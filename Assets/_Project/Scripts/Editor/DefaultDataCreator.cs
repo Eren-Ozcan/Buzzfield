@@ -37,6 +37,7 @@ namespace Buzzfield.Editor
             var hive = CreateHivePrefab(materials);
             var ground = CreateGroundPrefab(materials);
             var gardens = CreateGardens(flowers, hive, ground);
+            CreateBloom(materials);
 
             CreateEconomy(gardens);
             CreateUpgrades();
@@ -49,7 +50,7 @@ namespace Buzzfield.Editor
 
         struct Materials
         {
-            public Material Ground, Hive, HiveDoor, Stem, Wing, MergeFlash;
+            public Material Ground, GroundSurface, Hive, HiveDoor, Stem, Wing, MergeFlash, BloomParticle;
             public Material Worker, Forager, Golden;
             public Material Daisy, Lavender, Orchid;
         }
@@ -61,11 +62,15 @@ namespace Buzzfield.Editor
         static Materials CreateMaterials() => new Materials
         {
             Ground = EditorAssets.LoadOrCreateMaterial("Ground", new Color(0.55f, 0.6f, 0.5f)),
+            // White: the runtime tile texture carries the colour.
+            GroundSurface = EditorAssets.LoadOrCreateMaterial("GroundSurface", Color.white),
             Hive = EditorAssets.LoadOrCreateMaterial("Hive", new Color(0.93f, 0.68f, 0.2f)),
             HiveDoor = EditorAssets.LoadOrCreateMaterial("HiveDoor", new Color(0.25f, 0.15f, 0.05f)),
             Stem = EditorAssets.LoadOrCreateMaterial("FlowerStem", new Color(0.3f, 0.6f, 0.25f)),
             Wing = EditorAssets.LoadOrCreateMaterial("BeeWing", new Color(0.92f, 0.96f, 1f)),
             MergeFlash = EditorAssets.LoadOrCreateMaterial("MergeFlash", new Color(1f, 0.97f, 0.75f), "Universal Render Pipeline/Unlit"),
+            // White: each burst tints its particles through the start colour.
+            BloomParticle = EditorAssets.LoadOrCreateMaterial("BloomParticle", Color.white, "Universal Render Pipeline/Particles/Unlit"),
             Worker = EditorAssets.LoadOrCreateMaterial("BeeWorker", new Color(1f, 0.82f, 0.1f)),
             Forager = EditorAssets.LoadOrCreateMaterial("BeeForager", new Color(1f, 0.55f, 0.1f)),
             Golden = EditorAssets.LoadOrCreateMaterial("BeeGolden", new Color(1f, 0.9f, 0.45f)),
@@ -175,17 +180,117 @@ namespace Buzzfield.Editor
             return prefab.GetComponent<HiveView>();
         }
 
-        static GameObject CreateGroundPrefab(Materials m) => EditorAssets.LoadOrCreatePrefab("Ground", () =>
+        static GroundView CreateGroundPrefab(Materials m)
         {
-            // 1x1 footprint: GardenSpawner scales the root to the garden size.
-            var root = new GameObject("Ground");
-            EditorAssets.Primitive(PrimitiveType.Cube, "Slab", root.transform, new Vector3(0f, -0.1f, 0f), new Vector3(1f, 0.2f, 1f), m.Ground);
-            return root;
-        });
+            GameObject prefab = EditorAssets.LoadOrCreatePrefab("GardenGround", () =>
+            {
+                // 1x1 footprint: GardenSpawner scales the root to the garden size.
+                var root = new GameObject("GardenGround");
+                EditorAssets.Primitive(PrimitiveType.Cube, "Slab", root.transform, new Vector3(0f, -0.1f, 0f), new Vector3(1f, 0.2f, 1f), m.Ground);
+                // Quad lying flat just above the slab: UV u runs along +X, v along +Z, as GroundView expects.
+                GameObject surface = EditorAssets.Primitive(PrimitiveType.Quad, "Surface", root.transform, new Vector3(0f, 0.002f, 0f), Vector3.one, m.GroundSurface);
+                surface.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+
+                var view = root.AddComponent<GroundView>();
+                EditorAssets.Set(view, ("surface", surface.GetComponent<Renderer>()));
+                return root;
+            });
+            return prefab.GetComponent<GroundView>();
+        }
+
+        // ---- Bloom ----
+
+        static void CreateBloom(Materials m)
+        {
+            ParticleSystem burst = CreateParticlePrefab("BloomBurst", m.BloomParticle, ps =>
+            {
+                ParticleSystem.MainModule main = ps.main;
+                main.duration = 1f;
+                main.startLifetime = new ParticleSystem.MinMaxCurve(0.5f, 0.9f);
+                main.startSpeed = new ParticleSystem.MinMaxCurve(1.5f, 3f);
+                main.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.16f);
+                main.gravityModifier = 0.6f;
+                main.maxParticles = 40;
+
+                ParticleSystem.EmissionModule emission = ps.emission;
+                emission.rateOverTime = 0f;
+                emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 18) });
+
+                ParticleSystem.ShapeModule shape = ps.shape;
+                shape.shapeType = ParticleSystemShapeType.Sphere;
+                shape.radius = 0.15f;
+            });
+
+            ParticleSystem confetti = CreateParticlePrefab("GardenConfetti", m.BloomParticle, ps =>
+            {
+                ParticleSystem.MainModule main = ps.main;
+                main.duration = 2f;
+                main.startLifetime = new ParticleSystem.MinMaxCurve(2f, 3f);
+                main.startSpeed = new ParticleSystem.MinMaxCurve(0.5f, 2f);
+                main.startSize = new ParticleSystem.MinMaxCurve(0.14f, 0.26f);
+                main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+                main.gravityModifier = 0.25f;
+                main.maxParticles = 220;
+                var colors = new Gradient();
+                colors.SetKeys(
+                    new[]
+                    {
+                        new GradientColorKey(DaisyColor, 0f), new GradientColorKey(LavenderColor, 0.33f),
+                        new GradientColorKey(OrchidColor, 0.66f), new GradientColorKey(new Color(0.45f, 0.85f, 0.4f), 1f),
+                    },
+                    new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
+                main.startColor = new ParticleSystem.MinMaxGradient(colors) { mode = ParticleSystemGradientMode.RandomColor };
+
+                ParticleSystem.EmissionModule emission = ps.emission;
+                emission.rateOverTime = 0f;
+                emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 90), new ParticleSystem.Burst(0.4f, 90) });
+
+                // GardenBloomManager sizes the box to the garden.
+                ParticleSystem.ShapeModule shape = ps.shape;
+                shape.shapeType = ParticleSystemShapeType.Box;
+
+                ParticleSystem.RotationOverLifetimeModule rotation = ps.rotationOverLifetime;
+                rotation.enabled = true;
+                rotation.z = new ParticleSystem.MinMaxCurve(-3f, 3f);
+            });
+
+            BloomSettings settings = EditorAssets.LoadOrCreate<BloomSettings>($"{Data}/Flowers/BloomSettings.asset", _ => { });
+            EditorAssets.SetIfMissing(settings, "bloomBurstPrefab", burst);
+            EditorAssets.SetIfMissing(settings, "confettiPrefab", confetti);
+        }
+
+        /// <summary>One-shot particle prefab: no play on awake, world space, particles shrink out.</summary>
+        static ParticleSystem CreateParticlePrefab(string name, Material material, System.Action<ParticleSystem> setup)
+        {
+            GameObject prefab = EditorAssets.LoadOrCreatePrefab(name, () =>
+            {
+                var root = new GameObject(name);
+                var ps = root.AddComponent<ParticleSystem>();
+                ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+                ParticleSystem.MainModule main = ps.main;
+                main.playOnAwake = false;
+                main.loop = false;
+                main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+                ParticleSystem.SizeOverLifetimeModule size = ps.sizeOverLifetime;
+                size.enabled = true;
+                size.size = new ParticleSystem.MinMaxCurve(1f, AnimationCurve.Linear(0f, 1f, 1f, 0f));
+
+                setup(ps);
+
+                var renderer = root.GetComponent<ParticleSystemRenderer>();
+                renderer.sharedMaterial = material;
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                return root;
+            });
+            return prefab.GetComponent<ParticleSystem>();
+        }
 
         // ---- Gardens ----
 
-        static List<GardenConfig> CreateGardens(FlowerTypes f, HiveView hive, GameObject ground)
+        static List<GardenConfig> CreateGardens(FlowerTypes f, HiveView hive, GroundView ground)
         {
             // Garden 1: hand-placed. 6 active Daisies around the hive side, 10 sprouts further out.
             var garden1 = new List<(Vector2, FlowerType, bool)>
@@ -218,14 +323,14 @@ namespace Buzzfield.Editor
             };
         }
 
-        static GardenConfig CreateGarden(string name, List<(Vector2 position, FlowerType type, bool active)> slots, float valueMultiplier, double moveCost, HiveView hive, GameObject ground)
+        static GardenConfig CreateGarden(string name, List<(Vector2 position, FlowerType type, bool active)> slots, float valueMultiplier, double moveCost, HiveView hive, GroundView ground)
         {
-            return EditorAssets.LoadOrCreate<GardenConfig>($"{Data}/Gardens/{name}.asset", g =>
+            GardenConfig garden = EditorAssets.LoadOrCreate<GardenConfig>($"{Data}/Gardens/{name}.asset", g =>
             {
                 EditorAssets.Set(g,
                     ("groundSize", new Vector2(12f, 18f)), ("tileGrid", new Vector2Int(12, 18)),
                     ("hivePosition", new Vector2(0f, -6.8f)), ("gardenValueMultiplier", valueMultiplier),
-                    ("moveHoneyCost", moveCost), ("hivePrefab", hive), ("groundPrefab", ground));
+                    ("moveHoneyCost", moveCost), ("hivePrefab", hive), ("groundView", ground));
                 var elements = new object[slots.Count];
                 for (int i = 0; i < slots.Count; i++)
                     elements[i] = new (string, object)[]
@@ -234,6 +339,9 @@ namespace Buzzfield.Editor
                     };
                 EditorAssets.SetList(g, "slots", elements);
             });
+            // Phase 3 replaced the plain ground prefab with the tiled one; filled on older data too.
+            EditorAssets.SetIfMissing(garden, "groundView", ground);
+            return garden;
         }
 
         /// <summary>

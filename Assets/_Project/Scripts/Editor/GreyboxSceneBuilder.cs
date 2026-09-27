@@ -46,11 +46,12 @@ namespace Buzzfield.Editor
             var economySettings = Load<EconomySettings>("Settings/EconomySettings");
             var beeSettings = Load<BeeSettings>("Bees/BeeSettings");
             var prestigeSettings = Load<PrestigeSettings>("Settings/PrestigeSettings");
+            var bloomSettings = Load<BloomSettings>("Flowers/BloomSettings");
             var addBee = Load<UpgradeDefinition>("Upgrades/Upgrade_AddBee");
             var speed = Load<UpgradeDefinition>("Upgrades/Upgrade_Speed");
             var honeyValue = Load<UpgradeDefinition>("Upgrades/Upgrade_HoneyValue");
             if (gameSettings == null || economySettings == null || beeSettings == null || prestigeSettings == null
-                || addBee == null || speed == null || honeyValue == null)
+                || bloomSettings == null || addBee == null || speed == null || honeyValue == null)
             {
                 Debug.LogError("Default data is missing. Run Buzzfield > Create Default Data first.");
                 return;
@@ -63,16 +64,16 @@ namespace Buzzfield.Editor
             var systems = new GameObject("Systems");
             var flowerManager = systems.AddComponent<FlowerManager>();
             var beeManager = systems.AddComponent<BeeManager>();
-            (HudView hud, BottomBarView bottomBar) = CreateCanvas();
+            (HudView hud, BottomBarView bottomBar, GardenCompleteView gardenComplete) = CreateCanvas();
             new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
 
             var game = systems.AddComponent<GameManager>();
             EditorAssets.Set(game,
                 ("gameSettings", gameSettings), ("economySettings", economySettings),
-                ("beeSettings", beeSettings), ("prestigeSettings", prestigeSettings),
+                ("beeSettings", beeSettings), ("bloomSettings", bloomSettings), ("prestigeSettings", prestigeSettings),
                 ("addBeeUpgrade", addBee), ("speedUpgrade", speed), ("honeyValueUpgrade", honeyValue),
                 ("flowerManager", flowerManager), ("beeManager", beeManager),
-                ("hud", hud), ("bottomBar", bottomBar), ("cameraFitter", fitter), ("worldRoot", world));
+                ("hud", hud), ("bottomBar", bottomBar), ("gardenComplete", gardenComplete), ("cameraFitter", fitter), ("worldRoot", world));
 
             EditorAssets.EnsureFolder(System.IO.Path.GetDirectoryName(EditorAssets.ScenePath));
             EditorSceneManager.SaveScene(scene, EditorAssets.ScenePath);
@@ -114,7 +115,7 @@ namespace Buzzfield.Editor
             RenderSettings.skybox = null;
         }
 
-        static (HudView, BottomBarView) CreateCanvas()
+        static (HudView, BottomBarView, GardenCompleteView) CreateCanvas()
         {
             var canvasObject = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasObject.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
@@ -132,7 +133,7 @@ namespace Buzzfield.Editor
             topBar.anchorMin = new Vector2(0f, 1f);
             topBar.anchorMax = new Vector2(1f, 1f);
             topBar.pivot = new Vector2(0.5f, 1f);
-            topBar.sizeDelta = new Vector2(0f, 200f);
+            topBar.sizeDelta = new Vector2(0f, 260f);
             topBar.anchoredPosition = Vector2.zero;
             var background = topBar.gameObject.AddComponent<Image>();
             background.color = new Color(0.12f, 0.09f, 0.04f, 0.55f);
@@ -141,9 +142,72 @@ namespace Buzzfield.Editor
             TMP_Text honey = CreateText("HoneyText", topBar, new Vector2(0f, -20f), 110f, 96f, FontStyles.Bold, new Color(1f, 0.85f, 0.3f));
             TMP_Text rate = CreateText("RateText", topBar, new Vector2(0f, -130f), 56f, 44f, FontStyles.Normal, Color.white);
 
+            (TMP_Text bloom, RectTransform bloomFill) = CreateBloomBar(topBar);
+
             var hud = topBar.gameObject.AddComponent<HudView>();
-            EditorAssets.Set(hud, ("honeyText", honey), ("rateText", rate));
-            return (hud, CreateBottomBar(root));
+            EditorAssets.Set(hud, ("honeyText", honey), ("rateText", rate), ("bloomText", bloom), ("bloomFill", bloomFill));
+            GardenCompleteView gardenComplete = CreateGardenComplete(root);
+            return (hud, CreateBottomBar(root), gardenComplete);
+        }
+
+        /// <summary>Thin bar along the bottom of the top bar; the fill's right anchor is the bloom fraction.</summary>
+        static (TMP_Text, RectTransform) CreateBloomBar(Transform topBar)
+        {
+            RectTransform track = CreateRect("BloomBar", topBar);
+            track.anchorMin = new Vector2(0f, 0f);
+            track.anchorMax = new Vector2(1f, 0f);
+            track.pivot = new Vector2(0.5f, 0f);
+            track.sizeDelta = new Vector2(-80f, 44f);
+            track.anchoredPosition = new Vector2(0f, 16f);
+            var trackImage = track.gameObject.AddComponent<Image>();
+            trackImage.color = new Color(0.35f, 0.33f, 0.3f, 0.9f);
+            trackImage.raycastTarget = false;
+
+            RectTransform fill = CreateRect("Fill", track);
+            fill.anchorMin = Vector2.zero;
+            fill.anchorMax = new Vector2(0f, 1f);
+            fill.offsetMin = Vector2.zero;
+            fill.offsetMax = Vector2.zero;
+            var fillImage = fill.gameObject.AddComponent<Image>();
+            fillImage.color = new Color(0.45f, 0.78f, 0.35f);
+            fillImage.raycastTarget = false;
+
+            TMP_Text label = CreateText("BloomText", track, Vector2.zero, 44f, 32f, FontStyles.Bold, Color.white);
+            var labelRect = (RectTransform)label.transform;
+            Stretch(labelRect);
+            label.text = string.Format(Strings.BloomFormat, 0);
+            return (label, fill);
+        }
+
+        static GardenCompleteView CreateGardenComplete(Transform root)
+        {
+            RectTransform overlay = CreateRect("GardenComplete", root);
+            Stretch(overlay);
+            var group = overlay.gameObject.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+            group.interactable = false;
+            group.blocksRaycasts = false;
+
+            RectTransform banner = CreateRect("Banner", overlay);
+            banner.anchorMin = new Vector2(0f, 0.5f);
+            banner.anchorMax = new Vector2(1f, 0.5f);
+            banner.sizeDelta = new Vector2(-120f, 220f);
+            banner.anchoredPosition = new Vector2(0f, 260f);
+            var background = banner.gameObject.AddComponent<Image>();
+            background.color = new Color(0.3f, 0.62f, 0.25f, 0.92f);
+            background.raycastTarget = false;
+
+            TMP_Text title = CreateText("Title", banner, Vector2.zero, 220f, 96f, FontStyles.Bold, new Color(1f, 0.95f, 0.6f));
+            Stretch((RectTransform)title.transform);
+            title.alignment = TextAlignmentOptions.Center;
+            title.text = Strings.GardenComplete;
+            title.enableAutoSizing = true;
+            title.fontSizeMin = 40f;
+            title.fontSizeMax = 96f;
+
+            var view = overlay.gameObject.AddComponent<GardenCompleteView>();
+            EditorAssets.Set(view, ("group", group), ("banner", banner), ("titleText", title));
+            return view;
         }
 
         /// <summary>Four equal buttons in thumb reach; 250 px tall at the reference resolution.</summary>

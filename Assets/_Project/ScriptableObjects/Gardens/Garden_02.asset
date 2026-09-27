@@ -92,4 +92,4 @@ MonoBehaviour:
   bloomInfluenceRadius: 2.5
   moveHoneyCost: 60000
   hivePrefab: {fileID: 5126540283087801417, guid: 64253252f4f49ac4ebdacf37b5c5ed08, type: 3}
-  groundPrefab: {fileID: 2153784831631823590, guid: 37369bb44ca7b6c4ba276d01c6b659e4, type: 3}
+  groundView: {fileID: 5958315175847541985, guid: c70682c6a74bd404f97e15f6856cd408, type: 3}

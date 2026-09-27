@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 374221486e84f8941bd4a31d37ee21f9, type: 3}
+  m_Name: BloomSettings
+  m_EditorClassIdentifier: Buzzfield.Flowers::Buzzfield.Flowers.BloomSettings
+  unbloomedHeadColor: {r: 0.62, g: 0.62, b: 0.6, a: 1}
+  progressTint: 0.35
+  bloomDuration: 0.6
+  bloomScalePop: 0.35
+  bloomBurstPrefab: {fileID: 6934581845144953476, guid: 8ae0711532d8e004db4a682aa7029b57, type: 3}
+  burstPoolSize: 6
+  sproutsPerBloom: 2
+  sproutGrowDuration: 0.8
+  groundGrey: {r: 0.56, g: 0.56, b: 0.53, a: 1}
+  groundGreen: {r: 0.38, g: 0.68, b: 0.3, a: 1}
+  gardenWideGreen: 0.6
+  confettiPrefab: {fileID: 6264326580663532200, guid: 8bcbfcba5145a784c8614b482946a081, type: 3}
+  completePulseDuration: 0.8
+  completePulseScale: 0.25
