@@ -14,6 +14,8 @@ namespace Buzzfield.Core
     {
         // Past this exponent gap the smaller operand cannot change a double mantissa.
         const int PrecisionDigits = 17;
+        // ToDouble rounds to 15 significant digits up to this exponent (Math.Round allows 0-15 decimals).
+        const int MaxRoundedExponent = 14;
 
         public static readonly BigNumber Zero = new BigNumber(0, 0);
         public static readonly BigNumber One = new BigNumber(1, 0);
@@ -83,7 +85,12 @@ namespace Buzzfield.Core
                 return IsNegative ? double.NegativeInfinity : double.PositiveInfinity;
             if (Exponent < -324)
                 return 0;
-            return Exponent >= 0 ? Mantissa * Math.Pow(10, Exponent) : Mantissa / Math.Pow(10, -Exponent);
+            if (Exponent < 0)
+                return Mantissa / Math.Pow(10, -Exponent);
+            double value = Mantissa * Math.Pow(10, Exponent);
+            // Mantissas like 1.09 are not exact in binary, so 109 would come back as
+            // 109.00000000000001; rounding to 15 significant digits drops that noise.
+            return Exponent <= MaxRoundedExponent ? Math.Round(value, MaxRoundedExponent - (int)Exponent) : value;
         }
 
         public static BigNumber Pow(BigNumber value, double power)
