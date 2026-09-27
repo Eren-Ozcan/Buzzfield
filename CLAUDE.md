@@ -21,6 +21,12 @@ string lives in `Buzzfield.Core.Strings`.
     `Unity.exe -batchmode -quit -projectPath . -executeMethod Buzzfield.Editor.GreyboxSceneBuilder.Build`.
 - `Assets/_Project/Tests/EditMode/` — NUnit tests for `Core`
   (Test Runner window, or `-runTests -testPlatform EditMode`).
+- `Assets/_Project/Tests/PlayMode/` — smoke and upgrade-flow tests against the real
+  `Main.unity`. Batchmode needs the editor closed:
+  `Unity.exe -batchmode -projectPath . -runTests -testPlatform PlayMode -testResults <file>`.
+  Set `BZ_SHOT_DIR` to also save 1080x1920 and 1440x1920 screenshots (HUD included).
+- Batchmode TMP import: `-executeMethod Buzzfield.Editor.TmpResources.ImportAndExit`
+  without `-quit` (the package import finishes after the method returns).
 - `Assets/_Project/ScriptableObjects/` — all balance data. No tuning number in code.
 
 ## Rules
