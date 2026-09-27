@@ -21,6 +21,7 @@ namespace Buzzfield.Tests.PlayMode
         [UnitySetUp]
         public IEnumerator LoadMain()
         {
+            TestSave.Clear();
             yield return SceneManager.LoadSceneAsync("Main", LoadSceneMode.Single);
             yield return null;
             game = Object.FindAnyObjectByType<GameManager>();
@@ -47,46 +48,8 @@ namespace Buzzfield.Tests.PlayMode
 
             Assert.That(game.Economy.Honey.ToDouble(), Is.GreaterThan(0));
             Assert.That(game.Economy.HoneyPerSecond(Time.timeAsDouble).ToDouble(), Is.GreaterThan(0));
-            SaveShotIfRequested("main_1080x1920.png", 1080, 1920);
-            SaveShotIfRequested("main_1440x1920.png", 1440, 1920);
-        }
-
-        /// <summary>Set BZ_SHOT_DIR to save camera renders (world only, no overlay UI) for a visual check.</summary>
-        static void SaveShotIfRequested(string fileName, int width, int height)
-        {
-            string directory = System.Environment.GetEnvironmentVariable("BZ_SHOT_DIR");
-            if (string.IsNullOrEmpty(directory))
-                return;
-
-            Camera cam = Camera.main;
-            var target = new RenderTexture(width, height, 24);
-            float oldAspect = cam.aspect;
-            cam.aspect = width / (float)height;
-            cam.SendMessage("Refit", SendMessageOptions.DontRequireReceiver);
-            cam.targetTexture = target;
-            // Overlay canvases skip camera renders; switch to camera space for the shot.
-            Canvas canvas = Object.FindAnyObjectByType<Canvas>();
-            RenderMode oldMode = canvas != null ? canvas.renderMode : RenderMode.ScreenSpaceOverlay;
-            if (canvas != null)
-            {
-                canvas.renderMode = RenderMode.ScreenSpaceCamera;
-                canvas.worldCamera = cam;
-                canvas.planeDistance = cam.nearClipPlane + 0.1f;
-                Canvas.ForceUpdateCanvases();
-            }
-            cam.Render();
-            if (canvas != null)
-                canvas.renderMode = oldMode;
-            RenderTexture.active = target;
-            var image = new Texture2D(width, height, TextureFormat.RGB24, false);
-            image.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-            image.Apply();
-            System.IO.File.WriteAllBytes(System.IO.Path.Combine(directory, fileName), image.EncodeToPNG());
-            cam.targetTexture = null;
-            RenderTexture.active = null;
-            cam.aspect = oldAspect;
-            Object.Destroy(image);
-            target.Release();
+            TestShots.SaveIfRequested("main_1080x1920.png", 1080, 1920);
+            TestShots.SaveIfRequested("main_1440x1920.png", 1440, 1920);
         }
 
         [UnityTest]

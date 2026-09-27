@@ -16,6 +16,7 @@ namespace Buzzfield.Tests.PlayMode
         [UnitySetUp]
         public IEnumerator LoadMain()
         {
+            TestSave.Clear();
             yield return SceneManager.LoadSceneAsync("Main", LoadSceneMode.Single);
             yield return null;
             game = Object.FindAnyObjectByType<GameManager>();
