@@ -5,6 +5,7 @@
         "Buzzfield.Core",
         "Buzzfield.Economy",
         "Buzzfield.Bees",
+        "Buzzfield.Flowers",
         "Buzzfield.Upgrades",
         "Unity.TextMeshPro",
         "UnityEngine.UI"

@@ -30,12 +30,14 @@ namespace Buzzfield.Game
         [SerializeField] private HudView hud;
         [SerializeField] private BottomBarView bottomBar;
         [SerializeField] private GardenCompleteView gardenComplete;
+        [SerializeField] private QueenPanelView queenPanel;
         [SerializeField] private CameraFitter cameraFitter;
         [SerializeField] private Transform worldRoot;
 
         private EconomyManager economy;
         private UpgradeManager upgrades;
         private GardenBloomManager bloom;
+        private PrestigeManager prestige;
         private GardenInstance garden;
 
         public EconomyManager Economy => economy;
@@ -43,6 +45,7 @@ namespace Buzzfield.Game
         public BeeManager Bees => beeManager;
         public FlowerManager Flowers => flowerManager;
         public GardenBloomManager Bloom => bloom;
+        public PrestigeManager Prestige => prestige;
 
         private void Awake()
         {
@@ -57,10 +60,11 @@ namespace Buzzfield.Game
             bloom = new GardenBloomManager(bloomSettings, flowerManager);
             bloom.OnBloomChanged += HandleBloomChanged;
             bloom.OnGardenCompleted += HandleGardenCompleted;
+            prestige = new PrestigeManager(prestigeSettings);
+            queenPanel.Init(prestige, economy, bloom, TryMoveQueen);
 
-            LoadGarden(0);
-            for (int i = 0; i < beeSettings.StartingBees; i++)
-                beeManager.Spawn(0);
+            LoadGarden();
+            SpawnStartingBees();
         }
 
         private void Update()
@@ -83,18 +87,47 @@ namespace Buzzfield.Game
             }
         }
 
-        private void LoadGarden(int index)
+        /// <summary>
+        /// "Move the Queen" (design doc section 3b). Resets honey, upgrades, bees and the
+        /// garden; keeps Royal Jelly, lifetime stats and timed boosts, and loads the next
+        /// garden. Returns false when the bloom gate or the honey cost is not met.
+        /// </summary>
+        public bool TryMoveQueen()
+        {
+            float fraction = bloom.Fraction;
+            if (!prestige.CanMove(fraction, economy.Honey))
+                return false;
+
+            // The honey cost is a gate only: the whole balance resets right after.
+            BigNumber jelly = prestige.PreviewJelly(economy.RunHoneyEarned, fraction);
+            beeManager.DespawnAll();
+            upgrades.ResetLevels();
+            economy.ResetRun(Time.timeAsDouble);
+            prestige.CommitMove(jelly);
+
+            LoadGarden();
+            SpawnStartingBees();
+            return true;
+        }
+
+        private void LoadGarden()
         {
             if (garden.Root != null)
                 Destroy(garden.Root.gameObject);
 
-            GardenConfig config = prestigeSettings.Gardens[Mathf.Min(index, prestigeSettings.Gardens.Count - 1)];
+            GardenConfig config = prestige.CurrentGarden;
             garden = GardenSpawner.Spawn(config, worldRoot);
-            flowerManager.Init(config, garden.Root);
+            flowerManager.Init(config, prestige.GardenValueMultiplier, garden.Root);
             bloom.Load(config, garden);
             if (garden.Hive != null)
                 beeManager.SetHive(garden.Hive.EntrancePoint);
             cameraFitter.Fit(garden.Bounds);
+        }
+
+        private void SpawnStartingBees()
+        {
+            for (int i = 0; i < beeSettings.StartingBees; i++)
+                beeManager.Spawn(0);
         }
 
         private void HandleNectarDeposited(double nectar, double flowerValue)
