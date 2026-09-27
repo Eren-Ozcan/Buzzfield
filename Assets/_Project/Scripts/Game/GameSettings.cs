@@ -8,8 +8,13 @@ namespace Buzzfield.Game
     {
         [SerializeField, Min(30)] private int targetFrameRate = 60;
         [SerializeField, Min(5f)] private float autosaveIntervalSeconds = 30f;
+        [SerializeField] private string saveFileName = "buzzfield_save.json";
+        [Tooltip("Ask a time server for UTC, so offline earnings survive device clock changes and reboots.")]
+        [SerializeField] private bool fetchTrustedTime = true;
 
         public int TargetFrameRate => targetFrameRate;
         public float AutosaveIntervalSeconds => autosaveIntervalSeconds;
+        public string SaveFileName => saveFileName;
+        public bool FetchTrustedTime => fetchTrustedTime;
     }
 }
