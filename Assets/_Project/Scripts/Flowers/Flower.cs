@@ -62,6 +62,10 @@ namespace Buzzfield.Flowers
                 Nectar = Math.Min(Type.MaxNectar, Nectar + Type.RegenPerSecond * deltaTime);
         }
 
+        /// <summary>Loads saved nectar, clamped to the flower's range.</summary>
+        internal void SetNectar(double nectar) =>
+            Nectar = double.IsNaN(nectar) ? Type.MaxNectar : Math.Max(0, Math.Min(Type.MaxNectar, nectar));
+
         internal double Take(double capacity)
         {
             double taken = Math.Min(capacity, Nectar);

@@ -38,8 +38,11 @@ namespace Buzzfield.Bees
         /// <summary>True while an Evolve animation is still running.</summary>
         public bool IsMerging => merges.Count > 0;
 
-        /// <summary>Global flight speed factor from upgrades, the Queen and boosts.</summary>
+        /// <summary>Permanent flight speed factor from upgrades and the Queen.</summary>
         public float SpeedMultiplier { get; set; } = 1f;
+
+        /// <summary>Temporary flight speed factor from the tap boost; set every frame by the game.</summary>
+        public float BoostSpeedMultiplier { get; set; } = 1f;
 
         /// <summary>Raised when a bee unloads at the hive: nectar units and honey value per unit.</summary>
         public event Action<double, double> OnNectarDeposited;
@@ -78,6 +81,22 @@ namespace Buzzfield.Bees
         }
 
         public int CountOfTier(int tierIndex) => tierCounts[tierIndex];
+
+        /// <summary>
+        /// Bees per tier for the save: a running merge counts as the bee it will become,
+        /// so saving mid-Evolve loses nothing. <paramref name="counts"/> needs one entry per tier.
+        /// </summary>
+        public void GetSaveCounts(int[] counts)
+        {
+            for (int i = 0; i < counts.Length; i++)
+                counts[i] = i < tierCounts.Count ? tierCounts[i] : 0;
+            for (int i = 0; i < merges.Count; i++)
+            {
+                int target = merges[i].TargetTier;
+                if (target < counts.Length)
+                    counts[target]++;
+            }
+        }
 
         /// <summary>Spawns a bee of the given tier at the hive. Returns null at the cap.</summary>
         public Bee Spawn(int tierIndex) => Spawn(tierIndex, hivePoint);
@@ -167,7 +186,7 @@ namespace Buzzfield.Bees
 
         private void TickBee(Bee bee, float deltaTime)
         {
-            float step = bee.Tier.Speed * SpeedMultiplier * deltaTime;
+            float step = bee.Tier.Speed * SpeedMultiplier * BoostSpeedMultiplier * deltaTime;
             switch (bee.State)
             {
                 case BeeState.Idle:

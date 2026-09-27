@@ -43,6 +43,36 @@ namespace Buzzfield.Flowers
             }
         }
 
+        /// <summary>
+        /// Loads one slot's saved state; call after <see cref="Init"/> and before the bloom
+        /// system loads the garden. Out-of-range slots (changed garden layout) are ignored.
+        /// </summary>
+        public void RestoreSlot(int slotIndex, bool active, float bloom, double nectar)
+        {
+            if (slotIndex < 0 || slotIndex >= flowers.Count)
+                return;
+            Flower flower = flowers[slotIndex];
+            // A bloomed flower is always active; a starting flower never goes back to a sprout.
+            bool isActive = active || flower.IsActive || bloom >= 1f;
+            flower.IsActive = isActive;
+            flower.View.gameObject.SetActive(isActive);
+            flower.Bloom = float.IsNaN(bloom) ? 0f : Mathf.Clamp01(bloom);
+            flower.SetNectar(nectar);
+        }
+
+        /// <summary>Regrows nectar on every active flower for time spent away.</summary>
+        public void RegenerateFor(double seconds)
+        {
+            if (seconds <= 0)
+                return;
+            for (int i = 0; i < flowers.Count; i++)
+            {
+                Flower flower = flowers[i];
+                if (flower.IsActive)
+                    flower.SetNectar(flower.Nectar + flower.Type.RegenPerSecond * seconds);
+            }
+        }
+
         public void Tick(float deltaTime)
         {
             for (int i = 0; i < flowers.Count; i++)

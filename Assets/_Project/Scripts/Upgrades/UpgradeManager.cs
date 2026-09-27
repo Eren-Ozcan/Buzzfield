@@ -122,6 +122,20 @@ namespace Buzzfield.Upgrades
             return true;
         }
 
+        /// <summary>Loads saved levels, clamped to the current max levels.</summary>
+        public void Restore(int beesBought, int speedLevel, int honeyValueLevel)
+        {
+            BeesBought = Math.Max(0, beesBought);
+            SpeedLevel = Clamp(speedLevel, speed.MaxLevel);
+            HoneyValueLevel = Clamp(honeyValueLevel, honeyValue.MaxLevel);
+            ApplyEffects();
+            OnUpgradesChanged?.Invoke();
+        }
+
+        /// <summary>0 = no max level.</summary>
+        private static int Clamp(int level, int maxLevel) =>
+            maxLevel > 0 ? Math.Min(Math.Max(0, level), maxLevel) : Math.Max(0, level);
+
         /// <summary>Back to level 0 on every upgrade (Queen move).</summary>
         public void ResetLevels()
         {
