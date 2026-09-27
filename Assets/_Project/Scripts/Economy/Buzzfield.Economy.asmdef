@@ -1,0 +1,17 @@
+{
+    "name": "Buzzfield.Economy",
+    "rootNamespace": "Buzzfield.Economy",
+    "references": [
+        "Buzzfield.Core",
+        "Buzzfield.Flowers"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
