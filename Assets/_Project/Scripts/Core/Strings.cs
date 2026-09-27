@@ -46,6 +46,10 @@ namespace Buzzfield.Core
         public const string OfflineHoneyFormat = "+{0} honey";
         public const string OfflineCapFormat = "Your bees rest after {0}";
         public const string Collect = "Collect";
+        public const string OfflineAdOfferFormat = "Watch ad: x{0}";
+
+        public const string RewardedBoostOfferFormat = "Watch ad\nx{0} honey {1}";
+        public const string RewardedBoostActiveFormat = "x{0} honey\n{1}";
 
         public const string TapBoostReady = "Tap!";
         public const string TapBoostActiveFormat = "x{0}";

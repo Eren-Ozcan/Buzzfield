@@ -26,6 +26,8 @@ namespace Buzzfield.Economy
         public double RewardedHoneyEndUtc { get; private set; }
 
         public float TapSpeedMultiplier => settings.TapSpeedMultiplier;
+        public float RewardedHoneyMultiplier => settings.RewardedHoneyMultiplier;
+        public float RewardedDurationSeconds => settings.RewardedDurationSeconds;
 
         /// <summary>Raised when a tap starts the boost.</summary>
         public event Action OnTapBoostStarted;
@@ -41,6 +43,9 @@ namespace Buzzfield.Economy
         public float SpeedMultiplier(double gameTime) => (float)Tap.SpeedMultiplier(gameTime);
 
         public bool IsRewardedHoneyActive(double utcNow) => utcNow < RewardedHoneyEndUtc;
+
+        /// <summary>Seconds left on the rewarded honey boost; 0 when inactive.</summary>
+        public double RewardedHoneySecondsLeft(double utcNow) => Math.Max(0, RewardedHoneyEndUtc - utcNow);
 
         /// <summary>Starts (or extends to) a full rewarded honey boost from now.</summary>
         public void StartRewardedHoney(double utcNow)
