@@ -10,6 +10,8 @@ namespace Buzzfield.Bees
         Collecting,
         ReturnToHive,
         Depositing,
+        /// <summary>Flying to a merge point to become one bee of the next tier (Evolve).</summary>
+        Merging,
     }
 
     /// <summary>Runtime state of one bee. Plain data; <see cref="BeeManager"/> ticks every bee in one loop.</summary>

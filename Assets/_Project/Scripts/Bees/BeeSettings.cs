@@ -23,6 +23,15 @@ namespace Buzzfield.Bees
         [Tooltip("Degrees per second the bee turns to face its flight direction.")]
         [SerializeField, Min(1f)] private float turnSpeed = 720f;
 
+        [Header("Evolve")]
+        [Tooltip("Flight speed factor while the three bees gather at the merge point.")]
+        [SerializeField, Min(0.1f)] private float mergeGatherSpeed = 1.5f;
+        [Tooltip("Seconds of the flash before the new bee appears.")]
+        [SerializeField, Min(0.05f)] private float mergeFlashDuration = 0.4f;
+        [Tooltip("Pooled effect shown at the merge point; scaled up and down during the flash.")]
+        [SerializeField] private GameObject mergeFlashPrefab;
+        [SerializeField, Min(0.1f)] private float mergeFlashScale = 1.2f;
+
         public IReadOnlyList<BeeTier> Tiers => tiers;
         public int MaxBees => maxBees;
         public int StartingBees => startingBees;
@@ -33,5 +42,9 @@ namespace Buzzfield.Bees
         public float BobAmplitude => bobAmplitude;
         public float BobFrequency => bobFrequency;
         public float TurnSpeed => turnSpeed;
+        public float MergeGatherSpeed => mergeGatherSpeed;
+        public float MergeFlashDuration => mergeFlashDuration;
+        public GameObject MergeFlashPrefab => mergeFlashPrefab;
+        public float MergeFlashScale => mergeFlashScale;
     }
 }
