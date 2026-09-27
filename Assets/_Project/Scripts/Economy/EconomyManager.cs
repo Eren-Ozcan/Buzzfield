@@ -43,6 +43,28 @@ namespace Buzzfield.Economy
             return honey;
         }
 
+        public bool CanAfford(BigNumber cost) => Honey >= cost;
+
+        /// <summary>Removes <paramref name="cost"/> if the balance covers it.</summary>
+        public bool TrySpend(BigNumber cost)
+        {
+            if (cost.IsNegative || Honey < cost)
+                return false;
+            Honey -= cost;
+            OnHoneyChanged?.Invoke(Honey);
+            return true;
+        }
+
+        /// <summary>Adds honey that did not come from a deposit (offline earnings, store grants).
+        /// Not counted in honey/sec or the run total.</summary>
+        public void Grant(BigNumber amount)
+        {
+            if (amount.IsZero || amount.IsNegative)
+                return;
+            Honey += amount;
+            OnHoneyChanged?.Invoke(Honey);
+        }
+
         public BigNumber HoneyPerSecond(double now) => honeyRate.PerSecond(now);
     }
 }
