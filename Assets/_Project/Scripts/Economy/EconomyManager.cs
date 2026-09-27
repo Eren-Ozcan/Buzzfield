@@ -73,6 +73,15 @@ namespace Buzzfield.Economy
 
         public BigNumber HoneyPerSecond(double now) => honeyRate.PerSecond(now);
 
+        /// <summary>Loads saved balances. Negative values (a damaged save) read as zero.</summary>
+        public void Restore(BigNumber honey, BigNumber runHoneyEarned, BigNumber lifetimeHoneyEarned)
+        {
+            Honey = honey.IsNegative ? BigNumber.Zero : honey;
+            RunHoneyEarned = runHoneyEarned.IsNegative ? BigNumber.Zero : runHoneyEarned;
+            LifetimeHoneyEarned = BigNumber.Max(lifetimeHoneyEarned, RunHoneyEarned);
+            OnHoneyChanged?.Invoke(Honey);
+        }
+
         /// <summary>Queen move: back to the starting honey with an empty run total and rate.
         /// Multipliers are owned by their systems and reset there.</summary>
         public void ResetRun(double now)

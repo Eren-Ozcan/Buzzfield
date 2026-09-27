@@ -14,10 +14,13 @@ namespace Buzzfield.Economy
         [SerializeField, Min(0f)] private float minAwaySeconds = 60f;
         [Tooltip("Multiplier of the rewarded ad offer on the Welcome back panel.")]
         [SerializeField, Min(1f)] private float rewardedMultiplier = 3f;
+        [Tooltip("How far the device clock may run ahead of the monotonic clock before the absence counts as a clock change.")]
+        [SerializeField, Min(0f)] private float clockToleranceSeconds = 120f;
 
         public float Efficiency => efficiency;
         public float CapHours => capHours;
         public float MinAwaySeconds => minAwaySeconds;
         public float RewardedMultiplier => rewardedMultiplier;
+        public float ClockToleranceSeconds => clockToleranceSeconds;
     }
 }

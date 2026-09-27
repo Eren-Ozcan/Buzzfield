@@ -57,6 +57,15 @@ namespace Buzzfield.Economy
         public BigNumber PreviewJelly(BigNumber runHoney, float bloom) =>
             PrestigeMath.Jelly(runHoney, settings.JellyBase, settings.JellyScale, BloomBonus(bloom));
 
+        /// <summary>Loads saved prestige state.</summary>
+        public void Restore(BigNumber royalJelly, BigNumber lifetimeJelly, int gardenIndex, int movesMade)
+        {
+            RoyalJelly = royalJelly.IsNegative ? BigNumber.Zero : royalJelly;
+            LifetimeJelly = BigNumber.Max(lifetimeJelly, RoyalJelly);
+            GardenIndex = Math.Max(0, gardenIndex);
+            MovesMade = Math.Max(0, movesMade);
+        }
+
         /// <summary>Credits the jelly and advances to the next garden. The caller resets the run.</summary>
         public void CommitMove(BigNumber jelly)
         {
