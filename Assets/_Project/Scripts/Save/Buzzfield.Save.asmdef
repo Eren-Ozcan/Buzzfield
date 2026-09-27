@@ -1,0 +1,16 @@
+{
+    "name": "Buzzfield.Save",
+    "rootNamespace": "Buzzfield.Save",
+    "references": [
+        "Buzzfield.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
