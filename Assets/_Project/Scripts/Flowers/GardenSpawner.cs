@@ -7,12 +7,14 @@ namespace Buzzfield.Flowers
     {
         public readonly Transform Root;
         public readonly HiveView Hive;
+        public readonly GroundView Ground;
         public readonly Bounds Bounds;
 
-        public GardenInstance(Transform root, HiveView hive, Bounds bounds)
+        public GardenInstance(Transform root, HiveView hive, GroundView ground, Bounds bounds)
         {
             Root = root;
             Hive = hive;
+            Ground = ground;
             Bounds = bounds;
         }
     }
@@ -29,12 +31,18 @@ namespace Buzzfield.Flowers
             root.SetParent(parent, false);
 
             Vector2 size = garden.GroundSize;
-            if (garden.GroundPrefab != null)
+            GroundView ground = null;
+            if (garden.GroundView != null)
             {
                 // The ground prefab is 1x1 world units, so its scale is the garden size.
-                GameObject ground = Object.Instantiate(garden.GroundPrefab, root);
+                ground = Object.Instantiate(garden.GroundView, root);
                 ground.name = "Ground";
                 ground.transform.localScale = new Vector3(size.x, ground.transform.localScale.y, size.y);
+                ground.InitTiles(garden.TileGrid);
+            }
+            else
+            {
+                Debug.LogError($"Garden '{garden.name}' has no ground prefab.", garden);
             }
 
             HiveView hive = null;
@@ -49,7 +57,7 @@ namespace Buzzfield.Flowers
             }
 
             var bounds = new Bounds(new Vector3(0f, ViewHeight * 0.5f, 0f), new Vector3(size.x, ViewHeight, size.y));
-            return new GardenInstance(root, hive, bounds);
+            return new GardenInstance(root, hive, ground, bounds);
         }
     }
 }

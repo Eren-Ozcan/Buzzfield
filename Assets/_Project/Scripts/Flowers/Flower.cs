@@ -3,15 +3,24 @@ using UnityEngine;
 
 namespace Buzzfield.Flowers
 {
+    internal enum FlowerAnimation
+    {
+        None,
+        Sprout,
+        Bloom,
+        Pulse,
+    }
+
     /// <summary>Runtime state of one flower slot. Owned and ticked by <see cref="FlowerManager"/>.</summary>
     public sealed class Flower
     {
-        internal Flower(int slotIndex, FlowerType type, FlowerView view, float valueMultiplier, bool active)
+        internal Flower(int slotIndex, FlowerType type, FlowerView view, Vector2 gardenPosition, float valueMultiplier, bool active)
         {
             SlotIndex = slotIndex;
             Type = type;
             View = view;
             Value = type.NectarValue * valueMultiplier;
+            GardenPosition = gardenPosition;
             IsActive = active;
             Nectar = type.MaxNectar;
             NectarPoint = view.NectarPoint;
@@ -28,6 +37,15 @@ namespace Buzzfield.Flowers
         public bool IsActive { get; internal set; }
         public double Nectar { get; private set; }
         public int AssignedBees { get; private set; }
+
+        /// <summary>Bloom progress 0..1; grows with every collection and never goes back.</summary>
+        public float Bloom { get; internal set; }
+        public bool IsBloomed => Bloom >= 1f;
+        public Vector2 GardenPosition { get; }
+
+        // Animation state, driven by GardenBloomManager.
+        internal FlowerAnimation Animation;
+        internal float AnimationTime;
 
         /// <summary>At least one whole unit is left to collect.</summary>
         public bool HasNectar => IsActive && Nectar >= 1;

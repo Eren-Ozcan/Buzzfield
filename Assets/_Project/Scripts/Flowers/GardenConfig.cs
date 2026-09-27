@@ -31,7 +31,8 @@ namespace Buzzfield.Flowers
         [Tooltip("Honey cost of moving the Queen away from this garden.")]
         [SerializeField] private double moveHoneyCost = 5000;
         [SerializeField] private HiveView hivePrefab;
-        [SerializeField] private GameObject groundPrefab;
+        [Tooltip("1x1 ground prefab, scaled to the ground size; its surface shows the bloom tiles.")]
+        [SerializeField] private GroundView groundView;
 
         public Vector2 GroundSize => groundSize;
         public Vector2Int TileGrid => tileGrid;
@@ -41,8 +42,13 @@ namespace Buzzfield.Flowers
         public float BloomInfluenceRadius => bloomInfluenceRadius;
         public double MoveHoneyCost => moveHoneyCost;
         public HiveView HivePrefab => hivePrefab;
-        public GameObject GroundPrefab => groundPrefab;
+        public GroundView GroundView => groundView;
 
         public static Vector3 ToWorld(Vector2 gardenPosition) => new Vector3(gardenPosition.x, 0f, gardenPosition.y);
+
+        /// <summary>Garden XZ position of the centre of tile (x, y); tile (0, 0) is the -X/-Z corner.</summary>
+        public Vector2 TileCenter(int x, int y) => new Vector2(
+            (x + 0.5f) / tileGrid.x * groundSize.x - groundSize.x * 0.5f,
+            (y + 0.5f) / tileGrid.y * groundSize.y - groundSize.y * 0.5f);
     }
 }

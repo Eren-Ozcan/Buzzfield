@@ -38,7 +38,7 @@ namespace Buzzfield.Flowers
                 view.name = $"{slot.type.name}_{i:00}";
                 // Sprout slots stay hidden until the bloom system activates them.
                 view.gameObject.SetActive(slot.startsActive);
-                flowers.Add(new Flower(i, slot.type, view, garden.GardenValueMultiplier, slot.startsActive));
+                flowers.Add(new Flower(i, slot.type, view, slot.position, garden.GardenValueMultiplier, slot.startsActive));
             }
         }
 
@@ -70,6 +70,16 @@ namespace Buzzfield.Flowers
                 }
             }
             return best;
+        }
+
+        /// <summary>Wakes a sprout slot: it shows up and bees may visit it. Returns false if it was already active.</summary>
+        public bool Activate(Flower flower)
+        {
+            if (flower.IsActive)
+                return false;
+            flower.IsActive = true;
+            flower.View.gameObject.SetActive(true);
+            return true;
         }
 
         public void Reserve(Flower flower) => flower.Reserve();
