@@ -3,6 +3,7 @@ using Buzzfield.Core;
 using Buzzfield.Economy;
 using Buzzfield.Flowers;
 using Buzzfield.UI;
+using Buzzfield.Upgrades;
 using UnityEngine;
 
 namespace Buzzfield.Game
@@ -18,18 +19,24 @@ namespace Buzzfield.Game
         [SerializeField] private EconomySettings economySettings;
         [SerializeField] private BeeSettings beeSettings;
         [SerializeField] private PrestigeSettings prestigeSettings;
+        [SerializeField] private UpgradeDefinition addBeeUpgrade;
+        [SerializeField] private UpgradeDefinition speedUpgrade;
+        [SerializeField] private UpgradeDefinition honeyValueUpgrade;
 
         [Header("Scene")]
         [SerializeField] private FlowerManager flowerManager;
         [SerializeField] private BeeManager beeManager;
         [SerializeField] private HudView hud;
+        [SerializeField] private BottomBarView bottomBar;
         [SerializeField] private CameraFitter cameraFitter;
         [SerializeField] private Transform worldRoot;
 
         private EconomyManager economy;
+        private UpgradeManager upgrades;
         private GardenInstance garden;
 
         public EconomyManager Economy => economy;
+        public UpgradeManager Upgrades => upgrades;
         public BeeManager Bees => beeManager;
         public FlowerManager Flowers => flowerManager;
 
@@ -40,7 +47,9 @@ namespace Buzzfield.Game
             economy = new EconomyManager(economySettings, Time.timeAsDouble);
             beeManager.Init(beeSettings, flowerManager);
             beeManager.OnNectarDeposited += HandleNectarDeposited;
+            upgrades = new UpgradeManager(addBeeUpgrade, speedUpgrade, honeyValueUpgrade, beeSettings, economy, beeManager);
             hud.Init(economy, economySettings);
+            bottomBar.Init(upgrades, economy, beeManager, beeSettings);
 
             LoadGarden(0);
             for (int i = 0; i < beeSettings.StartingBees; i++)
