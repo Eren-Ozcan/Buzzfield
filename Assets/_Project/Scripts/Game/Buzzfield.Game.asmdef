@@ -1,0 +1,21 @@
+{
+    "name": "Buzzfield.Game",
+    "rootNamespace": "Buzzfield.Game",
+    "references": [
+        "Buzzfield.Core",
+        "Buzzfield.Core.Runtime",
+        "Buzzfield.Flowers",
+        "Buzzfield.Bees",
+        "Buzzfield.Economy",
+        "Buzzfield.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
