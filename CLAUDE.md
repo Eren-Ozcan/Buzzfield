@@ -17,7 +17,7 @@ string lives in `Buzzfield.Core.Strings`.
     ScriptableObject definitions next to the code that reads them.
   - `Save/` (`Buzzfield.Save`): `SaveManager` (JsonUtility, persistentDataPath, backup fallback).
     Bump `SaveMigration.CurrentVersion` and add a step whenever the `SaveData` layout changes.
-  - `Game/` (`Buzzfield.Game`): `GameManager` (+ `GameManager.Save.cs`: autosave, offline) and `GameClock`, the composition root. It owns init order,
+  - `Game/` (`Buzzfield.Game`): `GameManager` (+ `GameManager.Save.cs`: autosave, offline; `GameManager.Ads.cs`: rewarded placements) and `GameClock`, the composition root. It owns init order,
     wires managers with plain C# events and drives all per-frame ticks.
   - `Editor/`: menu *Buzzfield > Create Default Data* (materials, placeholder prefabs, all
     SO assets; never overwrites existing ones) and *Buzzfield > Build Greybox Scene*
