@@ -8,6 +8,7 @@
         "Buzzfield.Flowers",
         "Buzzfield.Upgrades",
         "Unity.TextMeshPro",
+        "Unity.InputSystem",
         "UnityEngine.UI"
     ],
     "includePlatforms": [],
