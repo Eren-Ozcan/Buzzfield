@@ -1,3 +1,4 @@
+using Buzzfield.Ads;
 using Buzzfield.Bees;
 using Buzzfield.Core;
 using Buzzfield.Economy;
@@ -24,6 +25,7 @@ namespace Buzzfield.Game
         [SerializeField] private PrestigeSettings prestigeSettings;
         [SerializeField] private BoostSettings boostSettings;
         [SerializeField] private OfflineSettings offlineSettings;
+        [SerializeField] private AdSettings adSettings;
         [SerializeField] private UpgradeDefinition addBeeUpgrade;
         [SerializeField] private UpgradeDefinition speedUpgrade;
         [SerializeField] private UpgradeDefinition honeyValueUpgrade;
@@ -37,6 +39,7 @@ namespace Buzzfield.Game
         [SerializeField] private QueenPanelView queenPanel;
         [SerializeField] private WelcomeBackView welcomeBack;
         [SerializeField] private TapBoostView tapBoostView;
+        [SerializeField] private RewardedBoostView rewardedBoostView;
         [SerializeField] private TapCatcher tapCatcher;
         [SerializeField] private BackButtonHandler backButton;
         [SerializeField] private CameraFitter cameraFitter;
@@ -47,6 +50,7 @@ namespace Buzzfield.Game
         private GardenBloomManager bloom;
         private PrestigeManager prestige;
         private BoostManager boosts;
+        private AdManager ads;
         private GardenInstance garden;
 
         public EconomyManager Economy => economy;
@@ -56,6 +60,7 @@ namespace Buzzfield.Game
         public GardenBloomManager Bloom => bloom;
         public PrestigeManager Prestige => prestige;
         public BoostManager Boosts => boosts;
+        public AdManager Ads => ads;
         public LifetimeStats Stats => stats;
 
         private void Awake()
@@ -78,6 +83,7 @@ namespace Buzzfield.Game
             boosts = new BoostManager(boostSettings, economy);
             tapBoostView.Init(boosts);
             tapCatcher.OnWorldTapped += HandleWorldTapped;
+            InitAds();
 
             InitSave();
             SaveData data = saveManager.Load();
@@ -96,6 +102,7 @@ namespace Buzzfield.Game
         {
             // Views hide their panels in Awake; the Welcome back panel may only open after that.
             StartSession(loadedClock);
+            ads.Start();
         }
 
         private void Update()
@@ -107,6 +114,7 @@ namespace Buzzfield.Game
             flowerManager.Tick(deltaTime);
             beeManager.Tick(deltaTime);
             bloom.Tick(deltaTime);
+            ads.Tick(Time.unscaledDeltaTime);
             TickAutosave(Time.unscaledDeltaTime);
         }
 
@@ -126,6 +134,7 @@ namespace Buzzfield.Game
             }
             if (tapCatcher != null)
                 tapCatcher.OnWorldTapped -= HandleWorldTapped;
+            ads?.Dispose();
             DisposeSave();
         }
 

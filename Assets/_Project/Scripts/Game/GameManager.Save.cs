@@ -21,7 +21,6 @@ namespace Buzzfield.Game
         private GameClock clock;
         private LifetimeStats stats = new LifetimeStats();
         private int[] abilityLevels = Array.Empty<int>();
-        private double lastFullScreenAdUtc;
         private float autosaveTimer;
 
         /// <summary>Clock and rate of the loaded save; null for a new game.</summary>
@@ -199,10 +198,15 @@ namespace Buzzfield.Game
             flowerManager.RegenerateFor(result.CreditedSeconds);
             if (!result.IsPayable)
                 return;
-            economy.Grant(result.Amount);
-            stats.offlineHoney = BigNumberData.From(stats.offlineHoney.ToNonNegative() + result.Amount);
+            GrantOffline(result.Amount);
             if (result.ElapsedSeconds >= offlineSettings.MinAwaySeconds)
-                welcomeBack.Show(result.ElapsedSeconds, result.Amount, result.CapReached, capSeconds);
+                OfferOfflineAd(result.Amount, result.ElapsedSeconds, result.CapReached, capSeconds);
+        }
+
+        private void GrantOffline(BigNumber amount)
+        {
+            economy.Grant(amount);
+            stats.offlineHoney = BigNumberData.From(stats.offlineHoney.ToNonNegative() + amount);
         }
 
         private int[] tierCountBuffer;
@@ -243,7 +247,7 @@ namespace Buzzfield.Game
             data.movesMade = prestige.MovesMade;
             data.abilityLevels = abilityLevels;
             data.rewardedBoostEndUtc = boosts.RewardedHoneyEndUtc;
-            data.lastFullScreenAdUtc = lastFullScreenAdUtc;
+            data.lastFullScreenAdUtc = ads.LastFullScreenAdUtc;
             data.stats = stats;
             data.offlineRate = BigNumberData.From(TheoreticalHoneyPerSecond());
             data.clock = clock.Stamp();
@@ -256,7 +260,7 @@ namespace Buzzfield.Game
             upgrades.Restore(data.beesBought, data.speedLevel, data.honeyValueLevel);
             stats = data.stats;
             abilityLevels = data.abilityLevels;
-            lastFullScreenAdUtc = data.lastFullScreenAdUtc;
+            ads.Restore(data.lastFullScreenAdUtc);
             boosts.RestoreRewardedHoney(data.rewardedBoostEndUtc, GameClock.DeviceUtc);
 
             LoadGarden(data);
