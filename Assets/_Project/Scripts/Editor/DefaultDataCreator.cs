@@ -49,7 +49,7 @@ namespace Buzzfield.Editor
 
         struct Materials
         {
-            public Material Ground, Hive, HiveDoor, Stem, Wing;
+            public Material Ground, Hive, HiveDoor, Stem, Wing, MergeFlash;
             public Material Worker, Forager, Golden;
             public Material Daisy, Lavender, Orchid;
         }
@@ -65,6 +65,7 @@ namespace Buzzfield.Editor
             HiveDoor = EditorAssets.LoadOrCreateMaterial("HiveDoor", new Color(0.25f, 0.15f, 0.05f)),
             Stem = EditorAssets.LoadOrCreateMaterial("FlowerStem", new Color(0.3f, 0.6f, 0.25f)),
             Wing = EditorAssets.LoadOrCreateMaterial("BeeWing", new Color(0.92f, 0.96f, 1f)),
+            MergeFlash = EditorAssets.LoadOrCreateMaterial("MergeFlash", new Color(1f, 0.97f, 0.75f), "Universal Render Pipeline/Unlit"),
             Worker = EditorAssets.LoadOrCreateMaterial("BeeWorker", new Color(1f, 0.82f, 0.1f)),
             Forager = EditorAssets.LoadOrCreateMaterial("BeeForager", new Color(1f, 0.55f, 0.1f)),
             Golden = EditorAssets.LoadOrCreateMaterial("BeeGolden", new Color(1f, 0.9f, 0.45f)),
@@ -82,11 +83,20 @@ namespace Buzzfield.Editor
             BeeTier forager = CreateTier("Forager", m.Forager, m.Wing, speed: 3.2f, capacity: 4f, collect: 0.8f, scale: 0.42f, evolveCost: 150);
             BeeTier golden = CreateTier("Golden", m.Golden, m.Wing, speed: 4f, capacity: 8f, collect: 0.6f, scale: 0.5f, evolveCost: 2500);
 
-            EditorAssets.LoadOrCreate<BeeSettings>($"{Data}/Bees/BeeSettings.asset", s =>
+            GameObject flash = EditorAssets.LoadOrCreatePrefab("MergeFlash", () =>
+            {
+                var root = new GameObject("MergeFlash");
+                EditorAssets.Primitive(PrimitiveType.Sphere, "Glow", root.transform, Vector3.zero, Vector3.one, m.MergeFlash);
+                return root;
+            });
+
+            BeeSettings settings = EditorAssets.LoadOrCreate<BeeSettings>($"{Data}/Bees/BeeSettings.asset", s =>
             {
                 EditorAssets.SetList(s, "tiers", worker, forager, golden);
                 EditorAssets.Set(s, ("maxBees", 150), ("startingBees", 1));
             });
+            // Added in Phase 2; filled on older data too.
+            EditorAssets.SetIfMissing(settings, "mergeFlashPrefab", flash);
         }
 
         static BeeTier CreateTier(string name, Material body, Material wing, float speed, float capacity, float collect, float scale, double evolveCost)

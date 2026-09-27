@@ -4,6 +4,7 @@ using Buzzfield.Economy;
 using Buzzfield.Flowers;
 using Buzzfield.Game;
 using Buzzfield.UI;
+using Buzzfield.Upgrades;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -45,7 +46,11 @@ namespace Buzzfield.Editor
             var economySettings = Load<EconomySettings>("Settings/EconomySettings");
             var beeSettings = Load<BeeSettings>("Bees/BeeSettings");
             var prestigeSettings = Load<PrestigeSettings>("Settings/PrestigeSettings");
-            if (gameSettings == null || economySettings == null || beeSettings == null || prestigeSettings == null)
+            var addBee = Load<UpgradeDefinition>("Upgrades/Upgrade_AddBee");
+            var speed = Load<UpgradeDefinition>("Upgrades/Upgrade_Speed");
+            var honeyValue = Load<UpgradeDefinition>("Upgrades/Upgrade_HoneyValue");
+            if (gameSettings == null || economySettings == null || beeSettings == null || prestigeSettings == null
+                || addBee == null || speed == null || honeyValue == null)
             {
                 Debug.LogError("Default data is missing. Run Buzzfield > Create Default Data first.");
                 return;
@@ -58,15 +63,16 @@ namespace Buzzfield.Editor
             var systems = new GameObject("Systems");
             var flowerManager = systems.AddComponent<FlowerManager>();
             var beeManager = systems.AddComponent<BeeManager>();
-            HudView hud = CreateCanvas();
+            (HudView hud, BottomBarView bottomBar) = CreateCanvas();
             new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
 
             var game = systems.AddComponent<GameManager>();
             EditorAssets.Set(game,
                 ("gameSettings", gameSettings), ("economySettings", economySettings),
                 ("beeSettings", beeSettings), ("prestigeSettings", prestigeSettings),
+                ("addBeeUpgrade", addBee), ("speedUpgrade", speed), ("honeyValueUpgrade", honeyValue),
                 ("flowerManager", flowerManager), ("beeManager", beeManager),
-                ("hud", hud), ("cameraFitter", fitter), ("worldRoot", world));
+                ("hud", hud), ("bottomBar", bottomBar), ("cameraFitter", fitter), ("worldRoot", world));
 
             EditorAssets.EnsureFolder(System.IO.Path.GetDirectoryName(EditorAssets.ScenePath));
             EditorSceneManager.SaveScene(scene, EditorAssets.ScenePath);
@@ -108,7 +114,7 @@ namespace Buzzfield.Editor
             RenderSettings.skybox = null;
         }
 
-        static HudView CreateCanvas()
+        static (HudView, BottomBarView) CreateCanvas()
         {
             var canvasObject = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasObject.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
@@ -137,7 +143,63 @@ namespace Buzzfield.Editor
 
             var hud = topBar.gameObject.AddComponent<HudView>();
             EditorAssets.Set(hud, ("honeyText", honey), ("rateText", rate));
-            return hud;
+            return (hud, CreateBottomBar(root));
+        }
+
+        /// <summary>Four equal buttons in thumb reach; 250 px tall at the reference resolution.</summary>
+        static BottomBarView CreateBottomBar(Transform root)
+        {
+            RectTransform bar = CreateRect("BottomBar", root);
+            bar.anchorMin = Vector2.zero;
+            bar.anchorMax = new Vector2(1f, 0f);
+            bar.pivot = new Vector2(0.5f, 0f);
+            bar.sizeDelta = new Vector2(0f, 300f);
+            bar.anchoredPosition = Vector2.zero;
+            var background = bar.gameObject.AddComponent<Image>();
+            background.color = new Color(0.12f, 0.09f, 0.04f, 0.55f);
+
+            var layout = bar.gameObject.AddComponent<HorizontalLayoutGroup>();
+            layout.padding = new RectOffset(20, 20, 25, 25);
+            layout.spacing = 16f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = true;
+
+            var view = bar.gameObject.AddComponent<BottomBarView>();
+            EditorAssets.Set(view,
+                ("addBeeButton", CreateUpgradeButton("AddBeeButton", bar)),
+                ("speedButton", CreateUpgradeButton("SpeedButton", bar)),
+                ("evolveButton", CreateUpgradeButton("EvolveButton", bar)),
+                ("honeyValueButton", CreateUpgradeButton("HoneyValueButton", bar)));
+            return view;
+        }
+
+        static UpgradeButtonView CreateUpgradeButton(string name, Transform parent)
+        {
+            RectTransform rect = CreateRect(name, parent);
+            var image = rect.gameObject.AddComponent<Image>();
+            image.color = new Color(0.98f, 0.76f, 0.2f);
+            var button = rect.gameObject.AddComponent<Button>();
+            button.targetGraphic = image;
+
+            var dark = new Color(0.2f, 0.12f, 0.02f);
+            TMP_Text title = CreateText("Title", rect, new Vector2(0f, -18f), 60f, 38f, FontStyles.Bold, dark);
+            TMP_Text detail = CreateText("Detail", rect, new Vector2(0f, -88f), 50f, 32f, FontStyles.Normal, dark);
+            TMP_Text cost = CreateText("Cost", rect, new Vector2(0f, -160f), 60f, 42f, FontStyles.Bold, dark);
+            foreach (TMP_Text text in new[] { title, detail, cost })
+            {
+                // Narrow buttons: keep the side margin small and let long words shrink.
+                ((RectTransform)text.transform).sizeDelta = new Vector2(-16f, ((RectTransform)text.transform).sizeDelta.y);
+                text.enableAutoSizing = true;
+                text.fontSizeMin = 20f;
+                text.fontSizeMax = text.fontSize;
+            }
+
+            var view = rect.gameObject.AddComponent<UpgradeButtonView>();
+            EditorAssets.Set(view, ("button", button), ("background", image),
+                ("titleText", title), ("detailText", detail), ("costText", cost));
+            return view;
         }
 
         static TMP_Text CreateText(string name, Transform parent, Vector2 position, float height, float fontSize, FontStyles style, Color color)

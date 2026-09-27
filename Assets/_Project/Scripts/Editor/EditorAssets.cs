@@ -31,7 +31,7 @@ namespace Buzzfield.Editor
             return asset;
         }
 
-        public static Material LoadOrCreateMaterial(string name, Color color)
+        public static Material LoadOrCreateMaterial(string name, Color color, string shaderName = "Universal Render Pipeline/Simple Lit")
         {
             string path = $"{MaterialRoot}/{name}.mat";
             var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -39,7 +39,7 @@ namespace Buzzfield.Editor
                 return existing;
 
             EnsureFolder(MaterialRoot);
-            Shader shader = Shader.Find("Universal Render Pipeline/Simple Lit");
+            Shader shader = Shader.Find(shaderName);
             var material = new Material(shader) { name = name };
             material.SetColor("_BaseColor", color);
             material.enableInstancing = true;
@@ -99,6 +99,24 @@ namespace Buzzfield.Editor
                 Assign(property, value);
             }
             so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>
+        /// Sets an object reference only while it is empty. Lets a re-run of Create Default Data
+        /// fill fields added in later phases without touching values already tuned.
+        /// </summary>
+        public static void SetIfMissing(Object target, string field, Object value)
+        {
+            var so = new SerializedObject(target);
+            SerializedProperty property = so.FindProperty(field);
+            if (property == null)
+                throw new ArgumentException($"{target.GetType().Name} has no serialized field '{field}'.");
+            if (property.objectReferenceValue != null)
+                return;
+            property.objectReferenceValue = value;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+            Debug.Log($"Filled {target.name}.{field}");
         }
 
         /// <summary>Fills a serialized list. Each element is either a value or an array of (field, value) pairs for structs.</summary>
