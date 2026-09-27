@@ -8,6 +8,9 @@
         "Buzzfield.Economy",
         "Buzzfield.Game",
         "Buzzfield.Upgrades",
+        "Buzzfield.UI",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
