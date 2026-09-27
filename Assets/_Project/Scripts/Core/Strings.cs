@@ -41,6 +41,25 @@ namespace Buzzfield.Core
         public const string Cancel = "Cancel";
         public const string Close = "Close";
 
+        public const string WelcomeBackTitle = "Welcome back!";
+        public const string AwayFormat = "You were away for {0}";
+        public const string OfflineHoneyFormat = "+{0} honey";
+        public const string OfflineCapFormat = "Your bees rest after {0}";
+        public const string Collect = "Collect";
+
+        public const string TapBoostReady = "Tap!";
+        public const string TapBoostActiveFormat = "x{0}";
+
+        public const string QuitTitle = "Quit the game?";
+        public const string QuitBody = "Your progress is saved.";
+        public const string Quit = "Quit";
+
+        public const string HoursMinutesFormat = "{0}h {1}m";
+        public const string HoursFormat = "{0}h";
+        public const string MinutesSecondsFormat = "{0}m {1}s";
+        public const string MinutesFormat = "{0}m";
+        public const string SecondsFormat = "{0}s";
+
         public const string LevelFormat = "Lv {0}";
         public const string BeeCountFormat = "{0}/{1} bees";
         public const string Max = "MAX";
