@@ -8,7 +8,7 @@ string lives in `Buzzfield.Core.Strings`.
 
 - `Assets/_Project/Scripts/` — one assembly per folder:
   - `Core/` (`Buzzfield.Core`, `noEngineReferences: true`): `BigNumber`, `NumberFormat`,
-    `RollingRate`, `HoneyFormula`, `Strings`. Pure logic only, EditMode-tested.
+    `RollingRate`, `HoneyFormula`, `BloomMath`, `PrestigeMath`, `Strings`. Pure logic only, EditMode-tested.
   - `Core/Runtime/` (`Buzzfield.Core.Runtime`): Unity helpers shared by systems
     (`PrefabPool`, `CameraFitter`).
   - `Flowers/`, `Bees/`, `Economy/`, `Upgrades/`, `Save/`, `UI/`, `Ads/` — one system each,
