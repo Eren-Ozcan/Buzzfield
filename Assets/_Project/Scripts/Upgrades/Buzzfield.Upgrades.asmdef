@@ -2,7 +2,9 @@
     "name": "Buzzfield.Upgrades",
     "rootNamespace": "Buzzfield.Upgrades",
     "references": [
-        "Buzzfield.Core"
+        "Buzzfield.Core",
+        "Buzzfield.Economy",
+        "Buzzfield.Bees"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
