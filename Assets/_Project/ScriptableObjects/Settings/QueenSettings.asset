@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34c775fdb46b48640b9e80e443f57fe7, type: 3}
+  m_Name: QueenSettings
+  m_EditorClassIdentifier: Buzzfield.Economy::Buzzfield.Economy.QueenSettings
+  xpForLevel:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 102.02041
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 50
+      value: 5000
+      inSlope: 102.02041
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  honeyBonusPerLevel: 0.1
+  abilities:
+  - {fileID: 11400000, guid: 4ccdda0788f04ea4ca194b0600377069, type: 2}
+  - {fileID: 11400000, guid: 0bcf764d5392b834ea80562659948765, type: 2}
+  - {fileID: 11400000, guid: 8a1c463e2a2c30d4597f58bce7408a32, type: 2}
+  - {fileID: 11400000, guid: 4ed54cd7a1dc03244a68651bac95b996, type: 2}

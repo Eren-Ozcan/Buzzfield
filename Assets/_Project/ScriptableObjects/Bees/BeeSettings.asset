@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb16154ad7d313e478fbdb75f3735ccd, type: 3}
+  m_Name: BeeSettings
+  m_EditorClassIdentifier: Buzzfield.Bees::Buzzfield.Bees.BeeSettings
+  tiers:
+  - {fileID: 11400000, guid: c31d3701847c2994986272b22cf76a45, type: 2}
+  - {fileID: 11400000, guid: 0ecf61d2856b1d1409b536ac3696c92e, type: 2}
+  - {fileID: 11400000, guid: 6ca93985b8e593a46ab15fb2980c5801, type: 2}
+  maxBees: 150
+  startingBees: 1
+  poolPrewarm: 8
+  depositDuration: 0.25
+  retryInterval: 0.5
+  hoverRadius: 0.8
+  bobAmplitude: 0.06
+  bobFrequency: 7
+  turnSpeed: 720

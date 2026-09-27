@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 079ba7fe93191064a9a07a05fbb5a79f, type: 3}
+  m_Name: Flower_Orchid
+  m_EditorClassIdentifier: Buzzfield.Flowers::Buzzfield.Flowers.FlowerType
+  maxNectar: 16
+  regenPerSecond: 0.35
+  nectarValue: 8
+  maxBeesTargeting: 3
+  bloomPerVisit: 0.05
+  bloomedColor: {r: 0.95, g: 0.4, b: 0.7, a: 1}
+  prefab: {fileID: 1005153913463623587, guid: bd473669e97a8b349bedddc327ddfcc0, type: 3}

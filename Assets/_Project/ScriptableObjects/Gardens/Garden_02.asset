@@ -1,0 +1,95 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b5f99387e33a2e49b4e26a3fa71acdd, type: 3}
+  m_Name: Garden_02
+  m_EditorClassIdentifier: Buzzfield.Flowers::Buzzfield.Flowers.GardenConfig
+  groundSize: {x: 12, y: 18}
+  tileGrid: {x: 12, y: 18}
+  hivePosition: {x: 0, y: -6.8}
+  slots:
+  - position: {x: 1.507783, y: -4.5801077}
+    type: {fileID: 11400000, guid: 1565b6a0417733842abb274311d7e7b3, type: 2}
+    startsActive: 1
+  - position: {x: -1.8485641, y: -4.428864}
+    type: {fileID: 11400000, guid: 1565b6a0417733842abb274311d7e7b3, type: 2}
+    startsActive: 1
+  - position: {x: 3.4563942, y: -4.318674}
+    type: {fileID: 11400000, guid: 1565b6a0417733842abb274311d7e7b3, type: 2}
+    startsActive: 1
+  - position: {x: 1.4013805, y: -2.9805267}
+    type: {fileID: 11400000, guid: 1565b6a0417733842abb274311d7e7b3, type: 2}
+    startsActive: 1
+  - position: {x: -3.1446106, y: -2.7245483}
+    type: {fileID: 11400000, guid: 1565b6a0417733842abb274311d7e7b3, type: 2}
+    startsActive: 1
+  - position: {x: -1.57018, y: -1.3170435}
+    type: {fileID: 11400000, guid: 1565b6a0417733842abb274311d7e7b3, type: 2}
+    startsActive: 1
+  - position: {x: -5.070912, y: -2.8133826}
+    type: {fileID: 11400000, guid: 1565b6a0417733842abb274311d7e7b3, type: 2}
+    startsActive: 1
+  - position: {x: -3.454716, y: -1.2019203}
+    type: {fileID: 11400000, guid: 1565b6a0417733842abb274311d7e7b3, type: 2}
+    startsActive: 1
+  - position: {x: 4.9618483, y: -1.4960551}
+    type: {fileID: 11400000, guid: 1565b6a0417733842abb274311d7e7b3, type: 2}
+    startsActive: 0
+  - position: {x: 3.377028, y: -0.0009950399}
+    type: {fileID: 11400000, guid: 1565b6a0417733842abb274311d7e7b3, type: 2}
+    startsActive: 0
+  - position: {x: -3.149226, y: 0.26815295}
+    type: {fileID: 11400000, guid: 6b1644bffbfc2e74690f6b946792bb76, type: 2}
+    startsActive: 0
+  - position: {x: -5.070362, y: 0.08321155}
+    type: {fileID: 11400000, guid: 6b1644bffbfc2e74690f6b946792bb76, type: 2}
+    startsActive: 0
+  - position: {x: 5.0440774, y: 0.02359891}
+    type: {fileID: 11400000, guid: 6b1644bffbfc2e74690f6b946792bb76, type: 2}
+    startsActive: 0
+  - position: {x: -4.834013, y: 2.0452118}
+    type: {fileID: 11400000, guid: 6b1644bffbfc2e74690f6b946792bb76, type: 2}
+    startsActive: 0
+  - position: {x: 1.7652334, y: 3.2514467}
+    type: {fileID: 11400000, guid: 6b1644bffbfc2e74690f6b946792bb76, type: 2}
+    startsActive: 0
+  - position: {x: -3.1070552, y: 3.3335748}
+    type: {fileID: 11400000, guid: 6b1644bffbfc2e74690f6b946792bb76, type: 2}
+    startsActive: 0
+  - position: {x: 4.763958, y: 3.1991303}
+    type: {fileID: 11400000, guid: 6b1644bffbfc2e74690f6b946792bb76, type: 2}
+    startsActive: 0
+  - position: {x: -1.3448112, y: 5.138058}
+    type: {fileID: 11400000, guid: 6b1644bffbfc2e74690f6b946792bb76, type: 2}
+    startsActive: 0
+  - position: {x: -0.05156839, y: 6.4058065}
+    type: {fileID: 11400000, guid: 6b1644bffbfc2e74690f6b946792bb76, type: 2}
+    startsActive: 0
+  - position: {x: 3.277233, y: 6.3292365}
+    type: {fileID: 11400000, guid: 6b1644bffbfc2e74690f6b946792bb76, type: 2}
+    startsActive: 0
+  - position: {x: -3.3082566, y: 6.785855}
+    type: {fileID: 11400000, guid: 9bcfec9bfff82234ea29f989f78b7fe5, type: 2}
+    startsActive: 0
+  - position: {x: -4.5639977, y: 6.7100077}
+    type: {fileID: 11400000, guid: 9bcfec9bfff82234ea29f989f78b7fe5, type: 2}
+    startsActive: 0
+  - position: {x: -1.8577435, y: 8.161052}
+    type: {fileID: 11400000, guid: 9bcfec9bfff82234ea29f989f78b7fe5, type: 2}
+    startsActive: 0
+  - position: {x: -4.5918355, y: 8.370607}
+    type: {fileID: 11400000, guid: 9bcfec9bfff82234ea29f989f78b7fe5, type: 2}
+    startsActive: 0
+  gardenValueMultiplier: 3
+  bloomInfluenceRadius: 2.5
+  moveHoneyCost: 60000
+  hivePrefab: {fileID: 5126540283087801417, guid: 64253252f4f49ac4ebdacf37b5c5ed08, type: 3}
+  groundPrefab: {fileID: 2153784831631823590, guid: 37369bb44ca7b6c4ba276d01c6b659e4, type: 3}

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dde0331ad3b22774f989c65e0c762314, type: 3}
+  m_Name: PrestigeSettings
+  m_EditorClassIdentifier: Buzzfield.Economy::Buzzfield.Economy.PrestigeSettings
+  gardens:
+  - {fileID: 11400000, guid: dcada870fd1dc0041b1fc7778e4391bc, type: 2}
+  - {fileID: 11400000, guid: a18f48943ebe3ab43b43b8753dc71ce4, type: 2}
+  - {fileID: 11400000, guid: 9a42d4f1d20635a47b96521376ef7047, type: 2}
+  loopValueBonus: 0.25
+  moveUnlockBloom: 0.6
+  jellyScale: 1
+  jellyBase: 1000
+  bloomBonusAtFull: 0.5
+  gardenCompleteBonus: 0.5
