@@ -8,12 +8,16 @@ string lives in `Buzzfield.Core.Strings`.
 
 - `Assets/_Project/Scripts/` — one assembly per folder:
   - `Core/` (`Buzzfield.Core`, `noEngineReferences: true`): `BigNumber`, `NumberFormat`,
-    `RollingRate`, `HoneyFormula`, `BloomMath`, `PrestigeMath`, `Strings`. Pure logic only, EditMode-tested.
+    `RollingRate`, `HoneyFormula`, `BloomMath`, `PrestigeMath`, `IncomeMath`, `OfflineEarnings`,
+    `TapBoost`, `TimeFormat`, `SaveData` + `SaveMigration` + `SaveEnvelope` + `SaveFileStore`, `Strings`.
+    Pure logic only, EditMode-tested.
   - `Core/Runtime/` (`Buzzfield.Core.Runtime`): Unity helpers shared by systems
     (`PrefabPool`, `CameraFitter`).
   - `Flowers/`, `Bees/`, `Economy/`, `Upgrades/`, `Save/`, `UI/`, `Ads/` — one system each,
     ScriptableObject definitions next to the code that reads them.
-  - `Game/` (`Buzzfield.Game`): `GameManager`, the composition root. It owns init order,
+  - `Save/` (`Buzzfield.Save`): `SaveManager` (JsonUtility, persistentDataPath, backup fallback).
+    Bump `SaveMigration.CurrentVersion` and add a step whenever the `SaveData` layout changes.
+  - `Game/` (`Buzzfield.Game`): `GameManager` (+ `GameManager.Save.cs`: autosave, offline) and `GameClock`, the composition root. It owns init order,
     wires managers with plain C# events and drives all per-frame ticks.
   - `Editor/`: menu *Buzzfield > Create Default Data* (materials, placeholder prefabs, all
     SO assets; never overwrites existing ones) and *Buzzfield > Build Greybox Scene*
@@ -24,7 +28,8 @@ string lives in `Buzzfield.Core.Strings`.
 - `Assets/_Project/Tests/PlayMode/` — smoke and upgrade-flow tests against the real
   `Main.unity`. Batchmode needs the editor closed:
   `Unity.exe -batchmode -projectPath . -runTests -testPlatform PlayMode -testResults <file>`.
-  Set `BZ_SHOT_DIR` to also save 1080x1920 and 1440x1920 screenshots (HUD included).
+  Tests call `TestSave.Clear()` before loading the scene so they never touch the real save.
+  Set `BZ_SHOT_DIR` (folder must exist) to also save 1080x1920 and 1440x1920 screenshots (HUD included).
 - Batchmode TMP import: `-executeMethod Buzzfield.Editor.TmpResources.ImportAndExit`
   without `-quit` (the package import finishes after the method returns).
 - `Assets/_Project/ScriptableObjects/` — all balance data. No tuning number in code.
