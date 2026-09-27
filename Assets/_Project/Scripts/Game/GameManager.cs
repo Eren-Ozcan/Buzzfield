@@ -2,6 +2,7 @@ using Buzzfield.Bees;
 using Buzzfield.Core;
 using Buzzfield.Economy;
 using Buzzfield.Flowers;
+using Buzzfield.Save;
 using Buzzfield.UI;
 using Buzzfield.Upgrades;
 using UnityEngine;
@@ -11,8 +12,9 @@ namespace Buzzfield.Game
     /// <summary>
     /// Composition root: owns the init order, wires the managers together and drives
     /// the per-frame ticks in a fixed order (flowers regenerate before bees read them).
+    /// Saving, loading and offline earnings live in GameManager.Save.cs.
     /// </summary>
-    public sealed class GameManager : MonoBehaviour
+    public sealed partial class GameManager : MonoBehaviour
     {
         [Header("Data")]
         [SerializeField] private GameSettings gameSettings;
@@ -20,6 +22,8 @@ namespace Buzzfield.Game
         [SerializeField] private BeeSettings beeSettings;
         [SerializeField] private BloomSettings bloomSettings;
         [SerializeField] private PrestigeSettings prestigeSettings;
+        [SerializeField] private BoostSettings boostSettings;
+        [SerializeField] private OfflineSettings offlineSettings;
         [SerializeField] private UpgradeDefinition addBeeUpgrade;
         [SerializeField] private UpgradeDefinition speedUpgrade;
         [SerializeField] private UpgradeDefinition honeyValueUpgrade;
@@ -31,6 +35,10 @@ namespace Buzzfield.Game
         [SerializeField] private BottomBarView bottomBar;
         [SerializeField] private GardenCompleteView gardenComplete;
         [SerializeField] private QueenPanelView queenPanel;
+        [SerializeField] private WelcomeBackView welcomeBack;
+        [SerializeField] private TapBoostView tapBoostView;
+        [SerializeField] private TapCatcher tapCatcher;
+        [SerializeField] private BackButtonHandler backButton;
         [SerializeField] private CameraFitter cameraFitter;
         [SerializeField] private Transform worldRoot;
 
@@ -38,6 +46,7 @@ namespace Buzzfield.Game
         private UpgradeManager upgrades;
         private GardenBloomManager bloom;
         private PrestigeManager prestige;
+        private BoostManager boosts;
         private GardenInstance garden;
 
         public EconomyManager Economy => economy;
@@ -46,6 +55,8 @@ namespace Buzzfield.Game
         public FlowerManager Flowers => flowerManager;
         public GardenBloomManager Bloom => bloom;
         public PrestigeManager Prestige => prestige;
+        public BoostManager Boosts => boosts;
+        public LifetimeStats Stats => stats;
 
         private void Awake()
         {
@@ -54,43 +65,77 @@ namespace Buzzfield.Game
             economy = new EconomyManager(economySettings, Time.timeAsDouble);
             beeManager.Init(beeSettings, flowerManager);
             beeManager.OnNectarDeposited += HandleNectarDeposited;
+            beeManager.OnBeeEvolved += HandleBeeEvolved;
             upgrades = new UpgradeManager(addBeeUpgrade, speedUpgrade, honeyValueUpgrade, beeSettings, economy, beeManager);
             hud.Init(economy, economySettings);
             bottomBar.Init(upgrades, economy, beeManager, beeSettings);
             bloom = new GardenBloomManager(bloomSettings, flowerManager);
             bloom.OnBloomChanged += HandleBloomChanged;
+            bloom.OnFlowerBloomed += HandleFlowerBloomed;
             bloom.OnGardenCompleted += HandleGardenCompleted;
             prestige = new PrestigeManager(prestigeSettings);
             queenPanel.Init(prestige, economy, bloom, TryMoveQueen);
+            boosts = new BoostManager(boostSettings, economy);
+            tapBoostView.Init(boosts);
+            tapCatcher.OnWorldTapped += HandleWorldTapped;
 
-            LoadGarden();
-            SpawnStartingBees();
+            InitSave();
+            SaveData data = saveManager.Load();
+            if (data != null)
+            {
+                RestoreGame(data);
+            }
+            else
+            {
+                LoadGarden(null);
+                SpawnStartingBees();
+            }
+        }
+
+        private void Start()
+        {
+            // Views hide their panels in Awake; the Welcome back panel may only open after that.
+            StartSession(loadedClock);
         }
 
         private void Update()
         {
             float deltaTime = Time.deltaTime;
+            double now = Time.timeAsDouble;
+            boosts.Tick(GameClock.DeviceUtc);
+            beeManager.BoostSpeedMultiplier = boosts.SpeedMultiplier(now);
             flowerManager.Tick(deltaTime);
             beeManager.Tick(deltaTime);
             bloom.Tick(deltaTime);
+            TickAutosave(Time.unscaledDeltaTime);
         }
 
         private void OnDestroy()
         {
             if (beeManager != null)
+            {
                 beeManager.OnNectarDeposited -= HandleNectarDeposited;
+                beeManager.OnBeeEvolved -= HandleBeeEvolved;
+            }
             if (bloom != null)
             {
                 bloom.OnBloomChanged -= HandleBloomChanged;
+                bloom.OnFlowerBloomed -= HandleFlowerBloomed;
                 bloom.OnGardenCompleted -= HandleGardenCompleted;
                 bloom.Dispose();
             }
+            if (tapCatcher != null)
+                tapCatcher.OnWorldTapped -= HandleWorldTapped;
+            DisposeSave();
         }
 
+        /// <summary>Tap on the world (not UI): starts the tap boost if it is off cooldown.</summary>
+        public bool TryTapBoost() => boosts.TryTapBoost(Time.timeAsDouble);
+
         /// <summary>
-        /// "Move the Queen" (design doc section 3b). Resets honey, upgrades, bees and the
-        /// garden; keeps Royal Jelly, lifetime stats and timed boosts, and loads the next
-        /// garden. Returns false when the bloom gate or the honey cost is not met.
+        /// "Move the Queen" (design doc section 3b). Resets honey, upgrades, bees, the tap
+        /// boost and the garden; keeps Royal Jelly, lifetime stats and the rewarded boost,
+        /// and loads the next garden. Returns false when the bloom gate or the honey cost is not met.
         /// </summary>
         public bool TryMoveQueen()
         {
@@ -103,14 +148,17 @@ namespace Buzzfield.Game
             beeManager.DespawnAll();
             upgrades.ResetLevels();
             economy.ResetRun(Time.timeAsDouble);
+            boosts.ResetTapBoost();
             prestige.CommitMove(jelly);
 
-            LoadGarden();
+            LoadGarden(null);
             SpawnStartingBees();
+            SaveNow();
             return true;
         }
 
-        private void LoadGarden()
+        /// <summary>Spawns the current garden; <paramref name="data"/> restores its flower slots when given.</summary>
+        private void LoadGarden(SaveData data)
         {
             if (garden.Root != null)
                 Destroy(garden.Root.gameObject);
@@ -118,6 +166,8 @@ namespace Buzzfield.Game
             GardenConfig config = prestige.CurrentGarden;
             garden = GardenSpawner.Spawn(config, worldRoot);
             flowerManager.Init(config, prestige.GardenValueMultiplier, garden.Root);
+            if (data != null)
+                RestoreSlots(data);
             bloom.Load(config, garden);
             if (garden.Hive != null)
                 beeManager.SetHive(garden.Hive.EntrancePoint);
@@ -135,8 +185,18 @@ namespace Buzzfield.Game
             economy.Deposit(nectar, flowerValue, Time.timeAsDouble);
         }
 
+        private void HandleWorldTapped() => TryTapBoost();
+
         private void HandleBloomChanged() => hud.ShowBloom(bloom.Percent, bloom.Fraction);
 
-        private void HandleGardenCompleted() => gardenComplete.Play();
+        private void HandleFlowerBloomed(Flower _) => stats.flowersBloomed++;
+
+        private void HandleBeeEvolved(Bee _) => stats.beesEvolved++;
+
+        private void HandleGardenCompleted()
+        {
+            stats.gardensCompleted++;
+            gardenComplete.Play();
+        }
     }
 }
