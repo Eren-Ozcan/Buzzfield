@@ -18,7 +18,8 @@ namespace Buzzfield.Flowers
         /// <summary>Raised after a bee takes nectar: flower and units taken (bloom hooks in here).</summary>
         public event Action<Flower, double> OnNectarCollected;
 
-        public void Init(GardenConfig garden, Transform parent)
+        /// <param name="valueMultiplier">Nectar value factor of this garden (its own multiplier plus any loop bonus).</param>
+        public void Init(GardenConfig garden, float valueMultiplier, Transform parent)
         {
             Clear();
             flowerRoot = new GameObject("Flowers").transform;
@@ -38,7 +39,7 @@ namespace Buzzfield.Flowers
                 view.name = $"{slot.type.name}_{i:00}";
                 // Sprout slots stay hidden until the bloom system activates them.
                 view.gameObject.SetActive(slot.startsActive);
-                flowers.Add(new Flower(i, slot.type, view, slot.position, garden.GardenValueMultiplier, slot.startsActive));
+                flowers.Add(new Flower(i, slot.type, view, slot.position, valueMultiplier, slot.startsActive));
             }
         }
 

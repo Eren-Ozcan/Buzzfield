@@ -9,10 +9,12 @@ namespace Buzzfield.Economy
     /// </summary>
     public sealed class EconomyManager
     {
+        private readonly EconomySettings settings;
         private readonly RollingRate honeyRate;
 
         public EconomyManager(EconomySettings settings, double now)
         {
+            this.settings = settings;
             Honey = settings.StartingHoney;
             honeyRate = new RollingRate(settings.HoneyRateWindowSeconds, settings.HoneyRateBuckets, now);
         }
@@ -21,6 +23,9 @@ namespace Buzzfield.Economy
 
         /// <summary>Honey earned since the last Queen move; feeds the Royal Jelly formula.</summary>
         public BigNumber RunHoneyEarned { get; private set; }
+
+        /// <summary>Honey earned from deposits over all runs; survives the Queen move.</summary>
+        public BigNumber LifetimeHoneyEarned { get; private set; }
 
         /// <summary>Permanent honey per nectar multiplier (Honey Value upgrade, Queen level).</summary>
         public BigNumber HoneyValueMultiplier { get; set; } = BigNumber.One;
@@ -38,6 +43,7 @@ namespace Buzzfield.Economy
                 return honey;
             honeyRate.Add(now, honey);
             RunHoneyEarned += honey;
+            LifetimeHoneyEarned += honey;
             Honey += honey;
             OnHoneyChanged?.Invoke(Honey);
             return honey;
@@ -66,5 +72,15 @@ namespace Buzzfield.Economy
         }
 
         public BigNumber HoneyPerSecond(double now) => honeyRate.PerSecond(now);
+
+        /// <summary>Queen move: back to the starting honey with an empty run total and rate.
+        /// Multipliers are owned by their systems and reset there.</summary>
+        public void ResetRun(double now)
+        {
+            Honey = settings.StartingHoney;
+            RunHoneyEarned = BigNumber.Zero;
+            honeyRate.Reset(now);
+            OnHoneyChanged?.Invoke(Honey);
+        }
     }
 }
