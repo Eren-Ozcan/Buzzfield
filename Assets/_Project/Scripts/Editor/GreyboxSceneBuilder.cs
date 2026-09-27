@@ -64,7 +64,7 @@ namespace Buzzfield.Editor
             var systems = new GameObject("Systems");
             var flowerManager = systems.AddComponent<FlowerManager>();
             var beeManager = systems.AddComponent<BeeManager>();
-            (HudView hud, BottomBarView bottomBar, GardenCompleteView gardenComplete) = CreateCanvas();
+            (HudView hud, BottomBarView bottomBar, GardenCompleteView gardenComplete, QueenPanelView queenPanel) = CreateCanvas();
             new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
 
             var game = systems.AddComponent<GameManager>();
@@ -73,7 +73,7 @@ namespace Buzzfield.Editor
                 ("beeSettings", beeSettings), ("bloomSettings", bloomSettings), ("prestigeSettings", prestigeSettings),
                 ("addBeeUpgrade", addBee), ("speedUpgrade", speed), ("honeyValueUpgrade", honeyValue),
                 ("flowerManager", flowerManager), ("beeManager", beeManager),
-                ("hud", hud), ("bottomBar", bottomBar), ("gardenComplete", gardenComplete), ("cameraFitter", fitter), ("worldRoot", world));
+                ("hud", hud), ("bottomBar", bottomBar), ("gardenComplete", gardenComplete), ("queenPanel", queenPanel), ("cameraFitter", fitter), ("worldRoot", world));
 
             EditorAssets.EnsureFolder(System.IO.Path.GetDirectoryName(EditorAssets.ScenePath));
             EditorSceneManager.SaveScene(scene, EditorAssets.ScenePath);
@@ -115,7 +115,7 @@ namespace Buzzfield.Editor
             RenderSettings.skybox = null;
         }
 
-        static (HudView, BottomBarView, GardenCompleteView) CreateCanvas()
+        static (HudView, BottomBarView, GardenCompleteView, QueenPanelView) CreateCanvas()
         {
             var canvasObject = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasObject.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
@@ -141,13 +141,139 @@ namespace Buzzfield.Editor
 
             TMP_Text honey = CreateText("HoneyText", topBar, new Vector2(0f, -20f), 110f, 96f, FontStyles.Bold, new Color(1f, 0.85f, 0.3f));
             TMP_Text rate = CreateText("RateText", topBar, new Vector2(0f, -130f), 56f, 44f, FontStyles.Normal, Color.white);
+            // Keep the centred readouts clear of the Queen button in the top-right corner.
+            foreach (TMP_Text text in new[] { honey, rate })
+                ((RectTransform)text.transform).sizeDelta = new Vector2(-2f * QueenButtonMargin, ((RectTransform)text.transform).sizeDelta.y);
+            (Button queenButton, GameObject readyBadge) = CreateQueenButton(topBar);
 
             (TMP_Text bloom, RectTransform bloomFill) = CreateBloomBar(topBar);
 
             var hud = topBar.gameObject.AddComponent<HudView>();
             EditorAssets.Set(hud, ("honeyText", honey), ("rateText", rate), ("bloomText", bloom), ("bloomFill", bloomFill));
             GardenCompleteView gardenComplete = CreateGardenComplete(root);
-            return (hud, CreateBottomBar(root), gardenComplete);
+            BottomBarView bottomBar = CreateBottomBar(root);
+            // Created last so the modal panel draws over the HUD and the bottom bar.
+            QueenPanelView queenPanel = CreateQueenPanel(root, queenButton, readyBadge);
+            return (hud, bottomBar, gardenComplete, queenPanel);
+        }
+
+        const float QueenButtonSize = 150f;
+        const float QueenButtonMargin = QueenButtonSize + 40f;
+
+        /// <summary>Queen button in the top-right corner of the top bar, with a dot shown when a move is possible.</summary>
+        static (Button, GameObject) CreateQueenButton(Transform topBar)
+        {
+            RectTransform rect = CreateRect("QueenButton", topBar);
+            rect.anchorMin = rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, 1f);
+            rect.sizeDelta = new Vector2(QueenButtonSize, QueenButtonSize);
+            rect.anchoredPosition = new Vector2(-20f, -20f);
+            var image = rect.gameObject.AddComponent<Image>();
+            image.color = new Color(0.62f, 0.36f, 0.85f);
+            var button = rect.gameObject.AddComponent<Button>();
+            button.targetGraphic = image;
+
+            TMP_Text label = CreateText("Label", rect, Vector2.zero, QueenButtonSize, 36f, FontStyles.Bold, Color.white);
+            Stretch((RectTransform)label.transform);
+            label.text = Strings.QueenButton;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 20f;
+            label.fontSizeMax = 36f;
+
+            RectTransform badge = CreateRect("ReadyBadge", rect);
+            badge.anchorMin = badge.anchorMax = new Vector2(1f, 1f);
+            badge.sizeDelta = new Vector2(40f, 40f);
+            badge.anchoredPosition = new Vector2(-6f, -6f);
+            var badgeImage = badge.gameObject.AddComponent<Image>();
+            badgeImage.color = new Color(0.45f, 0.9f, 0.35f);
+            badgeImage.raycastTarget = false;
+            badge.gameObject.SetActive(false);
+            return (button, badge.gameObject);
+        }
+
+        /// <summary>Modal Queen panel plus its confirm dialog; both start hidden.</summary>
+        static QueenPanelView CreateQueenPanel(Transform root, Button openButton, GameObject readyBadge)
+        {
+            RectTransform panel = CreateModal("QueenPanel", root, new Vector2(900f, 1180f), new Color(0.2f, 0.14f, 0.3f, 0.97f), out RectTransform window);
+
+            var titleColor = new Color(1f, 0.9f, 0.55f);
+            TMP_Text title = CreateText("Title", window, new Vector2(0f, -40f), 110f, 80f, FontStyles.Bold, titleColor);
+            title.text = Strings.QueenTitle;
+            TMP_Text jelly = CreateText("JellyText", window, new Vector2(0f, -170f), 80f, 56f, FontStyles.Bold, Color.white);
+            TMP_Text garden = CreateText("GardenText", window, new Vector2(0f, -260f), 64f, 44f, FontStyles.Normal, Color.white);
+
+            TMP_Text moveTitle = CreateText("MoveTitle", window, new Vector2(0f, -380f), 80f, 60f, FontStyles.Bold, titleColor);
+            moveTitle.text = Strings.MoveTheQueen;
+            TMP_Text requirement = CreateText("RequirementText", window, new Vector2(0f, -470f), 60f, 42f, FontStyles.Normal, Color.white);
+            TMP_Text cost = CreateText("CostText", window, new Vector2(0f, -540f), 60f, 42f, FontStyles.Normal, Color.white);
+            TMP_Text preview = CreateText("PreviewText", window, new Vector2(0f, -630f), 90f, 68f, FontStyles.Bold, new Color(0.75f, 0.95f, 0.5f));
+            TMP_Text bonus = CreateText("BonusText", window, new Vector2(0f, -730f), 60f, 40f, FontStyles.Normal, Color.white);
+
+            (Button move, Image moveImage, TMP_Text moveLabel) = CreateButton("MoveButton", window, new Vector2(0f, -830f), new Vector2(620f, 160f), new Color(0.98f, 0.76f, 0.2f));
+            moveLabel.text = Strings.MoveTheQueen;
+            (Button close, _, TMP_Text closeLabel) = CreateButton("CloseButton", window, new Vector2(0f, -1020f), new Vector2(360f, 120f), new Color(0.5f, 0.46f, 0.55f));
+            closeLabel.text = Strings.Close;
+
+            RectTransform confirm = CreateModal("Confirm", panel, new Vector2(820f, 600f), new Color(0.26f, 0.18f, 0.36f, 1f), out RectTransform confirmWindow);
+            TMP_Text confirmTitle = CreateText("Title", confirmWindow, new Vector2(0f, -40f), 100f, 66f, FontStyles.Bold, titleColor);
+            confirmTitle.text = Strings.MoveConfirmTitle;
+            TMP_Text confirmBody = CreateText("Body", confirmWindow, new Vector2(0f, -160f), 200f, 44f, FontStyles.Normal, Color.white);
+            (Button confirmButton, _, TMP_Text confirmLabel) = CreateButton("ConfirmButton", confirmWindow, new Vector2(190f, -410f), new Vector2(340f, 140f), new Color(0.98f, 0.76f, 0.2f));
+            confirmLabel.text = Strings.MoveConfirm;
+            (Button cancelButton, _, TMP_Text cancelLabel) = CreateButton("CancelButton", confirmWindow, new Vector2(-190f, -410f), new Vector2(340f, 140f), new Color(0.5f, 0.46f, 0.55f));
+            cancelLabel.text = Strings.Cancel;
+            confirm.gameObject.SetActive(false);
+
+            // The view sits on the always-active root so it can open the hidden panel.
+            var view = root.gameObject.AddComponent<QueenPanelView>();
+            EditorAssets.Set(view,
+                ("openButton", openButton), ("readyBadge", readyBadge),
+                ("panel", panel.gameObject), ("closeButton", close),
+                ("jellyText", jelly), ("gardenText", garden), ("requirementText", requirement),
+                ("costText", cost), ("previewText", preview), ("bonusText", bonus),
+                ("moveButton", move), ("moveButtonImage", moveImage),
+                ("confirm", confirm.gameObject), ("confirmBodyText", confirmBody),
+                ("confirmButton", confirmButton), ("cancelButton", cancelButton));
+            panel.gameObject.SetActive(false);
+            return view;
+        }
+
+        /// <summary>Full-screen dimmed backdrop that swallows taps, with a centred window.</summary>
+        static RectTransform CreateModal(string name, Transform parent, Vector2 windowSize, Color windowColor, out RectTransform window)
+        {
+            RectTransform overlay = CreateRect(name, parent);
+            Stretch(overlay);
+            var backdrop = overlay.gameObject.AddComponent<Image>();
+            backdrop.color = new Color(0f, 0f, 0f, 0.6f);
+
+            window = CreateRect("Window", overlay);
+            window.anchorMin = window.anchorMax = new Vector2(0.5f, 0.5f);
+            window.sizeDelta = windowSize;
+            window.anchoredPosition = Vector2.zero;
+            var windowImage = window.gameObject.AddComponent<Image>();
+            windowImage.color = windowColor;
+            return overlay;
+        }
+
+        /// <summary>Button anchored to the top centre of <paramref name="parent"/>, offset by <paramref name="position"/>.</summary>
+        static (Button, Image, TMP_Text) CreateButton(string name, Transform parent, Vector2 position, Vector2 size, Color color)
+        {
+            RectTransform rect = CreateRect(name, parent);
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.sizeDelta = size;
+            rect.anchoredPosition = position;
+            var image = rect.gameObject.AddComponent<Image>();
+            image.color = color;
+            var button = rect.gameObject.AddComponent<Button>();
+            button.targetGraphic = image;
+
+            TMP_Text label = CreateText("Label", rect, Vector2.zero, size.y, 52f, FontStyles.Bold, new Color(0.2f, 0.12f, 0.02f));
+            Stretch((RectTransform)label.transform);
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 24f;
+            label.fontSizeMax = 52f;
+            return (button, image, label);
         }
 
         /// <summary>Thin bar along the bottom of the top bar; the fill's right anchor is the bloom fraction.</summary>
