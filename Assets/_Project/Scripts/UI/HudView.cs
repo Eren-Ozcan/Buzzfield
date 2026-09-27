@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Buzzfield.UI
 {
     /// <summary>
-    /// Top bar readout: honey balance and measured honey per second. The balance text
+    /// Top bar readout: honey balance, measured honey per second and garden bloom. The balance text
     /// is rebuilt at most once per frame after OnHoneyChanged; the rate is re-read on a
     /// slow timer because it also decays while nothing is deposited.
     /// </summary>
@@ -14,12 +14,16 @@ namespace Buzzfield.UI
     {
         [SerializeField] private TMP_Text honeyText;
         [SerializeField] private TMP_Text rateText;
+        [SerializeField] private TMP_Text bloomText;
+        [Tooltip("Stretched from the left; its right anchor follows the bloom fraction.")]
+        [SerializeField] private RectTransform bloomFill;
 
         private EconomyManager economy;
         private float refreshInterval;
         private float refreshTimer;
         private BigNumber shownRate = BigNumber.Zero;
         private bool honeyDirty;
+        private int shownBloomPercent = -1;
 
         public void Init(EconomyManager economyManager, EconomySettings settings)
         {
@@ -53,6 +57,17 @@ namespace Buzzfield.UI
         private void OnDestroy()
         {
             Unsubscribe();
+        }
+
+        /// <summary>Called when a flower blooms; text is rebuilt only when the whole percent changes.</summary>
+        public void ShowBloom(int percent, float fraction)
+        {
+            if (bloomFill != null)
+                bloomFill.anchorMax = new Vector2(Mathf.Clamp01(fraction), bloomFill.anchorMax.y);
+            if (percent == shownBloomPercent || bloomText == null)
+                return;
+            shownBloomPercent = percent;
+            bloomText.text = string.Format(Strings.BloomFormat, percent);
         }
 
         private void MarkHoneyDirty(BigNumber _) => honeyDirty = true;

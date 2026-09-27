@@ -14,7 +14,7 @@ namespace Buzzfield.Core
 
         [SerializeField, Range(20f, 80f)] private float pitch = 50f;
         [Tooltip("Screen fraction covered by the top HUD bar.")]
-        [SerializeField, Range(0f, 0.4f)] private float topInset = 0.1f;
+        [SerializeField, Range(0f, 0.4f)] private float topInset = 0.14f;
         [Tooltip("Screen fraction covered by the bottom upgrade bar.")]
         [SerializeField, Range(0f, 0.4f)] private float bottomInset = 0.16f;
         [Tooltip("Extra world units kept free around the garden.")]

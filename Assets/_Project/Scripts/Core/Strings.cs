@@ -22,6 +22,9 @@ namespace Buzzfield.Core
         public const string UpgradeEvolve = "Evolve";
         public const string UpgradeHoneyValue = "Honey Value";
 
+        public const string BloomFormat = "Bloom {0}%";
+        public const string GardenComplete = "Garden Complete!";
+
         public const string LevelFormat = "Lv {0}";
         public const string BeeCountFormat = "{0}/{1} bees";
         public const string Max = "MAX";

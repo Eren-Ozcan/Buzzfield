@@ -18,6 +18,7 @@ namespace Buzzfield.Game
         [SerializeField] private GameSettings gameSettings;
         [SerializeField] private EconomySettings economySettings;
         [SerializeField] private BeeSettings beeSettings;
+        [SerializeField] private BloomSettings bloomSettings;
         [SerializeField] private PrestigeSettings prestigeSettings;
         [SerializeField] private UpgradeDefinition addBeeUpgrade;
         [SerializeField] private UpgradeDefinition speedUpgrade;
@@ -28,17 +29,20 @@ namespace Buzzfield.Game
         [SerializeField] private BeeManager beeManager;
         [SerializeField] private HudView hud;
         [SerializeField] private BottomBarView bottomBar;
+        [SerializeField] private GardenCompleteView gardenComplete;
         [SerializeField] private CameraFitter cameraFitter;
         [SerializeField] private Transform worldRoot;
 
         private EconomyManager economy;
         private UpgradeManager upgrades;
+        private GardenBloomManager bloom;
         private GardenInstance garden;
 
         public EconomyManager Economy => economy;
         public UpgradeManager Upgrades => upgrades;
         public BeeManager Bees => beeManager;
         public FlowerManager Flowers => flowerManager;
+        public GardenBloomManager Bloom => bloom;
 
         private void Awake()
         {
@@ -50,6 +54,9 @@ namespace Buzzfield.Game
             upgrades = new UpgradeManager(addBeeUpgrade, speedUpgrade, honeyValueUpgrade, beeSettings, economy, beeManager);
             hud.Init(economy, economySettings);
             bottomBar.Init(upgrades, economy, beeManager, beeSettings);
+            bloom = new GardenBloomManager(bloomSettings, flowerManager);
+            bloom.OnBloomChanged += HandleBloomChanged;
+            bloom.OnGardenCompleted += HandleGardenCompleted;
 
             LoadGarden(0);
             for (int i = 0; i < beeSettings.StartingBees; i++)
@@ -61,12 +68,19 @@ namespace Buzzfield.Game
             float deltaTime = Time.deltaTime;
             flowerManager.Tick(deltaTime);
             beeManager.Tick(deltaTime);
+            bloom.Tick(deltaTime);
         }
 
         private void OnDestroy()
         {
             if (beeManager != null)
                 beeManager.OnNectarDeposited -= HandleNectarDeposited;
+            if (bloom != null)
+            {
+                bloom.OnBloomChanged -= HandleBloomChanged;
+                bloom.OnGardenCompleted -= HandleGardenCompleted;
+                bloom.Dispose();
+            }
         }
 
         private void LoadGarden(int index)
@@ -77,6 +91,7 @@ namespace Buzzfield.Game
             GardenConfig config = prestigeSettings.Gardens[Mathf.Min(index, prestigeSettings.Gardens.Count - 1)];
             garden = GardenSpawner.Spawn(config, worldRoot);
             flowerManager.Init(config, garden.Root);
+            bloom.Load(config, garden);
             if (garden.Hive != null)
                 beeManager.SetHive(garden.Hive.EntrancePoint);
             cameraFitter.Fit(garden.Bounds);
@@ -86,5 +101,9 @@ namespace Buzzfield.Game
         {
             economy.Deposit(nectar, flowerValue, Time.timeAsDouble);
         }
+
+        private void HandleBloomChanged() => hud.ShowBloom(bloom.Percent, bloom.Fraction);
+
+        private void HandleGardenCompleted() => gardenComplete.Play();
     }
 }
