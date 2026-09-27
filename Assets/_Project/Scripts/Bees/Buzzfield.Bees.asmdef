@@ -1,0 +1,18 @@
+{
+    "name": "Buzzfield.Bees",
+    "rootNamespace": "Buzzfield.Bees",
+    "references": [
+        "Buzzfield.Core",
+        "Buzzfield.Core.Runtime",
+        "Buzzfield.Flowers"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
