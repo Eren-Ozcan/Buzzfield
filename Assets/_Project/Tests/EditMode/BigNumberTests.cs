@@ -17,6 +17,13 @@ namespace Buzzfield.Tests.EditMode
         }
 
         [Test]
+        public void FromDouble_WholeNumbers_RoundTripExactly()
+        {
+            for (int n = -100_000; n <= 100_000; n++)
+                Assert.That(BigNumber.FromDouble(n).ToDouble(), Is.EqualTo((double)n), $"n = {n}");
+        }
+
+        [Test]
         public void Mantissa_IsNormalized()
         {
             BigNumber n = BigNumber.Create(12345, 2);
