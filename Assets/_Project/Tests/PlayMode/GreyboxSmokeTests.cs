@@ -64,7 +64,19 @@ namespace Buzzfield.Tests.PlayMode
             cam.aspect = width / (float)height;
             cam.SendMessage("Refit", SendMessageOptions.DontRequireReceiver);
             cam.targetTexture = target;
+            // Overlay canvases skip camera renders; switch to camera space for the shot.
+            Canvas canvas = Object.FindAnyObjectByType<Canvas>();
+            RenderMode oldMode = canvas != null ? canvas.renderMode : RenderMode.ScreenSpaceOverlay;
+            if (canvas != null)
+            {
+                canvas.renderMode = RenderMode.ScreenSpaceCamera;
+                canvas.worldCamera = cam;
+                canvas.planeDistance = cam.nearClipPlane + 0.1f;
+                Canvas.ForceUpdateCanvases();
+            }
             cam.Render();
+            if (canvas != null)
+                canvas.renderMode = oldMode;
             RenderTexture.active = target;
             var image = new Texture2D(width, height, TextureFormat.RGB24, false);
             image.ReadPixels(new Rect(0, 0, width, height), 0, 0);

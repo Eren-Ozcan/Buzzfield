@@ -7,6 +7,7 @@
         "Buzzfield.Bees",
         "Buzzfield.Economy",
         "Buzzfield.Game",
+        "Buzzfield.Upgrades",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
