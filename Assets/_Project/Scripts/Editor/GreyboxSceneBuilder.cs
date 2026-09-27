@@ -1,3 +1,4 @@
+using Buzzfield.Ads;
 using Buzzfield.Bees;
 using Buzzfield.Core;
 using Buzzfield.Economy;
@@ -52,9 +53,10 @@ namespace Buzzfield.Editor
             var honeyValue = Load<UpgradeDefinition>("Upgrades/Upgrade_HoneyValue");
             var boostSettings = Load<BoostSettings>("Settings/BoostSettings");
             var offlineSettings = Load<OfflineSettings>("Settings/OfflineSettings");
+            var adSettings = Load<AdSettings>("Settings/AdSettings");
             if (gameSettings == null || economySettings == null || beeSettings == null || prestigeSettings == null
                 || bloomSettings == null || addBee == null || speed == null || honeyValue == null
-                || boostSettings == null || offlineSettings == null)
+                || boostSettings == null || offlineSettings == null || adSettings == null)
             {
                 Debug.LogError("Default data is missing. Run Buzzfield > Create Default Data first.");
                 return;
@@ -74,11 +76,11 @@ namespace Buzzfield.Editor
             EditorAssets.Set(game,
                 ("gameSettings", gameSettings), ("economySettings", economySettings),
                 ("beeSettings", beeSettings), ("bloomSettings", bloomSettings), ("prestigeSettings", prestigeSettings),
-                ("boostSettings", boostSettings), ("offlineSettings", offlineSettings),
+                ("boostSettings", boostSettings), ("offlineSettings", offlineSettings), ("adSettings", adSettings),
                 ("addBeeUpgrade", addBee), ("speedUpgrade", speed), ("honeyValueUpgrade", honeyValue),
                 ("flowerManager", flowerManager), ("beeManager", beeManager),
                 ("hud", ui.Hud), ("bottomBar", ui.BottomBar), ("gardenComplete", ui.GardenComplete), ("queenPanel", ui.QueenPanel),
-                ("welcomeBack", ui.WelcomeBack), ("tapBoostView", ui.TapBoost), ("tapCatcher", ui.TapCatcher), ("backButton", ui.BackButton),
+                ("welcomeBack", ui.WelcomeBack), ("tapBoostView", ui.TapBoost), ("rewardedBoostView", ui.RewardedBoost), ("tapCatcher", ui.TapCatcher), ("backButton", ui.BackButton),
                 ("cameraFitter", fitter), ("worldRoot", world));
 
             EditorAssets.EnsureFolder(System.IO.Path.GetDirectoryName(EditorAssets.ScenePath));
@@ -129,6 +131,7 @@ namespace Buzzfield.Editor
             public QueenPanelView QueenPanel;
             public WelcomeBackView WelcomeBack;
             public TapBoostView TapBoost;
+            public RewardedBoostView RewardedBoost;
             public TapCatcher TapCatcher;
             public BackButtonHandler BackButton;
         }
@@ -179,6 +182,7 @@ namespace Buzzfield.Editor
             GardenCompleteView gardenComplete = CreateGardenComplete(root);
             BottomBarView bottomBar = CreateBottomBar(root);
             TapBoostView tapBoost = CreateTapBoost(root);
+            RewardedBoostView rewardedBoost = CreateRewardedBoost(root);
             // Modals last so they draw over the HUD and the bottom bar; the quit dialog on top.
             QueenPanelView queenPanel = CreateQueenPanel(root, queenButton, readyBadge);
             WelcomeBackView welcomeBack = CreateWelcomeBack(root);
@@ -186,7 +190,7 @@ namespace Buzzfield.Editor
             return new CanvasViews
             {
                 Hud = hud, BottomBar = bottomBar, GardenComplete = gardenComplete, QueenPanel = queenPanel,
-                WelcomeBack = welcomeBack, TapBoost = tapBoost, TapCatcher = tapCatcher, BackButton = backButton,
+                WelcomeBack = welcomeBack, TapBoost = tapBoost, RewardedBoost = rewardedBoost, TapCatcher = tapCatcher, BackButton = backButton,
             };
         }
 
@@ -225,22 +229,40 @@ namespace Buzzfield.Editor
             return view;
         }
 
+        /// <summary>Rewarded honey boost button in the bottom-left corner, opposite the tap boost ring.</summary>
+        static RewardedBoostView CreateRewardedBoost(Transform root)
+        {
+            (Button button, Image image, TMP_Text label) = CreateButton("RewardedBoost", root, Vector2.zero, new Vector2(300f, 130f), new Color(0.45f, 0.8f, 0.95f));
+            var rect = (RectTransform)button.transform;
+            rect.anchorMin = rect.anchorMax = Vector2.zero;
+            rect.pivot = Vector2.zero;
+            rect.anchoredPosition = new Vector2(30f, 330f);
+            label.fontSizeMax = 40f;
+            label.text = string.Format(Strings.RewardedBoostOfferFormat, "2", "5m");
+
+            var view = rect.gameObject.AddComponent<RewardedBoostView>();
+            EditorAssets.Set(view, ("button", button), ("background", image), ("label", label));
+            return view;
+        }
+
         static WelcomeBackView CreateWelcomeBack(Transform root)
         {
-            RectTransform panel = CreateModal("WelcomeBack", root, new Vector2(880f, 760f), new Color(0.24f, 0.2f, 0.1f, 0.97f), out RectTransform window);
+            RectTransform panel = CreateModal("WelcomeBack", root, new Vector2(880f, 860f), new Color(0.24f, 0.2f, 0.1f, 0.97f), out RectTransform window);
             var titleColor = new Color(1f, 0.9f, 0.55f);
             TMP_Text title = CreateText("Title", window, new Vector2(0f, -40f), 110f, 80f, FontStyles.Bold, titleColor);
             title.text = Strings.WelcomeBackTitle;
             TMP_Text away = CreateText("AwayText", window, new Vector2(0f, -170f), 70f, 46f, FontStyles.Normal, Color.white);
             TMP_Text honey = CreateText("HoneyText", window, new Vector2(0f, -260f), 120f, 96f, FontStyles.Bold, new Color(1f, 0.85f, 0.3f));
             TMP_Text cap = CreateText("CapText", window, new Vector2(0f, -400f), 60f, 38f, FontStyles.Italic, new Color(0.85f, 0.8f, 0.7f));
-            (Button collect, _, TMP_Text collectLabel) = CreateButton("CollectButton", window, new Vector2(0f, -540f), new Vector2(480f, 160f), new Color(0.98f, 0.76f, 0.2f));
+            (Button ad, _, TMP_Text adLabel) = CreateButton("AdButton", window, new Vector2(0f, -500f), new Vector2(560f, 150f), new Color(0.45f, 0.8f, 0.95f));
+            adLabel.text = string.Format(Strings.OfflineAdOfferFormat, "3");
+            (Button collect, _, TMP_Text collectLabel) = CreateButton("CollectButton", window, new Vector2(0f, -690f), new Vector2(420f, 130f), new Color(0.98f, 0.76f, 0.2f));
             collectLabel.text = Strings.Collect;
 
             // On the always-active root, like the Queen panel view, so it can hide and show the panel.
             var view = root.gameObject.AddComponent<WelcomeBackView>();
             EditorAssets.Set(view, ("panel", panel.gameObject), ("awayText", away), ("honeyText", honey),
-                ("capText", cap), ("collectButton", collect));
+                ("capText", cap), ("collectButton", collect), ("adButton", ad), ("adLabel", adLabel));
             panel.gameObject.SetActive(false);
             return view;
         }
