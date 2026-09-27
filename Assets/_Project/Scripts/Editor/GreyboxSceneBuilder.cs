@@ -50,8 +50,11 @@ namespace Buzzfield.Editor
             var addBee = Load<UpgradeDefinition>("Upgrades/Upgrade_AddBee");
             var speed = Load<UpgradeDefinition>("Upgrades/Upgrade_Speed");
             var honeyValue = Load<UpgradeDefinition>("Upgrades/Upgrade_HoneyValue");
+            var boostSettings = Load<BoostSettings>("Settings/BoostSettings");
+            var offlineSettings = Load<OfflineSettings>("Settings/OfflineSettings");
             if (gameSettings == null || economySettings == null || beeSettings == null || prestigeSettings == null
-                || bloomSettings == null || addBee == null || speed == null || honeyValue == null)
+                || bloomSettings == null || addBee == null || speed == null || honeyValue == null
+                || boostSettings == null || offlineSettings == null)
             {
                 Debug.LogError("Default data is missing. Run Buzzfield > Create Default Data first.");
                 return;
@@ -64,16 +67,19 @@ namespace Buzzfield.Editor
             var systems = new GameObject("Systems");
             var flowerManager = systems.AddComponent<FlowerManager>();
             var beeManager = systems.AddComponent<BeeManager>();
-            (HudView hud, BottomBarView bottomBar, GardenCompleteView gardenComplete, QueenPanelView queenPanel) = CreateCanvas();
+            CanvasViews ui = CreateCanvas();
             new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
 
             var game = systems.AddComponent<GameManager>();
             EditorAssets.Set(game,
                 ("gameSettings", gameSettings), ("economySettings", economySettings),
                 ("beeSettings", beeSettings), ("bloomSettings", bloomSettings), ("prestigeSettings", prestigeSettings),
+                ("boostSettings", boostSettings), ("offlineSettings", offlineSettings),
                 ("addBeeUpgrade", addBee), ("speedUpgrade", speed), ("honeyValueUpgrade", honeyValue),
                 ("flowerManager", flowerManager), ("beeManager", beeManager),
-                ("hud", hud), ("bottomBar", bottomBar), ("gardenComplete", gardenComplete), ("queenPanel", queenPanel), ("cameraFitter", fitter), ("worldRoot", world));
+                ("hud", ui.Hud), ("bottomBar", ui.BottomBar), ("gardenComplete", ui.GardenComplete), ("queenPanel", ui.QueenPanel),
+                ("welcomeBack", ui.WelcomeBack), ("tapBoostView", ui.TapBoost), ("tapCatcher", ui.TapCatcher), ("backButton", ui.BackButton),
+                ("cameraFitter", fitter), ("worldRoot", world));
 
             EditorAssets.EnsureFolder(System.IO.Path.GetDirectoryName(EditorAssets.ScenePath));
             EditorSceneManager.SaveScene(scene, EditorAssets.ScenePath);
@@ -115,7 +121,19 @@ namespace Buzzfield.Editor
             RenderSettings.skybox = null;
         }
 
-        static (HudView, BottomBarView, GardenCompleteView, QueenPanelView) CreateCanvas()
+        struct CanvasViews
+        {
+            public HudView Hud;
+            public BottomBarView BottomBar;
+            public GardenCompleteView GardenComplete;
+            public QueenPanelView QueenPanel;
+            public WelcomeBackView WelcomeBack;
+            public TapBoostView TapBoost;
+            public TapCatcher TapCatcher;
+            public BackButtonHandler BackButton;
+        }
+
+        static CanvasViews CreateCanvas()
         {
             var canvasObject = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasObject.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
@@ -125,9 +143,16 @@ namespace Buzzfield.Editor
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0.5f;
 
-            // Root panel for everything on screen; the safe-area component goes here in Phase 4.
+            // Behind everything else: presses that no UI element takes are taps on the world.
+            RectTransform catcherRect = CreateRect("TapCatcher", canvasObject.transform);
+            Stretch(catcherRect);
+            catcherRect.gameObject.AddComponent<Image>().color = Color.clear;
+            var tapCatcher = catcherRect.gameObject.AddComponent<TapCatcher>();
+
+            // Root panel for everything on screen, fitted to the notch-free area.
             RectTransform root = CreateRect("SafeArea", canvasObject.transform);
             Stretch(root);
+            root.gameObject.AddComponent<SafeArea>();
 
             RectTransform topBar = CreateRect("TopBar", root);
             topBar.anchorMin = new Vector2(0f, 1f);
@@ -137,7 +162,8 @@ namespace Buzzfield.Editor
             topBar.anchoredPosition = Vector2.zero;
             var background = topBar.gameObject.AddComponent<Image>();
             background.color = new Color(0.12f, 0.09f, 0.04f, 0.55f);
-            background.raycastTarget = false;
+            // Blocks the tap catcher: a press on the top bar is not a tap on the world.
+            background.raycastTarget = true;
 
             TMP_Text honey = CreateText("HoneyText", topBar, new Vector2(0f, -20f), 110f, 96f, FontStyles.Bold, new Color(1f, 0.85f, 0.3f));
             TMP_Text rate = CreateText("RateText", topBar, new Vector2(0f, -130f), 56f, 44f, FontStyles.Normal, Color.white);
@@ -152,9 +178,90 @@ namespace Buzzfield.Editor
             EditorAssets.Set(hud, ("honeyText", honey), ("rateText", rate), ("bloomText", bloom), ("bloomFill", bloomFill));
             GardenCompleteView gardenComplete = CreateGardenComplete(root);
             BottomBarView bottomBar = CreateBottomBar(root);
-            // Created last so the modal panel draws over the HUD and the bottom bar.
+            TapBoostView tapBoost = CreateTapBoost(root);
+            // Modals last so they draw over the HUD and the bottom bar; the quit dialog on top.
             QueenPanelView queenPanel = CreateQueenPanel(root, queenButton, readyBadge);
-            return (hud, bottomBar, gardenComplete, queenPanel);
+            WelcomeBackView welcomeBack = CreateWelcomeBack(root);
+            BackButtonHandler backButton = CreateQuitDialog(root, queenPanel, welcomeBack);
+            return new CanvasViews
+            {
+                Hud = hud, BottomBar = bottomBar, GardenComplete = gardenComplete, QueenPanel = queenPanel,
+                WelcomeBack = welcomeBack, TapBoost = tapBoost, TapCatcher = tapCatcher, BackButton = backButton,
+            };
+        }
+
+        /// <summary>Round cooldown indicator in the bottom-right corner, just above the bottom bar.</summary>
+        static TapBoostView CreateTapBoost(Transform root)
+        {
+            RectTransform rect = CreateRect("TapBoost", root);
+            rect.anchorMin = rect.anchorMax = new Vector2(1f, 0f);
+            rect.pivot = new Vector2(1f, 0f);
+            rect.sizeDelta = new Vector2(130f, 130f);
+            rect.anchoredPosition = new Vector2(-30f, 330f);
+
+            Sprite circle = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
+            var track = rect.gameObject.AddComponent<Image>();
+            track.sprite = circle;
+            track.color = new Color(0.12f, 0.09f, 0.04f, 0.55f);
+            track.raycastTarget = false;
+
+            RectTransform ringRect = CreateRect("Ring", rect);
+            Stretch(ringRect);
+            var ring = ringRect.gameObject.AddComponent<Image>();
+            ring.sprite = circle;
+            ring.type = Image.Type.Filled;
+            ring.fillMethod = Image.FillMethod.Radial360;
+            ring.fillOrigin = (int)Image.Origin360.Top;
+            ring.fillClockwise = false;
+            ring.raycastTarget = false;
+
+            TMP_Text label = CreateText("Label", rect, Vector2.zero, 130f, 40f, FontStyles.Bold, new Color(0.2f, 0.12f, 0.02f));
+            Stretch((RectTransform)label.transform);
+            label.verticalAlignment = VerticalAlignmentOptions.Middle;
+            label.text = Strings.TapBoostReady;
+
+            var view = rect.gameObject.AddComponent<TapBoostView>();
+            EditorAssets.Set(view, ("ring", ring), ("label", label));
+            return view;
+        }
+
+        static WelcomeBackView CreateWelcomeBack(Transform root)
+        {
+            RectTransform panel = CreateModal("WelcomeBack", root, new Vector2(880f, 760f), new Color(0.24f, 0.2f, 0.1f, 0.97f), out RectTransform window);
+            var titleColor = new Color(1f, 0.9f, 0.55f);
+            TMP_Text title = CreateText("Title", window, new Vector2(0f, -40f), 110f, 80f, FontStyles.Bold, titleColor);
+            title.text = Strings.WelcomeBackTitle;
+            TMP_Text away = CreateText("AwayText", window, new Vector2(0f, -170f), 70f, 46f, FontStyles.Normal, Color.white);
+            TMP_Text honey = CreateText("HoneyText", window, new Vector2(0f, -260f), 120f, 96f, FontStyles.Bold, new Color(1f, 0.85f, 0.3f));
+            TMP_Text cap = CreateText("CapText", window, new Vector2(0f, -400f), 60f, 38f, FontStyles.Italic, new Color(0.85f, 0.8f, 0.7f));
+            (Button collect, _, TMP_Text collectLabel) = CreateButton("CollectButton", window, new Vector2(0f, -540f), new Vector2(480f, 160f), new Color(0.98f, 0.76f, 0.2f));
+            collectLabel.text = Strings.Collect;
+
+            // On the always-active root, like the Queen panel view, so it can hide and show the panel.
+            var view = root.gameObject.AddComponent<WelcomeBackView>();
+            EditorAssets.Set(view, ("panel", panel.gameObject), ("awayText", away), ("honeyText", honey),
+                ("capText", cap), ("collectButton", collect));
+            panel.gameObject.SetActive(false);
+            return view;
+        }
+
+        static BackButtonHandler CreateQuitDialog(Transform root, QueenPanelView queenPanel, WelcomeBackView welcomeBack)
+        {
+            RectTransform dialog = CreateModal("QuitDialog", root, new Vector2(820f, 480f), new Color(0.2f, 0.16f, 0.1f, 1f), out RectTransform window);
+            TMP_Text title = CreateText("Title", window, new Vector2(0f, -50f), 100f, 66f, FontStyles.Bold, new Color(1f, 0.9f, 0.55f));
+            title.text = Strings.QuitTitle;
+            TMP_Text body = CreateText("Body", window, new Vector2(0f, -170f), 80f, 44f, FontStyles.Normal, Color.white);
+            body.text = Strings.QuitBody;
+            (Button quit, _, TMP_Text quitLabel) = CreateButton("QuitButton", window, new Vector2(190f, -290f), new Vector2(340f, 140f), new Color(0.98f, 0.76f, 0.2f));
+            quitLabel.text = Strings.Quit;
+            (Button cancel, _, TMP_Text cancelLabel) = CreateButton("CancelButton", window, new Vector2(-190f, -290f), new Vector2(340f, 140f), new Color(0.5f, 0.46f, 0.55f));
+            cancelLabel.text = Strings.Cancel;
+
+            var handler = root.gameObject.AddComponent<BackButtonHandler>();
+            EditorAssets.Set(handler, ("queenPanel", queenPanel), ("welcomeBack", welcomeBack),
+                ("quitDialog", dialog.gameObject), ("quitButton", quit), ("cancelButton", cancel));
+            dialog.gameObject.SetActive(false);
+            return handler;
         }
 
         const float QueenButtonSize = 150f;
