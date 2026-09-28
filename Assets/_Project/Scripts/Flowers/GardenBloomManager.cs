@@ -20,17 +20,25 @@ namespace Buzzfield.Flowers
         private GardenConfig garden;
         private GroundView ground;
         private Color32[] tileColors;
-        private ParticleSystem[] bursts;
-        private int nextBurst;
-        private ParticleSystem confetti;
+        private readonly ParticlePool bursts;
+        private readonly ParticleSystem confetti;
         private int bloomedCount;
         private bool groundDirty;
 
-        public GardenBloomManager(BloomSettings settings, FlowerManager flowerManager)
+        /// <param name="effectsRoot">Parent of the pooled bloom bursts and the confetti; outlives every garden.</param>
+        public GardenBloomManager(BloomSettings settings, FlowerManager flowerManager, Transform effectsRoot)
         {
             this.settings = settings;
             this.flowerManager = flowerManager;
             flowerManager.OnNectarCollected += HandleNectarCollected;
+
+            if (settings.BloomBurstPrefab != null)
+                bursts = new ParticlePool(settings.BloomBurstPrefab, effectsRoot, settings.BurstPoolSize);
+            if (settings.ConfettiPrefab != null)
+            {
+                confetti = UnityEngine.Object.Instantiate(settings.ConfettiPrefab, effectsRoot);
+                confetti.name = "Confetti";
+            }
         }
 
         /// <summary>Scales every flower's bloom per visit (the Pollen Touch Queen ability).</summary>
@@ -69,7 +77,7 @@ namespace Buzzfield.Flowers
 
             Vector2Int grid = config.TileGrid;
             tileColors = new Color32[Mathf.Max(1, grid.x) * Mathf.Max(1, grid.y)];
-            CreateEffects(instance.Root);
+            PlaceEffects(instance.Root);
             RefreshGround();
             groundDirty = false;
             IsComplete = TotalSlots > 0 && bloomedCount >= TotalSlots;
@@ -263,42 +271,22 @@ namespace Buzzfield.Flowers
             ground.SetTiles(tileColors);
         }
 
-        private void CreateEffects(Transform root)
+        /// <summary>Stops leftover particles and fits the confetti box over the new garden.</summary>
+        private void PlaceEffects(Transform gardenRoot)
         {
-            nextBurst = 0;
-            bursts = Array.Empty<ParticleSystem>();
-            confetti = null;
-            if (settings.BloomBurstPrefab != null)
-            {
-                bursts = new ParticleSystem[settings.BurstPoolSize];
-                for (int i = 0; i < bursts.Length; i++)
-                {
-                    bursts[i] = UnityEngine.Object.Instantiate(settings.BloomBurstPrefab, root);
-                    bursts[i].name = $"BloomBurst_{i}";
-                }
-            }
-            if (settings.ConfettiPrefab != null)
-            {
-                confetti = UnityEngine.Object.Instantiate(settings.ConfettiPrefab, root);
-                confetti.name = "Confetti";
-                Vector2 size = garden.GroundSize;
-                confetti.transform.localPosition = new Vector3(0f, 4f, 0f);
-                ParticleSystem.ShapeModule shape = confetti.shape;
-                shape.scale = new Vector3(size.x, 0.5f, size.y);
-            }
+            bursts?.Clear();
+            if (confetti == null)
+                return;
+            confetti.Clear(true);
+            Vector2 size = garden.GroundSize;
+            confetti.transform.position = gardenRoot.position + new Vector3(0f, 4f, 0f);
+            ParticleSystem.ShapeModule shape = confetti.shape;
+            shape.scale = new Vector3(size.x, 0.5f, size.y);
         }
 
         private void PlayBurst(Flower flower)
         {
-            if (bursts.Length == 0)
-                return;
-            ParticleSystem burst = bursts[nextBurst];
-            nextBurst = (nextBurst + 1) % bursts.Length;
-            burst.transform.position = flower.NectarPoint;
-            ParticleSystem.MainModule main = burst.main;
-            main.startColor = flower.Type.BloomedColor;
-            burst.Clear(true);
-            burst.Play(true);
+            bursts?.Play(flower.NectarPoint, flower.Type.BloomedColor);
         }
 
         private static float EaseOutBack(float t)

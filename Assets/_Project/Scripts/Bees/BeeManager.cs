@@ -23,6 +23,7 @@ namespace Buzzfield.Bees
         private readonly Stack<Merge> freeMerges = new Stack<Merge>(4);
         private PrefabPool[] pools;
         private PrefabPool flashPool;
+        private ParticlePool sparkles;
         private BeeSettings settings;
         private FlowerManager flowers;
         private Vector3 hivePoint;
@@ -72,6 +73,8 @@ namespace Buzzfield.Bees
             }
             if (settings.MergeFlashPrefab != null)
                 flashPool = new PrefabPool(settings.MergeFlashPrefab, root, 1);
+            if (settings.DepositSparklePrefab != null)
+                sparkles = new ParticlePool(settings.DepositSparklePrefab, root, settings.DepositSparklePoolSize);
         }
 
         /// <summary>Sets the deposit point; call when a garden is spawned.</summary>
@@ -258,6 +261,7 @@ namespace Buzzfield.Bees
                     bee.State = BeeState.Idle;
                     bee.Timer = 0f;
                     bee.HoverPoint = bee.Position;
+                    sparkles?.Emit(bee.Position, settings.DepositSparkleParticles);
                     OnNectarDeposited?.Invoke(nectar, bee.CarriedValue);
                     break;
 

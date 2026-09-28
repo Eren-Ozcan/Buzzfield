@@ -32,6 +32,13 @@ namespace Buzzfield.Bees
         [SerializeField] private GameObject mergeFlashPrefab;
         [SerializeField, Min(0.1f)] private float mergeFlashScale = 1.2f;
 
+        [Header("Effects")]
+        [Tooltip("Honey sparkle emitted where a bee unloads at the hive.")]
+        [SerializeField] private ParticleSystem depositSparklePrefab;
+        [Tooltip("Sparkle systems the deposits take turns emitting into.")]
+        [SerializeField, Min(1)] private int depositSparklePoolSize = 2;
+        [SerializeField, Min(1)] private int depositSparkleParticles = 4;
+
         public IReadOnlyList<BeeTier> Tiers => tiers;
         public int MaxBees => maxBees;
         public int StartingBees => startingBees;
@@ -46,5 +53,8 @@ namespace Buzzfield.Bees
         public float MergeFlashDuration => mergeFlashDuration;
         public GameObject MergeFlashPrefab => mergeFlashPrefab;
         public float MergeFlashScale => mergeFlashScale;
+        public ParticleSystem DepositSparklePrefab => depositSparklePrefab;
+        public int DepositSparklePoolSize => depositSparklePoolSize;
+        public int DepositSparkleParticles => depositSparkleParticles;
     }
 }
