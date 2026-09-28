@@ -9,15 +9,18 @@ string lives in `Buzzfield.Core.Strings`.
 - `Assets/_Project/Scripts/` — one assembly per folder:
   - `Core/` (`Buzzfield.Core`, `noEngineReferences: true`): `BigNumber`, `NumberFormat`,
     `RollingRate`, `HoneyFormula`, `BloomMath`, `PrestigeMath`, `IncomeMath`, `OfflineEarnings`,
-    `TapBoost`, `TimeFormat`, `SaveData` + `SaveMigration` + `SaveEnvelope` + `SaveFileStore`, `Strings`.
+    `TapBoost`, `TimeFormat`, `AdPacing`, `Entitlements`, `SaveData` + `SaveMigration` + `SaveEnvelope` +
+    `SaveFileStore`, `Strings`.
     Pure logic only, EditMode-tested.
   - `Core/Runtime/` (`Buzzfield.Core.Runtime`): Unity helpers shared by systems
     (`PrefabPool`, `CameraFitter`).
   - `Flowers/`, `Bees/`, `Economy/`, `Upgrades/`, `Save/`, `UI/`, `Ads/` — one system each,
     ScriptableObject definitions next to the code that reads them.
+  - `Ads/` (`Buzzfield.Ads`): `AdManager` and `StoreManager` over `IAdService`/`IStoreService`;
+    mock services stand in until the AdMob and Unity IAP SDKs are added.
   - `Save/` (`Buzzfield.Save`): `SaveManager` (JsonUtility, persistentDataPath, backup fallback).
     Bump `SaveMigration.CurrentVersion` and add a step whenever the `SaveData` layout changes.
-  - `Game/` (`Buzzfield.Game`): `GameManager` (+ `GameManager.Save.cs`: autosave, offline; `GameManager.Ads.cs`: rewarded placements) and `GameClock`, the composition root. It owns init order,
+  - `Game/` (`Buzzfield.Game`): `GameManager` (+ `GameManager.Save.cs`: autosave, offline; `GameManager.Ads.cs`: rewarded placements; `GameManager.Store.cs`: purchases and entitlements) and `GameClock`, the composition root. It owns init order,
     wires managers with plain C# events and drives all per-frame ticks.
   - `Editor/`: menu *Buzzfield > Create Default Data* (materials, placeholder prefabs, all
     SO assets; never overwrites existing ones) and *Buzzfield > Build Greybox Scene*
