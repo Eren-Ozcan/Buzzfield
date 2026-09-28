@@ -9,8 +9,8 @@ namespace Buzzfield.Core
     /// </summary>
     public static class SaveMigration
     {
-        /// <summary>1: first release layout (Phase 4). 2: store entitlements.</summary>
-        public const int CurrentVersion = 2;
+        /// <summary>1: first release layout (Phase 4). 2: store entitlements. 3: Queen abilities by id.</summary>
+        public const int CurrentVersion = 3;
 
         /// <summary>
         /// Upgrades a loaded save in place; returns true when anything changed.
@@ -31,6 +31,12 @@ namespace Buzzfield.Core
             // owned; Normalize has already filled the empty object.
             if (savedVersion < 2)
                 data.entitlements = new Entitlements();
+
+            // Version 3 replaces the index-based ability list with levels keyed by id. No
+            // build could buy abilities before it, so the old list was always empty and there
+            // is nothing to carry over; Normalize has already filled the empty array.
+            if (savedVersion < 3)
+                data.abilities = Array.Empty<AbilityLevel>();
 
             data.saveVersion = CurrentVersion;
             return true;

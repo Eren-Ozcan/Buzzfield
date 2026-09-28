@@ -239,7 +239,34 @@ namespace Buzzfield.Tests.EditMode
             var data = new SaveData { saveVersion = SaveMigration.CurrentVersion + 3 };
             Assert.That(SaveMigration.Upgrade(data, data.saveVersion), Is.False);
             Assert.That(data.saveVersion, Is.EqualTo(SaveMigration.CurrentVersion + 3));
-            Assert.That(data.abilityLevels, Is.Not.Null);
+            Assert.That(data.abilities, Is.Not.Null);
+        }
+
+        [Test]
+        public void Migration_VersionTwo_DropsTheOldAbilityList()
+        {
+            // A version 2 save wrote the unused index-based list; the id-keyed field is missing.
+            SaveData data = JsonUtility.FromJson<SaveData>("{\"saveVersion\":2,\"abilityLevels\":[],\"movesMade\":4}");
+            data.abilities = null;
+
+            Assert.That(SaveMigration.Upgrade(data, 2));
+            Assert.That(data.saveVersion, Is.EqualTo(SaveMigration.CurrentVersion));
+            Assert.That(data.abilities, Is.Empty);
+            Assert.That(data.movesMade, Is.EqualTo(4));
+        }
+
+        [Test]
+        public void AbilityLevels_RoundTripThroughJsonUtility()
+        {
+            var data = new SaveData
+            {
+                abilities = new[] { new AbilityLevel { id = "RoyalWings", level = 3 }, new AbilityLevel { id = "PollenTouch", level = 1 } },
+            };
+            SaveData read = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(data));
+            Assert.That(read.abilities.Length, Is.EqualTo(2));
+            Assert.That(read.abilities[0].id, Is.EqualTo("RoyalWings"));
+            Assert.That(read.abilities[0].level, Is.EqualTo(3));
+            Assert.That(read.abilities[1].id, Is.EqualTo("PollenTouch"));
         }
     }
 }

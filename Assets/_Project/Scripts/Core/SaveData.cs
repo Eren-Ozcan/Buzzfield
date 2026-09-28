@@ -53,6 +53,14 @@ namespace Buzzfield.Core
         public double playSeconds;
     }
 
+    /// <summary>One Queen ability level, keyed by the ability id so the list can be reordered or grow.</summary>
+    [Serializable]
+    public struct AbilityLevel
+    {
+        public string id;
+        public int level;
+    }
+
     /// <summary>
     /// Everything written to the save file. Plain fields for JsonUtility; the game maps
     /// its managers to and from this. Bee positions are not saved: bees respawn at the hive.
@@ -81,7 +89,8 @@ namespace Buzzfield.Core
         public BigNumberData lifetimeJelly;
         public int gardenIndex;
         public int movesMade;
-        public int[] abilityLevels;
+        /// <summary>Bought Queen ability levels; abilities not listed are at level 0.</summary>
+        public AbilityLevel[] abilities;
         public double rewardedBoostEndUtc;
         public double lastFullScreenAdUtc;
         public Entitlements entitlements = new Entitlements();
@@ -99,7 +108,7 @@ namespace Buzzfield.Core
             slotBloom = slotBloom ?? Array.Empty<float>();
             slotActive = slotActive ?? Array.Empty<bool>();
             slotNectar = slotNectar ?? Array.Empty<double>();
-            abilityLevels = abilityLevels ?? Array.Empty<int>();
+            abilities = abilities ?? Array.Empty<AbilityLevel>();
             stats = stats ?? new LifetimeStats();
             entitlements = entitlements ?? new Entitlements();
         }
