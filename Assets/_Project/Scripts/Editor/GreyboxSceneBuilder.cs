@@ -54,9 +54,10 @@ namespace Buzzfield.Editor
             var boostSettings = Load<BoostSettings>("Settings/BoostSettings");
             var offlineSettings = Load<OfflineSettings>("Settings/OfflineSettings");
             var adSettings = Load<AdSettings>("Settings/AdSettings");
+            var storeCatalog = Load<StoreCatalog>("Settings/StoreCatalog");
             if (gameSettings == null || economySettings == null || beeSettings == null || prestigeSettings == null
                 || bloomSettings == null || addBee == null || speed == null || honeyValue == null
-                || boostSettings == null || offlineSettings == null || adSettings == null)
+                || boostSettings == null || offlineSettings == null || adSettings == null || storeCatalog == null)
             {
                 Debug.LogError("Default data is missing. Run Buzzfield > Create Default Data first.");
                 return;
@@ -76,11 +77,11 @@ namespace Buzzfield.Editor
             EditorAssets.Set(game,
                 ("gameSettings", gameSettings), ("economySettings", economySettings),
                 ("beeSettings", beeSettings), ("bloomSettings", bloomSettings), ("prestigeSettings", prestigeSettings),
-                ("boostSettings", boostSettings), ("offlineSettings", offlineSettings), ("adSettings", adSettings),
+                ("boostSettings", boostSettings), ("offlineSettings", offlineSettings), ("adSettings", adSettings), ("storeCatalog", storeCatalog),
                 ("addBeeUpgrade", addBee), ("speedUpgrade", speed), ("honeyValueUpgrade", honeyValue),
                 ("flowerManager", flowerManager), ("beeManager", beeManager),
                 ("hud", ui.Hud), ("bottomBar", ui.BottomBar), ("gardenComplete", ui.GardenComplete), ("queenPanel", ui.QueenPanel),
-                ("welcomeBack", ui.WelcomeBack), ("tapBoostView", ui.TapBoost), ("rewardedBoostView", ui.RewardedBoost), ("tapCatcher", ui.TapCatcher), ("backButton", ui.BackButton),
+                ("welcomeBack", ui.WelcomeBack), ("tapBoostView", ui.TapBoost), ("rewardedBoostView", ui.RewardedBoost), ("shopPanel", ui.ShopPanel), ("tapCatcher", ui.TapCatcher), ("backButton", ui.BackButton),
                 ("cameraFitter", fitter), ("worldRoot", world));
 
             EditorAssets.EnsureFolder(System.IO.Path.GetDirectoryName(EditorAssets.ScenePath));
@@ -132,6 +133,7 @@ namespace Buzzfield.Editor
             public WelcomeBackView WelcomeBack;
             public TapBoostView TapBoost;
             public RewardedBoostView RewardedBoost;
+            public ShopPanelView ShopPanel;
             public TapCatcher TapCatcher;
             public BackButtonHandler BackButton;
         }
@@ -174,6 +176,7 @@ namespace Buzzfield.Editor
             foreach (TMP_Text text in new[] { honey, rate })
                 ((RectTransform)text.transform).sizeDelta = new Vector2(-2f * QueenButtonMargin, ((RectTransform)text.transform).sizeDelta.y);
             (Button queenButton, GameObject readyBadge) = CreateQueenButton(topBar);
+            Button shopButton = CreateShopButton(topBar);
 
             (TMP_Text bloom, RectTransform bloomFill) = CreateBloomBar(topBar);
 
@@ -185,12 +188,13 @@ namespace Buzzfield.Editor
             RewardedBoostView rewardedBoost = CreateRewardedBoost(root);
             // Modals last so they draw over the HUD and the bottom bar; the quit dialog on top.
             QueenPanelView queenPanel = CreateQueenPanel(root, queenButton, readyBadge);
+            ShopPanelView shopPanel = CreateShopPanel(root, shopButton);
             WelcomeBackView welcomeBack = CreateWelcomeBack(root);
-            BackButtonHandler backButton = CreateQuitDialog(root, queenPanel, welcomeBack);
+            BackButtonHandler backButton = CreateQuitDialog(root, queenPanel, welcomeBack, shopPanel);
             return new CanvasViews
             {
                 Hud = hud, BottomBar = bottomBar, GardenComplete = gardenComplete, QueenPanel = queenPanel,
-                WelcomeBack = welcomeBack, TapBoost = tapBoost, RewardedBoost = rewardedBoost, TapCatcher = tapCatcher, BackButton = backButton,
+                WelcomeBack = welcomeBack, TapBoost = tapBoost, RewardedBoost = rewardedBoost, ShopPanel = shopPanel, TapCatcher = tapCatcher, BackButton = backButton,
             };
         }
 
@@ -267,7 +271,7 @@ namespace Buzzfield.Editor
             return view;
         }
 
-        static BackButtonHandler CreateQuitDialog(Transform root, QueenPanelView queenPanel, WelcomeBackView welcomeBack)
+        static BackButtonHandler CreateQuitDialog(Transform root, QueenPanelView queenPanel, WelcomeBackView welcomeBack, ShopPanelView shopPanel)
         {
             RectTransform dialog = CreateModal("QuitDialog", root, new Vector2(820f, 480f), new Color(0.2f, 0.16f, 0.1f, 1f), out RectTransform window);
             TMP_Text title = CreateText("Title", window, new Vector2(0f, -50f), 100f, 66f, FontStyles.Bold, new Color(1f, 0.9f, 0.55f));
@@ -280,7 +284,7 @@ namespace Buzzfield.Editor
             cancelLabel.text = Strings.Cancel;
 
             var handler = root.gameObject.AddComponent<BackButtonHandler>();
-            EditorAssets.Set(handler, ("queenPanel", queenPanel), ("welcomeBack", welcomeBack),
+            EditorAssets.Set(handler, ("queenPanel", queenPanel), ("welcomeBack", welcomeBack), ("shopPanel", shopPanel),
                 ("quitDialog", dialog.gameObject), ("quitButton", quit), ("cancelButton", cancel));
             dialog.gameObject.SetActive(false);
             return handler;
@@ -318,6 +322,109 @@ namespace Buzzfield.Editor
             badgeImage.raycastTarget = false;
             badge.gameObject.SetActive(false);
             return (button, badge.gameObject);
+        }
+
+        /// <summary>Shop button in the top-left corner of the top bar, mirroring the Queen button.</summary>
+        static Button CreateShopButton(Transform topBar)
+        {
+            RectTransform rect = CreateRect("ShopButton", topBar);
+            rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0f, 1f);
+            rect.sizeDelta = new Vector2(QueenButtonSize, QueenButtonSize);
+            rect.anchoredPosition = new Vector2(20f, -20f);
+            var image = rect.gameObject.AddComponent<Image>();
+            image.color = new Color(0.3f, 0.7f, 0.55f);
+            var button = rect.gameObject.AddComponent<Button>();
+            button.targetGraphic = image;
+
+            TMP_Text label = CreateText("Label", rect, Vector2.zero, QueenButtonSize, 36f, FontStyles.Bold, Color.white);
+            Stretch((RectTransform)label.transform);
+            label.text = Strings.ShopButton;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 20f;
+            label.fontSizeMax = 36f;
+            return button;
+        }
+
+        const float ShopRowHeight = 240f;
+        const float ShopRowSpacing = 24f;
+
+        /// <summary>Modal shop: product rows in a vertical list (a hidden row leaves no gap), status line, restore and close.</summary>
+        static ShopPanelView CreateShopPanel(Transform root, Button openButton)
+        {
+            RectTransform panel = CreateModal("ShopPanel", root, new Vector2(900f, 1320f), new Color(0.12f, 0.26f, 0.22f, 0.97f), out RectTransform window);
+            TMP_Text title = CreateText("Title", window, new Vector2(0f, -40f), 110f, 80f, FontStyles.Bold, new Color(1f, 0.9f, 0.55f));
+            title.text = Strings.ShopTitle;
+
+            RectTransform list = CreateRect("Items", window);
+            list.anchorMin = new Vector2(0f, 1f);
+            list.anchorMax = new Vector2(1f, 1f);
+            list.pivot = new Vector2(0.5f, 1f);
+            list.sizeDelta = new Vector2(-60f, 3 * ShopRowHeight + 2 * ShopRowSpacing);
+            list.anchoredPosition = new Vector2(0f, -170f);
+            var layout = list.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.spacing = ShopRowSpacing;
+            layout.childControlWidth = true;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+
+            var items = new[]
+            {
+                CreateShopItem(list, ProductIds.RemoveAds),
+                CreateShopItem(list, ProductIds.PermanentHoney2x),
+                CreateShopItem(list, ProductIds.StarterPack),
+            };
+
+            TMP_Text status = CreateText("StatusText", window, new Vector2(0f, -960f), 70f, 42f, FontStyles.Italic, Color.white);
+            status.text = string.Empty;
+            (Button restore, _, TMP_Text restoreLabel) = CreateButton("RestoreButton", window, new Vector2(0f, -1040f), new Vector2(520f, 120f), new Color(0.45f, 0.8f, 0.95f));
+            restoreLabel.text = Strings.RestorePurchases;
+            (Button close, _, TMP_Text closeLabel) = CreateButton("CloseButton", window, new Vector2(0f, -1180f), new Vector2(360f, 120f), new Color(0.5f, 0.46f, 0.55f));
+            closeLabel.text = Strings.Close;
+
+            // On the always-active root, like the other panel views, so it can open the hidden panel.
+            var view = root.gameObject.AddComponent<ShopPanelView>();
+            EditorAssets.Set(view, ("openButton", openButton), ("panel", panel.gameObject), ("closeButton", close),
+                ("items", items), ("statusText", status), ("restoreButton", restore));
+            panel.gameObject.SetActive(false);
+            return view;
+        }
+
+        /// <summary>Product row: name and description on the left, buy button with the price on the right.</summary>
+        static ShopItemView CreateShopItem(Transform list, string productId)
+        {
+            RectTransform row = CreateRect(productId, list);
+            row.sizeDelta = new Vector2(0f, ShopRowHeight);
+            var background = row.gameObject.AddComponent<Image>();
+            background.color = new Color(0f, 0f, 0f, 0.25f);
+            background.raycastTarget = false;
+
+            const float buttonWidth = 260f;
+            TMP_Text title = CreateText("Title", row, new Vector2(0f, -24f), 70f, 50f, FontStyles.Bold, new Color(1f, 0.9f, 0.55f));
+            TMP_Text body = CreateText("Body", row, new Vector2(0f, -100f), 120f, 34f, FontStyles.Normal, Color.white);
+            foreach (TMP_Text text in new[] { title, body })
+            {
+                var rect = (RectTransform)text.transform;
+                // Left column, clear of the buy button on the right.
+                rect.offsetMin = new Vector2(30f, rect.offsetMin.y);
+                rect.offsetMax = new Vector2(-(buttonWidth + 60f), rect.offsetMax.y);
+                text.alignment = TextAlignmentOptions.TopLeft;
+                text.enableAutoSizing = true;
+                text.fontSizeMin = 22f;
+                text.fontSizeMax = text.fontSize;
+            }
+
+            (Button buy, Image buyImage, TMP_Text price) = CreateButton("BuyButton", row, Vector2.zero, new Vector2(buttonWidth, 140f), new Color(0.98f, 0.76f, 0.2f));
+            var buyRect = (RectTransform)buy.transform;
+            buyRect.anchorMin = buyRect.anchorMax = new Vector2(1f, 0.5f);
+            buyRect.pivot = new Vector2(1f, 0.5f);
+            buyRect.anchoredPosition = new Vector2(-30f, 0f);
+
+            var view = row.gameObject.AddComponent<ShopItemView>();
+            EditorAssets.Set(view, ("productId", productId), ("titleText", title), ("bodyText", body),
+                ("buyButton", buy), ("buyImage", buyImage), ("priceText", price));
+            return view;
         }
 
         /// <summary>Modal Queen panel plus its confirm dialog; both start hidden.</summary>

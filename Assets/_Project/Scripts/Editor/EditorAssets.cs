@@ -157,6 +157,11 @@ namespace Buzzfield.Editor
                 case Vector2 v: property.vector2Value = v; break;
                 case Vector2Int v: property.vector2IntValue = v; break;
                 case Enum e: property.enumValueIndex = Convert.ToInt32(e); break;
+                case Object[] array:
+                    property.arraySize = array.Length;
+                    for (int i = 0; i < array.Length; i++)
+                        property.GetArrayElementAtIndex(i).objectReferenceValue = array[i];
+                    break;
                 case Object o: property.objectReferenceValue = o; break;
                 default: throw new ArgumentException($"Unsupported value type {value.GetType().Name}.");
             }
