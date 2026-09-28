@@ -4,6 +4,7 @@ using Buzzfield.Bees;
 using Buzzfield.Economy;
 using Buzzfield.Flowers;
 using Buzzfield.Game;
+using Buzzfield.UI;
 using Buzzfield.Upgrades;
 using UnityEditor;
 using UnityEngine;
@@ -43,6 +44,7 @@ namespace Buzzfield.Editor
             CreateUpgrades();
             CreateMonetization();
             EditorAssets.LoadOrCreate<GameSettings>($"{Data}/Settings/GameSettings.asset", _ => { });
+            EditorAssets.LoadOrCreate<UiFeedbackSettings>($"{Data}/Settings/UiFeedbackSettings.asset", _ => { });
 
             AssetDatabase.SaveAssets();
             Debug.Log("Buzzfield default data ready. Next: Buzzfield > Build Greybox Scene.");
@@ -102,6 +104,28 @@ namespace Buzzfield.Editor
             });
             // Added in Phase 2; filled on older data too.
             EditorAssets.SetIfMissing(settings, "mergeFlashPrefab", flash);
+
+            // Only ever emitted into by BeeManager: it loops with no emission of its own.
+            ParticleSystem sparkle = CreateParticlePrefab("HoneySparkle", m.BloomParticle, ps =>
+            {
+                ParticleSystem.MainModule main = ps.main;
+                main.loop = true;
+                main.playOnAwake = true;
+                main.startLifetime = new ParticleSystem.MinMaxCurve(0.35f, 0.6f);
+                main.startSpeed = new ParticleSystem.MinMaxCurve(0.4f, 1f);
+                main.startSize = new ParticleSystem.MinMaxCurve(0.05f, 0.1f);
+                main.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 0.8f, 0.2f), new Color(1f, 0.95f, 0.6f));
+                main.gravityModifier = -0.15f;
+                main.maxParticles = 200;
+
+                ParticleSystem.EmissionModule emission = ps.emission;
+                emission.rateOverTime = 0f;
+
+                ParticleSystem.ShapeModule shape = ps.shape;
+                shape.shapeType = ParticleSystemShapeType.Sphere;
+                shape.radius = 0.1f;
+            });
+            EditorAssets.SetIfMissing(settings, "depositSparklePrefab", sparkle);
         }
 
         static BeeTier CreateTier(string name, Material body, Material wing, float speed, float capacity, float collect, float scale, double evolveCost)

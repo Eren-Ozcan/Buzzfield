@@ -55,9 +55,11 @@ namespace Buzzfield.Editor
             var offlineSettings = Load<OfflineSettings>("Settings/OfflineSettings");
             var adSettings = Load<AdSettings>("Settings/AdSettings");
             var storeCatalog = Load<StoreCatalog>("Settings/StoreCatalog");
+            var feedbackSettings = Load<UiFeedbackSettings>("Settings/UiFeedbackSettings");
             if (gameSettings == null || economySettings == null || beeSettings == null || prestigeSettings == null
                 || bloomSettings == null || addBee == null || speed == null || honeyValue == null
-                || boostSettings == null || offlineSettings == null || adSettings == null || storeCatalog == null)
+                || boostSettings == null || offlineSettings == null || adSettings == null || storeCatalog == null
+                || feedbackSettings == null)
             {
                 Debug.LogError("Default data is missing. Run Buzzfield > Create Default Data first.");
                 return;
@@ -78,10 +80,12 @@ namespace Buzzfield.Editor
                 ("gameSettings", gameSettings), ("economySettings", economySettings),
                 ("beeSettings", beeSettings), ("bloomSettings", bloomSettings), ("prestigeSettings", prestigeSettings),
                 ("boostSettings", boostSettings), ("offlineSettings", offlineSettings), ("adSettings", adSettings), ("storeCatalog", storeCatalog),
+                ("feedbackSettings", feedbackSettings),
                 ("addBeeUpgrade", addBee), ("speedUpgrade", speed), ("honeyValueUpgrade", honeyValue),
                 ("flowerManager", flowerManager), ("beeManager", beeManager),
                 ("hud", ui.Hud), ("bottomBar", ui.BottomBar), ("gardenComplete", ui.GardenComplete), ("queenPanel", ui.QueenPanel),
                 ("welcomeBack", ui.WelcomeBack), ("tapBoostView", ui.TapBoost), ("rewardedBoostView", ui.RewardedBoost), ("shopPanel", ui.ShopPanel), ("tapCatcher", ui.TapCatcher), ("backButton", ui.BackButton),
+                ("buttonFeedbacks", ui.ButtonFeedbacks),
                 ("cameraFitter", fitter), ("worldRoot", world));
 
             EditorAssets.EnsureFolder(System.IO.Path.GetDirectoryName(EditorAssets.ScenePath));
@@ -136,6 +140,7 @@ namespace Buzzfield.Editor
             public ShopPanelView ShopPanel;
             public TapCatcher TapCatcher;
             public BackButtonHandler BackButton;
+            public ButtonFeedback[] ButtonFeedbacks;
         }
 
         static CanvasViews CreateCanvas()
@@ -176,7 +181,7 @@ namespace Buzzfield.Editor
             foreach (TMP_Text text in new[] { honey, rate })
                 ((RectTransform)text.transform).sizeDelta = new Vector2(-2f * QueenButtonMargin, ((RectTransform)text.transform).sizeDelta.y);
             (Button queenButton, GameObject readyBadge) = CreateQueenButton(topBar);
-            Button shopButton = CreateShopButton(topBar);
+            (Button shopButton, GameObject shopBadge) = CreateShopButton(topBar);
 
             (TMP_Text bloom, RectTransform bloomFill) = CreateBloomBar(topBar);
 
@@ -188,11 +193,12 @@ namespace Buzzfield.Editor
             RewardedBoostView rewardedBoost = CreateRewardedBoost(root);
             // Modals last so they draw over the HUD and the bottom bar; the quit dialog on top.
             QueenPanelView queenPanel = CreateQueenPanel(root, queenButton, readyBadge);
-            ShopPanelView shopPanel = CreateShopPanel(root, shopButton);
+            ShopPanelView shopPanel = CreateShopPanel(root, shopButton, shopBadge);
             WelcomeBackView welcomeBack = CreateWelcomeBack(root);
             BackButtonHandler backButton = CreateQuitDialog(root, queenPanel, welcomeBack, shopPanel);
             return new CanvasViews
             {
+                ButtonFeedbacks = AddButtonFeedback(canvasObject.transform),
                 Hud = hud, BottomBar = bottomBar, GardenComplete = gardenComplete, QueenPanel = queenPanel,
                 WelcomeBack = welcomeBack, TapBoost = tapBoost, RewardedBoost = rewardedBoost, ShopPanel = shopPanel, TapCatcher = tapCatcher, BackButton = backButton,
             };
@@ -313,19 +319,46 @@ namespace Buzzfield.Editor
             label.fontSizeMin = 20f;
             label.fontSizeMax = 36f;
 
-            RectTransform badge = CreateRect("ReadyBadge", rect);
+            return (button, CreateBadge("ReadyBadge", rect, new Color(0.45f, 0.9f, 0.35f)));
+        }
+
+        /// <summary>Small dot in the top-right corner of a button; starts hidden.</summary>
+        static GameObject CreateBadge(string name, RectTransform button, Color color)
+        {
+            RectTransform badge = CreateRect(name, button);
             badge.anchorMin = badge.anchorMax = new Vector2(1f, 1f);
             badge.sizeDelta = new Vector2(40f, 40f);
             badge.anchoredPosition = new Vector2(-6f, -6f);
             var badgeImage = badge.gameObject.AddComponent<Image>();
-            badgeImage.color = new Color(0.45f, 0.9f, 0.35f);
+            badgeImage.color = color;
             badgeImage.raycastTarget = false;
             badge.gameObject.SetActive(false);
-            return (button, badge.gameObject);
+            return badge.gameObject;
+        }
+
+        /// <summary>Press feel on every button under <paramref name="canvas"/>, reusing ones added earlier.</summary>
+        static ButtonFeedback[] AddButtonFeedback(Transform canvas)
+        {
+            Button[] buttons = canvas.GetComponentsInChildren<Button>(true);
+            var feedbacks = new ButtonFeedback[buttons.Length];
+            for (int i = 0; i < buttons.Length; i++)
+                feedbacks[i] = AddButtonFeedback(buttons[i]);
+            return feedbacks;
+        }
+
+        static ButtonFeedback AddButtonFeedback(Button button)
+        {
+            var feedback = button.GetComponent<ButtonFeedback>();
+            if (feedback == null)
+            {
+                feedback = button.gameObject.AddComponent<ButtonFeedback>();
+                EditorAssets.Set(feedback, ("button", button));
+            }
+            return feedback;
         }
 
         /// <summary>Shop button in the top-left corner of the top bar, mirroring the Queen button.</summary>
-        static Button CreateShopButton(Transform topBar)
+        static (Button, GameObject) CreateShopButton(Transform topBar)
         {
             RectTransform rect = CreateRect("ShopButton", topBar);
             rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
@@ -343,14 +376,14 @@ namespace Buzzfield.Editor
             label.enableAutoSizing = true;
             label.fontSizeMin = 20f;
             label.fontSizeMax = 36f;
-            return button;
+            return (button, CreateBadge("NewBadge", rect, new Color(0.95f, 0.35f, 0.3f)));
         }
 
         const float ShopRowHeight = 240f;
         const float ShopRowSpacing = 24f;
 
         /// <summary>Modal shop: product rows in a vertical list (a hidden row leaves no gap), status line, restore and close.</summary>
-        static ShopPanelView CreateShopPanel(Transform root, Button openButton)
+        static ShopPanelView CreateShopPanel(Transform root, Button openButton, GameObject newBadge)
         {
             RectTransform panel = CreateModal("ShopPanel", root, new Vector2(900f, 1320f), new Color(0.12f, 0.26f, 0.22f, 0.97f), out RectTransform window);
             TMP_Text title = CreateText("Title", window, new Vector2(0f, -40f), 110f, 80f, FontStyles.Bold, new Color(1f, 0.9f, 0.55f));
@@ -385,7 +418,7 @@ namespace Buzzfield.Editor
 
             // On the always-active root, like the other panel views, so it can open the hidden panel.
             var view = root.gameObject.AddComponent<ShopPanelView>();
-            EditorAssets.Set(view, ("openButton", openButton), ("panel", panel.gameObject), ("closeButton", close),
+            EditorAssets.Set(view, ("openButton", openButton), ("newBadge", newBadge), ("panel", panel.gameObject), ("closeButton", close),
                 ("items", items), ("statusText", status), ("restoreButton", restore));
             panel.gameObject.SetActive(false);
             return view;
@@ -623,7 +656,7 @@ namespace Buzzfield.Editor
             }
 
             var view = rect.gameObject.AddComponent<UpgradeButtonView>();
-            EditorAssets.Set(view, ("button", button), ("background", image),
+            EditorAssets.Set(view, ("button", button), ("feedback", AddButtonFeedback(button)), ("background", image),
                 ("titleText", title), ("detailText", detail), ("costText", cost));
             return view;
         }
