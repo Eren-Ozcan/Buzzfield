@@ -9,11 +9,12 @@ string lives in `Buzzfield.Core.Strings`.
 - `Assets/_Project/Scripts/` — one assembly per folder:
   - `Core/` (`Buzzfield.Core`, `noEngineReferences: true`): `BigNumber`, `NumberFormat`,
     `RollingRate`, `HoneyFormula`, `BloomMath`, `PrestigeMath`, `IncomeMath`, `OfflineEarnings`,
-    `TapBoost`, `TimeFormat`, `AdPacing`, `Entitlements`, `SaveData` + `SaveMigration` + `SaveEnvelope` +
+    `TapBoost`, `TimeFormat`, `TweenMath`, `AdPacing`, `Entitlements`, `SaveData` + `SaveMigration` + `SaveEnvelope` +
     `SaveFileStore`, `Strings`.
     Pure logic only, EditMode-tested.
   - `Core/Runtime/` (`Buzzfield.Core.Runtime`): Unity helpers shared by systems
-    (`PrefabPool`, `CameraFitter`).
+    (`PrefabPool`, `ParticlePool`, `Tweener`, `CameraFitter`). `Tweener` is our own small tween
+    runner (scale pop, press hold, wiggle), ticked by `GameManager`; effects come from `ParticlePool`.
   - `Flowers/`, `Bees/`, `Economy/`, `Upgrades/`, `Save/`, `UI/`, `Ads/` — one system each,
     ScriptableObject definitions next to the code that reads them.
   - `Ads/` (`Buzzfield.Ads`): `AdManager` and `StoreManager` over `IAdService`/`IStoreService`;
@@ -22,10 +23,17 @@ string lives in `Buzzfield.Core.Strings`.
     Bump `SaveMigration.CurrentVersion` and add a step whenever the `SaveData` layout changes.
   - `Game/` (`Buzzfield.Game`): `GameManager` (+ `GameManager.Save.cs`: autosave, offline; `GameManager.Ads.cs`: rewarded placements; `GameManager.Store.cs`: purchases and entitlements) and `GameClock`, the composition root. It owns init order,
     wires managers with plain C# events and drives all per-frame ticks.
+  - `UI/`: every `Button` gets a `ButtonFeedback` (press scale, wiggle when refused), set up by
+    the scene builder and initialised by `GameManager`; feel lives in `UiFeedbackSettings`.
+    Per-frame number labels go through `NumberLabel` (no string allocations).
   - `Editor/`: menu *Buzzfield > Create Default Data* (materials, placeholder prefabs, all
     SO assets; never overwrites existing ones) and *Buzzfield > Build Greybox Scene*
     (`Assets/_Project/Scenes/Main.unity`). Batchmode:
     `Unity.exe -batchmode -quit -projectPath . -executeMethod Buzzfield.Editor.GreyboxSceneBuilder.Build`.
+    *Buzzfield > Build Android Dev APK* writes `Builds/Android/Buzzfield-dev.apk` (gitignored):
+    `Unity.exe -batchmode -quit -buildTarget Android -projectPath . -executeMethod Buzzfield.Editor.AndroidBuild.BuildDevApk`.
+    Player builds rewrite some settings files (URP asset prefiltering, UnityConnect, batching);
+    check `git diff` afterwards and revert what was not meant.
 - `Assets/_Project/Tests/EditMode/` — NUnit tests for `Core`
   (Test Runner window, or `-runTests -testPlatform EditMode`).
 - `Assets/_Project/Tests/PlayMode/` — smoke and upgrade-flow tests against the real
@@ -33,6 +41,9 @@ string lives in `Buzzfield.Core.Strings`.
   `Unity.exe -batchmode -projectPath . -runTests -testPlatform PlayMode -testResults <file>`.
   Tests call `TestSave.Clear()` before loading the scene so they never touch the real save.
   Set `BZ_SHOT_DIR` (folder must exist) to also save 1080x1920 and 1440x1920 screenshots (HUD included).
+  `PerformanceTests` fills the bee cap: the report test logs tick CPU, GC and draw calls (set
+  `BZ_PERF_OUT` to a file to save it); the zero-allocation test runs only in a player
+  (TMP allocates in the editor): `-runTests -testPlatform StandaloneWindows64 -testFilter PerformanceTests`.
 - Batchmode TMP import: `-executeMethod Buzzfield.Editor.TmpResources.ImportAndExit`
   without `-quit` (the package import finishes after the method returns).
 - `Assets/_Project/ScriptableObjects/` — all balance data. No tuning number in code.
