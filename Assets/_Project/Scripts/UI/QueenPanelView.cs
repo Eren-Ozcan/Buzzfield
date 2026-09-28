@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Buzzfield.Core;
 using Buzzfield.Economy;
 using Buzzfield.Flowers;
@@ -9,8 +10,9 @@ using UnityEngine.UI;
 namespace Buzzfield.UI
 {
     /// <summary>
-    /// Queen button in the top bar and the Queen panel behind it: Royal Jelly, the "Move the
-    /// Queen" gate, cost and jelly preview, and the confirm dialog. Events only mark it dirty;
+    /// Queen button in the top bar and the Queen panel behind it: Queen level and honey bonus,
+    /// the ability rows, Royal Jelly, the "Move the Queen" gate, cost and jelly preview, and
+    /// the confirm dialog. Events only mark it dirty;
     /// the button badge is re-checked once per frame at most, the open panel's texts on a
     /// slow timer because honey changes with every deposit. The badge pops in when it appears.
     /// </summary>
@@ -24,6 +26,9 @@ namespace Buzzfield.UI
         [Header("Panel")]
         [SerializeField] private GameObject panel;
         [SerializeField] private Button closeButton;
+        [SerializeField] private TMP_Text levelText;
+        [SerializeField] private TMP_Text nextLevelText;
+        [SerializeField] private QueenAbilityRowView[] abilityRows;
         [SerializeField] private TMP_Text jellyText;
         [SerializeField] private TMP_Text gardenText;
         [SerializeField] private TMP_Text requirementText;
@@ -44,6 +49,7 @@ namespace Buzzfield.UI
         [SerializeField, Min(0.05f)] private float refreshSeconds = 0.25f;
 
         private PrestigeManager prestige;
+        private QueenManager queen;
         private EconomyManager economy;
         private GardenBloomManager bloom;
         private Func<bool> moveQueen;
@@ -56,11 +62,14 @@ namespace Buzzfield.UI
         public bool IsOpen => panel.activeSelf;
         public bool IsConfirming => confirm.activeSelf;
 
-        public void Init(PrestigeManager prestigeManager, EconomyManager economyManager, GardenBloomManager bloomManager,
-            Func<bool> onMove, Tweener tweenRunner, UiFeedbackSettings feedbackSettings)
+        public IReadOnlyList<QueenAbilityRowView> AbilityRows => abilityRows;
+
+        public void Init(PrestigeManager prestigeManager, QueenManager queenManager, EconomyManager economyManager,
+            GardenBloomManager bloomManager, Func<bool> onMove, Tweener tweenRunner, UiFeedbackSettings feedbackSettings)
         {
             Unsubscribe();
             prestige = prestigeManager;
+            queen = queenManager;
             economy = economyManager;
             bloom = bloomManager;
             moveQueen = onMove;
@@ -70,6 +79,20 @@ namespace Buzzfield.UI
             economy.OnHoneyChanged += HandleHoneyChanged;
             bloom.OnBloomChanged += MarkDirty;
             prestige.OnQueenMoved += HandleQueenMoved;
+            queen.OnChanged += MarkDirty;
+
+            for (int i = 0; i < abilityRows.Length; i++)
+            {
+                QueenAbilityRowView row = abilityRows[i];
+                bool known = row.AbilityIndex >= 0 && row.AbilityIndex < queen.AbilityCount;
+                // Rows are built from the data; a row left over from older data is hidden.
+                row.gameObject.SetActive(known);
+                if (known)
+                {
+                    QueenAbility ability = queen.Abilities[row.AbilityIndex];
+                    row.Init(AbilityName(ability), AbilityBody(ability), queen.TryBuy);
+                }
+            }
 
             AddListener(openButton, Open);
             AddListener(closeButton, Close);
@@ -159,6 +182,7 @@ namespace Buzzfield.UI
             bool unlocked = prestige.IsUnlocked(fraction);
             BigNumber cost = prestige.MoveCost;
 
+            RefreshQueen();
             SetText(jellyText, string.Format(Strings.RoyalJellyFormat, NumberFormat.Abbreviate(prestige.RoyalJelly)));
             SetText(gardenText, string.Format(Strings.GardenNumberFormat, prestige.GardenIndex + 1));
             SetText(requirementText, unlocked
@@ -174,6 +198,56 @@ namespace Buzzfield.UI
             moveButtonImage.color = ready ? moveEnabledColor : moveDisabledColor;
             if (!ready && confirm.activeSelf)
                 confirm.SetActive(false);
+        }
+
+        private void RefreshQueen()
+        {
+            SetText(levelText, string.Format(Strings.QueenLevelFormat, queen.Level, queen.HoneyMultiplier.ToString("0.##")));
+            SetText(nextLevelText, queen.IsMaxLevel
+                ? Strings.QueenMaxLevel
+                : string.Format(Strings.QueenNextLevelFormat, NumberFormat.Abbreviate(prestige.LifetimeJelly),
+                    NumberFormat.Abbreviate(BigNumber.FromDouble(Math.Ceiling(queen.NextLevelJelly - 1e-6))),
+                    queen.Level + 1, queen.NextHoneyMultiplier.ToString("0.##")));
+
+            for (int i = 0; i < abilityRows.Length; i++)
+            {
+                QueenAbilityRowView row = abilityRows[i];
+                int index = row.AbilityIndex;
+                if (index < 0 || index >= queen.AbilityCount)
+                    continue;
+                bool maxed = queen.IsMaxed(index);
+                row.Show(string.Format(Strings.AbilityLevelFormat, queen.AbilityLevel(index), queen.Abilities[index].MaxLevel),
+                    maxed ? Strings.Max : string.Format(Strings.AbilityCostFormat, NumberFormat.Abbreviate(queen.AbilityCost(index))),
+                    queen.CanBuy(index), maxed);
+            }
+        }
+
+        private static string AbilityName(QueenAbility ability)
+        {
+            switch (ability.Id)
+            {
+                case QueenAbilityIds.RoyalBrood: return Strings.AbilityRoyalBrood;
+                case QueenAbilityIds.RoyalWings: return Strings.AbilityRoyalWings;
+                case QueenAbilityIds.SweetMemory: return Strings.AbilitySweetMemory;
+                case QueenAbilityIds.PollenTouch: return Strings.AbilityPollenTouch;
+                default: return ability.Id;
+            }
+        }
+
+        /// <summary>Described by effect, so a new ability that reuses an effect needs no new text.</summary>
+        private static string AbilityBody(QueenAbility ability)
+        {
+            string amount = ability.EffectPerLevel.ToString("0.##");
+            string format;
+            switch (ability.Effect)
+            {
+                case QueenEffect.StartingWorkers: format = Strings.EffectStartingWorkersFormat; break;
+                case QueenEffect.FlightSpeedPercent: format = Strings.EffectFlightSpeedFormat; break;
+                case QueenEffect.OfflineCapHours: format = Strings.EffectOfflineCapFormat; break;
+                case QueenEffect.BloomPerVisitPercent: format = Strings.EffectBloomPerVisitFormat; break;
+                default: return string.Empty;
+            }
+            return string.Format(format, amount) + Strings.PerLevelSuffix;
         }
 
         private void HandleHoneyChanged(BigNumber _) => dirty = true;
@@ -212,6 +286,8 @@ namespace Buzzfield.UI
                 bloom.OnBloomChanged -= MarkDirty;
             if (prestige != null)
                 prestige.OnQueenMoved -= HandleQueenMoved;
+            if (queen != null)
+                queen.OnChanged -= MarkDirty;
         }
     }
 }
