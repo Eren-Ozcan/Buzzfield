@@ -70,5 +70,24 @@ namespace Buzzfield.Tests.EditMode
         {
             Assert.That(NumberFormat.PerSecond(value), Is.EqualTo(expected));
         }
+
+        [TestCase(1234.0, "1.23K")]
+        [TestCase(-45600.0, "-45.6K")]
+        [TestCase(0.45, "0")]
+        public void Write_FillsBufferWithAbbreviation(double value, string expected)
+        {
+            var buffer = new char[NumberFormat.MaxLength];
+            int length = NumberFormat.Write(value, buffer);
+            Assert.That(new string(buffer, 0, length), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void Write_ReusedBuffer_OverwritesLongerText()
+        {
+            var buffer = new char[NumberFormat.MaxLength];
+            NumberFormat.Write(BigNumber.Create(1.23, 40), buffer);
+            int length = NumberFormat.WritePerSecond(0.45, buffer);
+            Assert.That(new string(buffer, 0, length), Is.EqualTo("0.4/s"));
+        }
     }
 }

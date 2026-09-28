@@ -20,22 +20,16 @@ namespace Buzzfield.Core
         /// <summary>Highest suffix tier: T plus every two-letter pair up to zz.</summary>
         public static readonly int MaxTier = NamedTiers - 1 + LetterCount * LetterCount;
 
+        /// <summary>Buffer size that fits any label written by <see cref="Write"/> or <see cref="WritePerSecond"/> in play.</summary>
+        public const int MaxLength = 32;
+
+        /// <summary>Largest scaled digit count written without a string; only values past the last suffix get there.</summary>
+        const double MaxExactDigits = 1e15;
+
         public static string Abbreviate(BigNumber value)
         {
-            if (value.IsNegative)
-                return "-" + Abbreviate(-value);
-            if (value < 1000)
-                return Math.Floor(value.ToDouble() + 1e-9).ToString("0", CultureInfo.InvariantCulture);
-
-            int tier = (int)Math.Min(value.Exponent / 3, MaxTier);
-            double scaled = (value / BigNumber.Create(1, tier * 3L)).ToDouble();
-            double rounded = RoundSignificant(scaled);
-
-            int decimals = DecimalsFor(rounded);
-            string digits = rounded.ToString("F" + decimals, CultureInfo.InvariantCulture);
-            if (decimals > 0)
-                digits = digits.TrimEnd('0').TrimEnd('.');
-            return digits + Suffix(tier);
+            var buffer = new char[MaxLength];
+            return new string(buffer, 0, Write(value, buffer));
         }
 
         /// <summary>
@@ -44,12 +38,48 @@ namespace Buzzfield.Core
         /// </summary>
         public static string PerSecond(BigNumber value)
         {
-            if (!value.IsNegative && value < 10)
+            var buffer = new char[MaxLength];
+            return new string(buffer, 0, WritePerSecond(value, buffer));
+        }
+
+        /// <summary>
+        /// Writes <see cref="Abbreviate"/> into <paramref name="buffer"/> without allocating and
+        /// returns the length. Labels that change every frame use this with a reused buffer.
+        /// </summary>
+        public static int Write(BigNumber value, char[] buffer)
+        {
+            int length = 0;
+            if (value.IsNegative)
             {
-                double rounded = Math.Floor(value.ToDouble() * 10 + 1e-9) / 10;
-                return rounded.ToString("0.#", CultureInfo.InvariantCulture) + "/s";
+                buffer[length++] = '-';
+                value = -value;
             }
-            return Abbreviate(value) + "/s";
+            if (value < 1000)
+                return WriteInteger((long)Math.Floor(value.ToDouble() + 1e-9), buffer, length);
+
+            int tier = (int)Math.Min(value.Exponent / 3, MaxTier);
+            double scaled = (value / BigNumber.Create(1, tier * 3L)).ToDouble();
+            int decimals = DecimalsFor(scaled);
+            // The epsilon absorbs binary error such as 1.2 * 100 = 119.99999999999999.
+            double digits = Math.Floor(scaled * Pow10(decimals) + 1e-9);
+            if (digits >= MaxExactDigits)
+                length = CopyString(digits.ToString("F0", CultureInfo.InvariantCulture), buffer, length);
+            else
+                length = WriteFixed((long)digits, decimals, buffer, length);
+            return WriteSuffix(tier, buffer, length);
+        }
+
+        /// <summary>Writes <see cref="PerSecond"/> into <paramref name="buffer"/> without allocating and returns the length.</summary>
+        public static int WritePerSecond(BigNumber value, char[] buffer)
+        {
+            int length;
+            if (!value.IsNegative && value < 10)
+                length = WriteFixed((long)Math.Floor(value.ToDouble() * 10 + 1e-9), 1, buffer, 0);
+            else
+                length = Write(value, buffer);
+            buffer[length++] = '/';
+            buffer[length++] = 's';
+            return length;
         }
 
         /// <summary>Suffix for a power-of-1000 tier: 0 = none, 1 = K ... 4 = T, 5 = aa, 6 = ab.</summary>
@@ -65,11 +95,65 @@ namespace Buzzfield.Core
             return new string(new[] { first, second });
         }
 
-        static double RoundSignificant(double value)
+        /// <summary><paramref name="scaledDigits"/> / 10^<paramref name="decimals"/> with trailing fraction zeros trimmed.</summary>
+        static int WriteFixed(long scaledDigits, int decimals, char[] buffer, int length)
         {
-            double factor = Math.Pow(10, DecimalsFor(value));
-            // The epsilon absorbs binary error such as 1.2 * 100 = 119.99999999999999.
-            return Math.Floor(value * factor + 1e-9) / factor;
+            long unit = (long)Pow10(decimals);
+            length = WriteInteger(scaledDigits / unit, buffer, length);
+            long fraction = scaledDigits % unit;
+            if (fraction == 0)
+                return length;
+            int places = decimals;
+            while (fraction % 10 == 0)
+            {
+                fraction /= 10;
+                places--;
+            }
+            buffer[length++] = '.';
+            for (int i = places - 1; i >= 0; i--)
+            {
+                buffer[length + i] = (char)('0' + fraction % 10);
+                fraction /= 10;
+            }
+            return length + places;
+        }
+
+        static int WriteInteger(long value, char[] buffer, int length)
+        {
+            int count = 1;
+            for (long rest = value / 10; rest > 0; rest /= 10)
+                count++;
+            for (int i = count - 1; i >= 0; i--)
+            {
+                buffer[length + i] = (char)('0' + value % 10);
+                value /= 10;
+            }
+            return length + count;
+        }
+
+        static int WriteSuffix(int tier, char[] buffer, int length)
+        {
+            if (tier < NamedTiers)
+                return CopyString(Named[tier], buffer, length);
+            int index = tier - NamedTiers;
+            buffer[length++] = (char)('a' + index / LetterCount);
+            buffer[length++] = (char)('a' + index % LetterCount);
+            return length;
+        }
+
+        static int CopyString(string text, char[] buffer, int length)
+        {
+            int count = Math.Min(text.Length, buffer.Length - length);
+            text.CopyTo(0, buffer, length, count);
+            return length + count;
+        }
+
+        static double Pow10(int exponent)
+        {
+            double result = 1;
+            for (int i = 0; i < exponent; i++)
+                result *= 10;
+            return result;
         }
 
         static int DecimalsFor(double value)

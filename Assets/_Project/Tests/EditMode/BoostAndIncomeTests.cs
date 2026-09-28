@@ -122,5 +122,16 @@ namespace Buzzfield.Tests.EditMode
         {
             Assert.That(TimeFormat.Duration(seconds), Is.EqualTo(expected));
         }
+
+        [TestCase(3725.0, "{0}h {1}m", 1L, 2L)]
+        [TestCase(7200.0, "{0}h", 2L, 0L)]
+        [TestCase(125.0, "{0}m {1}s", 2L, 5L)]
+        [TestCase(45.9, "{0}s", 45L, 0L)]
+        public void DurationSplit_ReturnsFormatAndUnits(double seconds, string format, long first, long second)
+        {
+            Assert.That(TimeFormat.Split(seconds, out long a, out long b), Is.EqualTo(format));
+            Assert.That(a, Is.EqualTo(first));
+            Assert.That(b, Is.EqualTo(second));
+        }
     }
 }
