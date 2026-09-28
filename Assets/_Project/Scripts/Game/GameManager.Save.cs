@@ -20,7 +20,6 @@ namespace Buzzfield.Game
         private SaveManager saveManager;
         private GameClock clock;
         private LifetimeStats stats = new LifetimeStats();
-        private int[] abilityLevels = Array.Empty<int>();
         private float autosaveTimer;
 
         /// <summary>Clock and rate of the loaded save; null for a new game.</summary>
@@ -124,9 +123,9 @@ namespace Buzzfield.Game
                 beeNectar += counts[t] * IncomeMath.BeeNectarPerSecond(tier.Capacity, tier.Speed * beeManager.SpeedMultiplier,
                     roundTrip, tier.CollectDuration, beeSettings.DepositDuration);
             }
-            // The bought multiplier is permanent, so it counts; timed boosts do not.
+            // The Queen level and the bought multiplier are permanent, so they count; timed boosts do not.
             return IncomeMath.HoneyPerSecond(beeNectar, regen, valueRegen / regen,
-                economy.HoneyValueMultiplier * economy.PurchasedMultiplier);
+                economy.HoneyValueMultiplier * economy.PermanentMultiplier);
         }
 
         private void TickAutosave(float unscaledDeltaTime)
@@ -164,7 +163,7 @@ namespace Buzzfield.Game
 
         private void EvaluateReturn(ClockStamp stamp, BigNumber rate, double deviceNow, double monotonicNow)
         {
-            double capSeconds = offlineSettings.CapHours * 3600.0;
+            double capSeconds = OfflineCapHours * 3600.0;
             OfflineClockInput input = clock.ReturnInput(stamp, deviceNow, monotonicNow);
             OfflineResult result = OfflineEarnings.Evaluate(input, capSeconds, rate,
                 offlineSettings.Efficiency, offlineSettings.ClockToleranceSeconds);
@@ -247,7 +246,7 @@ namespace Buzzfield.Game
             data.lifetimeJelly = BigNumberData.From(prestige.LifetimeJelly);
             data.gardenIndex = prestige.GardenIndex;
             data.movesMade = prestige.MovesMade;
-            data.abilityLevels = abilityLevels;
+            data.abilities = queen.Capture();
             data.rewardedBoostEndUtc = boosts.RewardedHoneyEndUtc;
             data.lastFullScreenAdUtc = ads.LastFullScreenAdUtc;
             data.entitlements.CopyFrom(store.Entitlements);
@@ -262,7 +261,7 @@ namespace Buzzfield.Game
             economy.Restore(data.honey.ToNonNegative(), data.runHoneyEarned.ToNonNegative(), data.lifetimeHoneyEarned.ToNonNegative());
             upgrades.Restore(data.beesBought, data.speedLevel, data.honeyValueLevel);
             stats = data.stats;
-            abilityLevels = data.abilityLevels;
+            queen.Restore(data.abilities);
             ads.Restore(data.lastFullScreenAdUtc);
             RestoreStore(data.entitlements);
             boosts.RestoreRewardedHoney(data.rewardedBoostEndUtc, GameClock.DeviceUtc);

@@ -15,7 +15,7 @@ namespace Buzzfield.Game
     /// Composition root: owns the init order, wires the managers together and drives
     /// the per-frame ticks in a fixed order (flowers regenerate before bees read them).
     /// Saving, loading and offline earnings live in GameManager.Save.cs, rewarded ads in
-    /// GameManager.Ads.cs and the store in GameManager.Store.cs.
+    /// GameManager.Ads.cs, the store in GameManager.Store.cs and Queen bonuses in GameManager.Queen.cs.
     /// </summary>
     public sealed partial class GameManager : MonoBehaviour
     {
@@ -98,7 +98,8 @@ namespace Buzzfield.Game
             bloom.OnFlowerBloomed += HandleFlowerBloomed;
             bloom.OnGardenCompleted += HandleGardenCompleted;
             prestige = new PrestigeManager(prestigeSettings);
-            queenPanel.Init(prestige, economy, bloom, TryMoveQueen, tweener, feedbackSettings);
+            InitQueen();
+            queenPanel.Init(prestige, queen, economy, bloom, TryMoveQueen, tweener, feedbackSettings);
             boosts = new BoostManager(boostSettings, economy);
             tapBoostView.Init(boosts);
             tapCatcher.OnWorldTapped += HandleWorldTapped;
@@ -159,6 +160,7 @@ namespace Buzzfield.Game
             if (tapCatcher != null)
                 tapCatcher.OnWorldTapped -= HandleWorldTapped;
             ads?.Dispose();
+            DisposeQueen();
             DisposeStore();
             DisposeSave();
         }
@@ -168,8 +170,8 @@ namespace Buzzfield.Game
 
         /// <summary>
         /// "Move the Queen" (design doc section 3b). Resets honey, upgrades, bees, the tap
-        /// boost and the garden; keeps Royal Jelly, lifetime stats and the rewarded boost,
-        /// and loads the next garden. Store entitlements are not touched. Returns false when the bloom gate or the honey cost is not met.
+        /// boost and the garden; keeps Royal Jelly, the Queen level and abilities, lifetime
+        /// stats and the rewarded boost, and loads the next garden. Store entitlements are not touched. Returns false when the bloom gate or the honey cost is not met.
         /// </summary>
         public bool TryMoveQueen()
         {
@@ -210,7 +212,8 @@ namespace Buzzfield.Game
 
         private void SpawnStartingBees()
         {
-            for (int i = 0; i < beeSettings.StartingBees; i++)
+            int workers = StartingWorkers;
+            for (int i = 0; i < workers; i++)
                 beeManager.Spawn(0);
         }
 
