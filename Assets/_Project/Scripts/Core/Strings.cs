@@ -38,6 +38,25 @@ namespace Buzzfield.Core
         public const string MoveConfirmTitle = "Move the Queen?";
         public const string MoveConfirmBody = "Your bees and honey will reset.\nYou keep your Royal Jelly and go to Garden {0}.";
         public const string MoveConfirm = "Move";
+
+        public const string QueenLevelFormat = "Queen Lv {0}  x{1} honey";
+        public const string QueenNextLevelFormat = "{0} / {1} jelly earned to Lv {2} (x{3})";
+        public const string QueenMaxLevel = "Top Queen level reached";
+        public const string AbilitiesTitle = "Queen Abilities";
+        public const string AbilityLevelFormat = "Lv {0}/{1}";
+        public const string AbilityCostFormat = "{0}\nJelly";
+
+        public const string AbilityRoyalBrood = "Royal Brood";
+        public const string AbilityRoyalWings = "Royal Wings";
+        public const string AbilitySweetMemory = "Sweet Memory";
+        public const string AbilityPollenTouch = "Pollen Touch";
+
+        /// <summary>What one level of an ability does, by effect; {0} is the amount per level.</summary>
+        public const string EffectStartingWorkersFormat = "+{0} Worker at the start of every garden";
+        public const string EffectFlightSpeedFormat = "+{0}% bee flight speed";
+        public const string EffectOfflineCapFormat = "+{0}h offline earning time";
+        public const string EffectBloomPerVisitFormat = "+{0}% bloom per flower visit";
+        public const string PerLevelSuffix = " per level";
         public const string Cancel = "Cancel";
         public const string Close = "Close";
 
