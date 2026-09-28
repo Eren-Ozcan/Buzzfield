@@ -24,11 +24,16 @@ namespace Buzzfield.Ads
         private string pendingId;
         private Action<PurchaseResult> pendingCallback;
 
-        public MockStoreService(StoreCatalog settings, string accountKey = DefaultAccountKey)
+        /// <param name="accountKey">PlayerPrefs key of the fake account; null uses
+        /// <see cref="AccountKeyOverride"/>, then <see cref="DefaultAccountKey"/>.</param>
+        public MockStoreService(StoreCatalog settings, string accountKey = null)
         {
             this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
-            this.accountKey = accountKey;
+            this.accountKey = accountKey ?? AccountKeyOverride ?? DefaultAccountKey;
         }
+
+        /// <summary>Tests point the game's mock account here so they never touch the real one.</summary>
+        public static string AccountKeyOverride { get; set; }
 
         public bool IsInitialized { get; private set; }
         public bool IsPurchasing => purchaseLeft >= 0f;
@@ -39,7 +44,8 @@ namespace Buzzfield.Ads
 #pragma warning restore 0067
 
         /// <summary>Forgets every mock-owned product (tests, and resetting a dev device).</summary>
-        public static void ClearAccount(string accountKey = DefaultAccountKey) => PlayerPrefs.DeleteKey(accountKey);
+        public static void ClearAccount(string accountKey = null) =>
+            PlayerPrefs.DeleteKey(accountKey ?? AccountKeyOverride ?? DefaultAccountKey);
 
         public void Initialize(IReadOnlyList<StoreProduct> catalog, Action<bool> onDone)
         {

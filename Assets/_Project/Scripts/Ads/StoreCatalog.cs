@@ -35,13 +35,30 @@ namespace Buzzfield.Ads
         }
 
         [SerializeField] private List<StoreProduct> products = new List<StoreProduct>();
+        [Tooltip("Honey multiplier of permanent_2x_honey; stacks with the rewarded boost.")]
+        [SerializeField, Min(1f)] private float permanentHoneyMultiplier = 2f;
 
         [Header("Mock service (editor and dev builds)")]
         [SerializeField, Min(0f)] private float mockDelaySeconds = 1f;
         [SerializeField] private MockResult mockResult;
 
         public IReadOnlyList<StoreProduct> Products => products;
+        public float PermanentHoneyMultiplier => permanentHoneyMultiplier;
         public float MockDelaySeconds => mockDelaySeconds;
         public MockResult MockPurchaseResult => mockResult;
+
+        public bool TryGet(string id, out StoreProduct product)
+        {
+            for (int i = 0; i < products.Count; i++)
+            {
+                if (products[i].id == id)
+                {
+                    product = products[i];
+                    return true;
+                }
+            }
+            product = default;
+            return false;
+        }
     }
 }

@@ -39,6 +39,12 @@ namespace Buzzfield.Ads
 
         public bool IsShowing => service.IsShowing;
 
+        /// <summary>
+        /// The player bought remove_ads. The MVP has no forced placements; any added later
+        /// (interstitials) must check this. Rewarded ads ignore it and keep working.
+        /// </summary>
+        public bool ForcedAdsRemoved { get; set; }
+
         /// <summary>Consent is done and the SDK is up.</summary>
         public bool IsReady => consent.CanRequestAds && service.IsInitialized;
 
