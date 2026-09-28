@@ -19,15 +19,69 @@ MonoBehaviour:
       time: 1
       value: 1
       inSlope: 0
-      outSlope: 102.02041
+      outSlope: 3
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 2
+      value: 4
+      inSlope: 3
+      outSlope: 6
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 3
+      value: 10
+      inSlope: 6
+      outSlope: 10
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 4
+      value: 20
+      inSlope: 10
+      outSlope: 15
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 5
+      value: 35
+      inSlope: 15
+      outSlope: 23
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 10
+      value: 150
+      inSlope: 23
+      outSlope: 55
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 20
+      value: 700
+      inSlope: 55
+      outSlope: 176.66667
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
       time: 50
-      value: 5000
-      inSlope: 102.02041
+      value: 6000
+      inSlope: 176.66667
       outSlope: 0
       tangentMode: 0
       weightedMode: 0
@@ -36,6 +90,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  maxLevel: 50
   honeyBonusPerLevel: 0.1
   abilities:
   - {fileID: 11400000, guid: 4ccdda0788f04ea4ca194b0600377069, type: 2}
