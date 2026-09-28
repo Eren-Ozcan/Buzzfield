@@ -9,8 +9,8 @@ namespace Buzzfield.Core
     /// </summary>
     public static class SaveMigration
     {
-        /// <summary>1: first release layout (Phase 4).</summary>
-        public const int CurrentVersion = 1;
+        /// <summary>1: first release layout (Phase 4). 2: store entitlements.</summary>
+        public const int CurrentVersion = 2;
 
         /// <summary>
         /// Upgrades a loaded save in place; returns true when anything changed.
@@ -26,6 +26,12 @@ namespace Buzzfield.Core
 
             // Version 0: development saves written before saveVersion existed. JsonUtility
             // reads the missing field as 0; the layout is the same as version 1.
+
+            // Version 2 adds entitlements. Older saves predate the store, so nothing is
+            // owned; Normalize has already filled the empty object.
+            if (savedVersion < 2)
+                data.entitlements = new Entitlements();
+
             data.saveVersion = CurrentVersion;
             return true;
         }

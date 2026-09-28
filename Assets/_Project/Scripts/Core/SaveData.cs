@@ -84,6 +84,7 @@ namespace Buzzfield.Core
         public int[] abilityLevels;
         public double rewardedBoostEndUtc;
         public double lastFullScreenAdUtc;
+        public Entitlements entitlements = new Entitlements();
         public LifetimeStats stats = new LifetimeStats();
 
         // Offline earnings
@@ -100,6 +101,7 @@ namespace Buzzfield.Core
             slotNectar = slotNectar ?? Array.Empty<double>();
             abilityLevels = abilityLevels ?? Array.Empty<int>();
             stats = stats ?? new LifetimeStats();
+            entitlements = entitlements ?? new Entitlements();
         }
     }
 }
