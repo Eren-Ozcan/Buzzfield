@@ -29,3 +29,6 @@ MonoBehaviour:
   mergeFlashDuration: 0.4
   mergeFlashPrefab: {fileID: 8605738798363320783, guid: 857d2e3554c9cfb4eb4f92e2ecf175ed, type: 3}
   mergeFlashScale: 1.2
+  depositSparklePrefab: {fileID: 8676527292001949040, guid: 03849ba4683120e4cb4b595d3aba45fc, type: 3}
+  depositSparklePoolSize: 2
+  depositSparkleParticles: 4
