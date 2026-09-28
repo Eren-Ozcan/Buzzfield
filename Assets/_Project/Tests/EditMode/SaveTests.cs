@@ -213,6 +213,20 @@ namespace Buzzfield.Tests.EditMode
         }
 
         [Test]
+        public void Migration_VersionOne_AddsEmptyEntitlements()
+        {
+            // A version 1 save has no entitlements field.
+            SaveData data = JsonUtility.FromJson<SaveData>("{\"saveVersion\":1,\"gardenIndex\":3}");
+            data.entitlements = null;
+
+            Assert.That(SaveMigration.Upgrade(data, 1));
+            Assert.That(data.saveVersion, Is.EqualTo(SaveMigration.CurrentVersion));
+            Assert.That(data.entitlements, Is.Not.Null);
+            Assert.That(data.entitlements.removeAds || data.entitlements.permanentHoney2x || data.entitlements.starterPackBought, Is.False);
+            Assert.That(data.gardenIndex, Is.EqualTo(3));
+        }
+
+        [Test]
         public void Migration_CurrentVersion_ChangesNothing()
         {
             var data = new SaveData();
