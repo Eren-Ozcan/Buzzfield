@@ -13,7 +13,8 @@ namespace Buzzfield.Game
     /// <summary>
     /// Composition root: owns the init order, wires the managers together and drives
     /// the per-frame ticks in a fixed order (flowers regenerate before bees read them).
-    /// Saving, loading and offline earnings live in GameManager.Save.cs.
+    /// Saving, loading and offline earnings live in GameManager.Save.cs, rewarded ads in
+    /// GameManager.Ads.cs and the store in GameManager.Store.cs.
     /// </summary>
     public sealed partial class GameManager : MonoBehaviour
     {
@@ -26,6 +27,7 @@ namespace Buzzfield.Game
         [SerializeField] private BoostSettings boostSettings;
         [SerializeField] private OfflineSettings offlineSettings;
         [SerializeField] private AdSettings adSettings;
+        [SerializeField] private StoreCatalog storeCatalog;
         [SerializeField] private UpgradeDefinition addBeeUpgrade;
         [SerializeField] private UpgradeDefinition speedUpgrade;
         [SerializeField] private UpgradeDefinition honeyValueUpgrade;
@@ -40,6 +42,7 @@ namespace Buzzfield.Game
         [SerializeField] private WelcomeBackView welcomeBack;
         [SerializeField] private TapBoostView tapBoostView;
         [SerializeField] private RewardedBoostView rewardedBoostView;
+        [SerializeField] private ShopPanelView shopPanel;
         [SerializeField] private TapCatcher tapCatcher;
         [SerializeField] private BackButtonHandler backButton;
         [SerializeField] private CameraFitter cameraFitter;
@@ -51,6 +54,7 @@ namespace Buzzfield.Game
         private PrestigeManager prestige;
         private BoostManager boosts;
         private AdManager ads;
+        private StoreManager store;
         private GardenInstance garden;
 
         public EconomyManager Economy => economy;
@@ -61,6 +65,7 @@ namespace Buzzfield.Game
         public PrestigeManager Prestige => prestige;
         public BoostManager Boosts => boosts;
         public AdManager Ads => ads;
+        public StoreManager Store => store;
         public LifetimeStats Stats => stats;
 
         private void Awake()
@@ -84,6 +89,7 @@ namespace Buzzfield.Game
             tapBoostView.Init(boosts);
             tapCatcher.OnWorldTapped += HandleWorldTapped;
             InitAds();
+            InitStore();
 
             InitSave();
             SaveData data = saveManager.Load();
@@ -103,6 +109,7 @@ namespace Buzzfield.Game
             // Views hide their panels in Awake; the Welcome back panel may only open after that.
             StartSession(loadedClock);
             ads.Start();
+            store.Start();
         }
 
         private void Update()
@@ -115,6 +122,7 @@ namespace Buzzfield.Game
             beeManager.Tick(deltaTime);
             bloom.Tick(deltaTime);
             ads.Tick(Time.unscaledDeltaTime);
+            store.Tick(Time.unscaledDeltaTime);
             TickAutosave(Time.unscaledDeltaTime);
         }
 
@@ -135,6 +143,7 @@ namespace Buzzfield.Game
             if (tapCatcher != null)
                 tapCatcher.OnWorldTapped -= HandleWorldTapped;
             ads?.Dispose();
+            DisposeStore();
             DisposeSave();
         }
 
@@ -144,7 +153,7 @@ namespace Buzzfield.Game
         /// <summary>
         /// "Move the Queen" (design doc section 3b). Resets honey, upgrades, bees, the tap
         /// boost and the garden; keeps Royal Jelly, lifetime stats and the rewarded boost,
-        /// and loads the next garden. Returns false when the bloom gate or the honey cost is not met.
+        /// and loads the next garden. Store entitlements are not touched. Returns false when the bloom gate or the honey cost is not met.
         /// </summary>
         public bool TryMoveQueen()
         {

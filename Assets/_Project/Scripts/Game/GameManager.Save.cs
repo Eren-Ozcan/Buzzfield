@@ -88,7 +88,7 @@ namespace Buzzfield.Game
 
         /// <summary>
         /// Honey per second the current bees, upgrades and garden produce in theory: bee
-        /// trips limited by flower regrowth. Boosts are not included.
+        /// trips limited by flower regrowth. Timed boosts are not included; the bought multiplier is.
         /// </summary>
         public BigNumber TheoreticalHoneyPerSecond()
         {
@@ -124,7 +124,9 @@ namespace Buzzfield.Game
                 beeNectar += counts[t] * IncomeMath.BeeNectarPerSecond(tier.Capacity, tier.Speed * beeManager.SpeedMultiplier,
                     roundTrip, tier.CollectDuration, beeSettings.DepositDuration);
             }
-            return IncomeMath.HoneyPerSecond(beeNectar, regen, valueRegen / regen, economy.HoneyValueMultiplier);
+            // The bought multiplier is permanent, so it counts; timed boosts do not.
+            return IncomeMath.HoneyPerSecond(beeNectar, regen, valueRegen / regen,
+                economy.HoneyValueMultiplier * economy.PurchasedMultiplier);
         }
 
         private void TickAutosave(float unscaledDeltaTime)
@@ -248,6 +250,7 @@ namespace Buzzfield.Game
             data.abilityLevels = abilityLevels;
             data.rewardedBoostEndUtc = boosts.RewardedHoneyEndUtc;
             data.lastFullScreenAdUtc = ads.LastFullScreenAdUtc;
+            data.entitlements.CopyFrom(store.Entitlements);
             data.stats = stats;
             data.offlineRate = BigNumberData.From(TheoreticalHoneyPerSecond());
             data.clock = clock.Stamp();
@@ -261,6 +264,7 @@ namespace Buzzfield.Game
             stats = data.stats;
             abilityLevels = data.abilityLevels;
             ads.Restore(data.lastFullScreenAdUtc);
+            RestoreStore(data.entitlements);
             boosts.RestoreRewardedHoney(data.rewardedBoostEndUtc, GameClock.DeviceUtc);
 
             LoadGarden(data);
