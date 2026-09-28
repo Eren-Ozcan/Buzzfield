@@ -3,6 +3,7 @@
     "rootNamespace": "Buzzfield.UI",
     "references": [
         "Buzzfield.Core",
+        "Buzzfield.Ads",
         "Buzzfield.Economy",
         "Buzzfield.Bees",
         "Buzzfield.Flowers",

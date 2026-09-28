@@ -54,6 +54,25 @@ namespace Buzzfield.Core
         public const string TapBoostReady = "Tap!";
         public const string TapBoostActiveFormat = "x{0}";
 
+        public const string ShopButton = "Shop";
+        public const string ShopTitle = "Shop";
+        public const string ProductRemoveAds = "Remove Ads";
+        public const string ProductRemoveAdsBody = "No forced ads.\nRewarded ads stay available.";
+        public const string ProductHoney2x = "Double Honey";
+        public const string ProductHoney2xBodyFormat = "x{0} honey forever.\nStacks with ad boosts.";
+        public const string ProductStarterPack = "Starter Pack";
+        public const string ProductStarterPackBodyFormat = "+{0} honey, +{1} Royal Jelly.\nOne time only.";
+        public const string Owned = "Owned";
+        public const string StoreBusy = "...";
+        public const string StoreUnavailable = "Unavailable";
+        public const string StoreConnecting = "Connecting to the store...";
+        public const string PurchaseThanks = "Thank you!";
+        public const string PurchaseCancelled = "Purchase cancelled.";
+        public const string PurchaseFailed = "Purchase failed. Please try again.";
+        public const string RestorePurchases = "Restore Purchases";
+        public const string RestoreDone = "Purchases restored.";
+        public const string RestoreNothing = "Nothing to restore.";
+
         public const string QuitTitle = "Quit the game?";
         public const string QuitBody = "Your progress is saved.";
         public const string Quit = "Quit";
