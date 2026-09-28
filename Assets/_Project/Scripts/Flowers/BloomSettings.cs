@@ -23,6 +23,10 @@ namespace Buzzfield.Flowers
         [SerializeField, Range(0, 4)] private int sproutsPerBloom = 2;
         [SerializeField, Min(0.05f)] private float sproutGrowDuration = 0.8f;
 
+        [Header("Bee Targeting")]
+        [Tooltip("Extra distance (world units) a bee counts for an already bloomed flower, so free unbloomed flowers win unless they are this much farther.")]
+        [SerializeField, Min(0f)] private float bloomedTargetPenalty = 10f;
+
         [Header("Ground")]
         [SerializeField] private Color groundGrey = new Color(0.56f, 0.56f, 0.53f);
         [SerializeField] private Color groundGreen = new Color(0.38f, 0.68f, 0.3f);
@@ -42,6 +46,7 @@ namespace Buzzfield.Flowers
         public int BurstPoolSize => burstPoolSize;
         public int SproutsPerBloom => sproutsPerBloom;
         public float SproutGrowDuration => sproutGrowDuration;
+        public float BloomedTargetPenalty => bloomedTargetPenalty;
         public Color GroundGrey => groundGrey;
         public Color GroundGreen => groundGreen;
         public float GardenWideGreen => gardenWideGreen;

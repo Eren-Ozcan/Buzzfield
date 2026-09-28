@@ -83,8 +83,17 @@ namespace Buzzfield.Flowers
             }
         }
 
-        /// <summary>Nearest flower a bee may fly to, or null. Does not reserve it.</summary>
-        public Flower FindNearestAvailable(Vector3 from)
+        /// <summary>
+        /// Extra distance counted for an already bloomed flower, so bees spread the bloom
+        /// outward instead of feeding on the flowers nearest the hive forever.
+        /// </summary>
+        public float BloomedTargetPenalty { get; set; }
+
+        /// <summary>
+        /// Nearest flower a bee may fly to, with bloomed flowers pushed back by
+        /// <see cref="BloomedTargetPenalty"/>; null if none is free. Does not reserve it.
+        /// </summary>
+        public Flower FindTarget(Vector3 from)
         {
             Flower best = null;
             float bestDistance = float.MaxValue;
@@ -93,7 +102,9 @@ namespace Buzzfield.Flowers
                 Flower flower = flowers[i];
                 if (!flower.IsAvailable)
                     continue;
-                float distance = (flower.NectarPoint - from).sqrMagnitude;
+                float distance = (flower.NectarPoint - from).magnitude;
+                if (flower.IsBloomed)
+                    distance += BloomedTargetPenalty;
                 if (distance < bestDistance)
                 {
                     bestDistance = distance;

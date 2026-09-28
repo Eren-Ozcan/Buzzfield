@@ -87,6 +87,7 @@ namespace Buzzfield.Game
                 buttonFeedbacks[i].Init(tweener, feedbackSettings);
 
             economy = new EconomyManager(economySettings, Time.timeAsDouble);
+            flowerManager.BloomedTargetPenalty = bloomSettings.BloomedTargetPenalty;
             beeManager.Init(beeSettings, flowerManager);
             beeManager.OnNectarDeposited += HandleNectarDeposited;
             beeManager.OnBeeEvolved += HandleBeeEvolved;

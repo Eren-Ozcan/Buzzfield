@@ -367,7 +367,7 @@ namespace Buzzfield.Bees
 
         private bool TryTarget(Bee bee)
         {
-            Flower flower = flowers.FindNearestAvailable(bee.Position);
+            Flower flower = flowers.FindTarget(bee.Position);
             if (flower == null)
                 return false;
             flowers.Reserve(flower);
