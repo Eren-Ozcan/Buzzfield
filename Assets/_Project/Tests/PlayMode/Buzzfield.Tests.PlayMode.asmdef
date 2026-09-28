@@ -3,6 +3,7 @@
     "rootNamespace": "Buzzfield.Tests.PlayMode",
     "references": [
         "Buzzfield.Core",
+        "Buzzfield.Core.Runtime",
         "Buzzfield.Ads",
         "Buzzfield.Flowers",
         "Buzzfield.Bees",
