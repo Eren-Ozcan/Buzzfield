@@ -46,6 +46,9 @@ namespace Buzzfield.Economy
         /// <summary>Raised after a move has been committed: the jelly gained.</summary>
         public event Action<BigNumber> OnQueenMoved;
 
+        /// <summary>Raised whenever Royal Jelly or lifetime jelly changes (moves, grants, spending, loading).</summary>
+        public event Action OnJellyChanged;
+
         public bool IsUnlocked(float bloom) => PrestigeMath.IsUnlocked(bloom, settings.MoveUnlockBloom);
 
         public bool CanMove(float bloom, BigNumber honey) => IsUnlocked(bloom) && honey >= MoveCost;
@@ -64,6 +67,7 @@ namespace Buzzfield.Economy
             LifetimeJelly = BigNumber.Max(lifetimeJelly, RoyalJelly);
             GardenIndex = Math.Max(0, gardenIndex);
             MovesMade = Math.Max(0, movesMade);
+            OnJellyChanged?.Invoke();
         }
 
         /// <summary>Adds Royal Jelly from outside a move (store grants). It counts as earned jelly.</summary>
@@ -73,6 +77,17 @@ namespace Buzzfield.Economy
                 return;
             RoyalJelly += jelly;
             LifetimeJelly += jelly;
+            OnJellyChanged?.Invoke();
+        }
+
+        /// <summary>Spends Royal Jelly (Queen abilities). Lifetime jelly, the Queen XP, is not reduced.</summary>
+        public bool TrySpendJelly(BigNumber cost)
+        {
+            if (cost.IsNegative || RoyalJelly < cost)
+                return false;
+            RoyalJelly -= cost;
+            OnJellyChanged?.Invoke();
+            return true;
         }
 
         /// <summary>Credits the jelly and advances to the next garden. The caller resets the run.</summary>
@@ -85,6 +100,7 @@ namespace Buzzfield.Economy
             }
             GardenIndex++;
             MovesMade++;
+            OnJellyChanged?.Invoke();
             OnQueenMoved?.Invoke(jelly);
         }
     }

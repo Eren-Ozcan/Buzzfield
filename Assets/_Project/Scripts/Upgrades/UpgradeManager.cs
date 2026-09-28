@@ -38,6 +38,22 @@ namespace Buzzfield.Upgrades
         /// <summary>Flight speed factor from the Speed upgrade.</summary>
         public float SpeedMultiplier { get; private set; } = 1f;
 
+        /// <summary>
+        /// Flight speed factor from Queen abilities. Survives the Queen move; the bees fly at
+        /// this times <see cref="SpeedMultiplier"/>.
+        /// </summary>
+        public float QueenSpeedMultiplier
+        {
+            get => queenSpeedMultiplier;
+            set
+            {
+                queenSpeedMultiplier = value;
+                ApplyEffects();
+            }
+        }
+
+        private float queenSpeedMultiplier = 1f;
+
         /// <summary>Raised after any purchase or reset.</summary>
         public event Action OnUpgradesChanged;
 
@@ -149,7 +165,7 @@ namespace Buzzfield.Upgrades
         private void ApplyEffects()
         {
             SpeedMultiplier = (float)UpgradeMath.Compound(speed.EffectPerLevel, SpeedLevel);
-            bees.SpeedMultiplier = SpeedMultiplier;
+            bees.SpeedMultiplier = SpeedMultiplier * queenSpeedMultiplier;
             economy.HoneyValueMultiplier = UpgradeMath.CompoundBig(honeyValue.EffectPerLevel, HoneyValueLevel);
         }
     }

@@ -27,8 +27,14 @@ namespace Buzzfield.Economy
         /// <summary>Honey earned from deposits over all runs; survives the Queen move.</summary>
         public BigNumber LifetimeHoneyEarned { get; private set; }
 
-        /// <summary>Permanent honey per nectar multiplier (Honey Value upgrade, Queen level).</summary>
+        /// <summary>Permanent honey per nectar multiplier from the Honey Value upgrade; resets with the run.</summary>
         public BigNumber HoneyValueMultiplier { get; set; } = BigNumber.One;
+
+        /// <summary>Permanent multiplier from the Queen level; survives the Queen move.</summary>
+        public double QueenMultiplier { get; set; } = 1;
+
+        /// <summary>Every permanent multiplier on top of <see cref="HoneyValueMultiplier"/> (Queen level, store).</summary>
+        public double PermanentMultiplier => QueenMultiplier * PurchasedMultiplier;
 
         /// <summary>Product of the timed boosts active right now.</summary>
         public double BoostMultiplier { get; set; } = 1;
@@ -41,7 +47,7 @@ namespace Buzzfield.Economy
         /// <summary>Turns deposited nectar into honey and returns the amount added.</summary>
         public BigNumber Deposit(double nectar, double flowerValue, double now)
         {
-            BigNumber honey = HoneyFormula.Honey(nectar, flowerValue, HoneyValueMultiplier, BoostMultiplier * PurchasedMultiplier);
+            BigNumber honey = HoneyFormula.Honey(nectar, flowerValue, HoneyValueMultiplier, BoostMultiplier * PermanentMultiplier);
             if (honey.IsZero)
                 return honey;
             honeyRate.Add(now, honey);

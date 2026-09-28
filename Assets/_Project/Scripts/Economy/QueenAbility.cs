@@ -11,6 +11,15 @@ namespace Buzzfield.Economy
         BloomPerVisitPercent,
     }
 
+    /// <summary>Ids of the authored abilities; saves and display names key on these.</summary>
+    public static class QueenAbilityIds
+    {
+        public const string RoyalBrood = "RoyalBrood";
+        public const string RoyalWings = "RoyalWings";
+        public const string SweetMemory = "SweetMemory";
+        public const string PollenTouch = "PollenTouch";
+    }
+
     /// <summary>One permanent Queen ability bought with Royal Jelly.</summary>
     [CreateAssetMenu(menuName = "Buzzfield/Queen Ability", fileName = "QueenAbility")]
     public sealed class QueenAbility : ScriptableObject
