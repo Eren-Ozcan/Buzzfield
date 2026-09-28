@@ -15,7 +15,7 @@ namespace Buzzfield.Game
             // The mock stands in until Unity IAP is added.
             store = new StoreManager(new MockStoreService(storeCatalog), storeCatalog);
             store.OnProductGranted += HandleProductGranted;
-            shopPanel.Init(store);
+            shopPanel.Init(store, tweener, feedbackSettings);
             ApplyEntitlements();
         }
 

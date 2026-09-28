@@ -6,6 +6,7 @@ using Buzzfield.Flowers;
 using Buzzfield.Save;
 using Buzzfield.UI;
 using Buzzfield.Upgrades;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Buzzfield.Game
@@ -18,6 +19,11 @@ namespace Buzzfield.Game
     /// </summary>
     public sealed partial class GameManager : MonoBehaviour
     {
+        /// <summary>Profiler sample around every per-frame tick; the performance test reads it.</summary>
+        public const string TickMarkerName = "Buzzfield.GameTick";
+
+        private static readonly ProfilerMarker TickMarker = new ProfilerMarker(TickMarkerName);
+
         [Header("Data")]
         [SerializeField] private GameSettings gameSettings;
         [SerializeField] private EconomySettings economySettings;
@@ -28,6 +34,7 @@ namespace Buzzfield.Game
         [SerializeField] private OfflineSettings offlineSettings;
         [SerializeField] private AdSettings adSettings;
         [SerializeField] private StoreCatalog storeCatalog;
+        [SerializeField] private UiFeedbackSettings feedbackSettings;
         [SerializeField] private UpgradeDefinition addBeeUpgrade;
         [SerializeField] private UpgradeDefinition speedUpgrade;
         [SerializeField] private UpgradeDefinition honeyValueUpgrade;
@@ -45,6 +52,8 @@ namespace Buzzfield.Game
         [SerializeField] private ShopPanelView shopPanel;
         [SerializeField] private TapCatcher tapCatcher;
         [SerializeField] private BackButtonHandler backButton;
+        [Tooltip("Press feel on every button; initialised here with the shared tweener.")]
+        [SerializeField] private ButtonFeedback[] buttonFeedbacks;
         [SerializeField] private CameraFitter cameraFitter;
         [SerializeField] private Transform worldRoot;
 
@@ -56,6 +65,7 @@ namespace Buzzfield.Game
         private AdManager ads;
         private StoreManager store;
         private GardenInstance garden;
+        private Tweener tweener;
 
         public EconomyManager Economy => economy;
         public UpgradeManager Upgrades => upgrades;
@@ -72,19 +82,23 @@ namespace Buzzfield.Game
         {
             Application.targetFrameRate = gameSettings.TargetFrameRate;
 
+            tweener = new Tweener(feedbackSettings.TweenCapacity);
+            for (int i = 0; i < buttonFeedbacks.Length; i++)
+                buttonFeedbacks[i].Init(tweener, feedbackSettings);
+
             economy = new EconomyManager(economySettings, Time.timeAsDouble);
             beeManager.Init(beeSettings, flowerManager);
             beeManager.OnNectarDeposited += HandleNectarDeposited;
             beeManager.OnBeeEvolved += HandleBeeEvolved;
             upgrades = new UpgradeManager(addBeeUpgrade, speedUpgrade, honeyValueUpgrade, beeSettings, economy, beeManager);
-            hud.Init(economy, economySettings);
+            hud.Init(economy, economySettings, tweener, feedbackSettings);
             bottomBar.Init(upgrades, economy, beeManager, beeSettings);
-            bloom = new GardenBloomManager(bloomSettings, flowerManager);
+            bloom = new GardenBloomManager(bloomSettings, flowerManager, worldRoot);
             bloom.OnBloomChanged += HandleBloomChanged;
             bloom.OnFlowerBloomed += HandleFlowerBloomed;
             bloom.OnGardenCompleted += HandleGardenCompleted;
             prestige = new PrestigeManager(prestigeSettings);
-            queenPanel.Init(prestige, economy, bloom, TryMoveQueen);
+            queenPanel.Init(prestige, economy, bloom, TryMoveQueen, tweener, feedbackSettings);
             boosts = new BoostManager(boostSettings, economy);
             tapBoostView.Init(boosts);
             tapCatcher.OnWorldTapped += HandleWorldTapped;
@@ -114,6 +128,7 @@ namespace Buzzfield.Game
 
         private void Update()
         {
+            using ProfilerMarker.AutoScope tick = TickMarker.Auto();
             float deltaTime = Time.deltaTime;
             double now = Time.timeAsDouble;
             boosts.Tick(GameClock.DeviceUtc);
@@ -124,6 +139,7 @@ namespace Buzzfield.Game
             ads.Tick(Time.unscaledDeltaTime);
             store.Tick(Time.unscaledDeltaTime);
             TickAutosave(Time.unscaledDeltaTime);
+            tweener.Tick(Time.unscaledDeltaTime);
         }
 
         private void OnDestroy()
