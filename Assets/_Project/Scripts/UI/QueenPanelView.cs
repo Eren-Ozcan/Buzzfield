@@ -12,7 +12,7 @@ namespace Buzzfield.UI
     /// Queen button in the top bar and the Queen panel behind it: Royal Jelly, the "Move the
     /// Queen" gate, cost and jelly preview, and the confirm dialog. Events only mark it dirty;
     /// the button badge is re-checked once per frame at most, the open panel's texts on a
-    /// slow timer because honey changes with every deposit.
+    /// slow timer because honey changes with every deposit. The badge pops in when it appears.
     /// </summary>
     public sealed class QueenPanelView : MonoBehaviour
     {
@@ -47,6 +47,8 @@ namespace Buzzfield.UI
         private EconomyManager economy;
         private GardenBloomManager bloom;
         private Func<bool> moveQueen;
+        private Tweener tweener;
+        private UiFeedbackSettings feedback;
         private bool dirty;
         private float refreshTimer;
         private bool shownReady;
@@ -54,13 +56,16 @@ namespace Buzzfield.UI
         public bool IsOpen => panel.activeSelf;
         public bool IsConfirming => confirm.activeSelf;
 
-        public void Init(PrestigeManager prestigeManager, EconomyManager economyManager, GardenBloomManager bloomManager, Func<bool> onMove)
+        public void Init(PrestigeManager prestigeManager, EconomyManager economyManager, GardenBloomManager bloomManager,
+            Func<bool> onMove, Tweener tweenRunner, UiFeedbackSettings feedbackSettings)
         {
             Unsubscribe();
             prestige = prestigeManager;
             economy = economyManager;
             bloom = bloomManager;
             moveQueen = onMove;
+            tweener = tweenRunner;
+            feedback = feedbackSettings;
 
             economy.OnHoneyChanged += HandleHoneyChanged;
             bloom.OnBloomChanged += MarkDirty;
@@ -124,6 +129,8 @@ namespace Buzzfield.UI
                 {
                     shownReady = ready;
                     readyBadge.SetActive(ready);
+                    if (ready)
+                        tweener.PopIn(readyBadge.transform, feedback.BadgePop, feedback.BadgePopDuration);
                 }
             }
             if (!panel.activeSelf)

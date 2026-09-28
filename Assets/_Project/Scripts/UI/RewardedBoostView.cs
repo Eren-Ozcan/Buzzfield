@@ -24,6 +24,13 @@ namespace Buzzfield.UI
         private Func<double> utcNow;
         private Func<bool> canWatchAd;
         private Func<bool> watchAd;
+        private static readonly string[] DurationFormats =
+        {
+            Strings.HoursMinutesFormat, Strings.HoursFormat, Strings.MinutesSecondsFormat, Strings.MinutesFormat, Strings.SecondsFormat,
+        };
+
+        /// <summary>The active label per duration format, built once so the countdown allocates nothing.</summary>
+        private readonly string[] activeFormats = new string[DurationFormats.Length];
         private string offerText;
         private string multiplierText;
         private long shownSecondsLeft = -1;
@@ -50,6 +57,8 @@ namespace Buzzfield.UI
             multiplierText = boosts.RewardedHoneyMultiplier.ToString("0.#");
             offerText = string.Format(Strings.RewardedBoostOfferFormat, multiplierText,
                 TimeFormat.Duration(boosts.RewardedDurationSeconds));
+            for (int i = 0; i < DurationFormats.Length; i++)
+                activeFormats[i] = string.Format(Strings.RewardedBoostActiveFormat, multiplierText, DurationFormats[i]);
             shownSecondsLeft = -1;
             shownInteractable = null;
         }
@@ -72,7 +81,8 @@ namespace Buzzfield.UI
             shownSecondsLeft = secondsLeft;
             if (secondsLeft > 0)
             {
-                label.text = string.Format(Strings.RewardedBoostActiveFormat, multiplierText, TimeFormat.Duration(secondsLeft));
+                string duration = TimeFormat.Split(secondsLeft, out long first, out long second);
+                label.SetText(ActiveFormat(duration), first, second);
                 if (!wasActive)
                     background.color = activeColor;
             }
@@ -81,6 +91,16 @@ namespace Buzzfield.UI
                 label.text = offerText;
                 background.color = offerColor;
             }
+        }
+
+        private string ActiveFormat(string durationFormat)
+        {
+            for (int i = 0; i < DurationFormats.Length; i++)
+            {
+                if (ReferenceEquals(DurationFormats[i], durationFormat))
+                    return activeFormats[i];
+            }
+            return durationFormat;
         }
 
         private void HandleClick()

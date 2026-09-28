@@ -10,11 +10,15 @@ namespace Buzzfield.UI
     /// Shop button in the top bar and the shop panel behind it: one row per product, a
     /// restore button and a status line for the last purchase or restore. Store events only
     /// mark it dirty; the rows are refreshed at most once per frame while the panel is open.
+    /// A badge on the shop button pops in once the store is ready with something to buy, and
+    /// goes away for the rest of the session when the shop is opened.
     /// </summary>
     public sealed class ShopPanelView : MonoBehaviour
     {
         [Header("Top bar")]
         [SerializeField] private Button openButton;
+        [Tooltip("Shown on the shop button until the shop is opened this session.")]
+        [SerializeField] private GameObject newBadge;
 
         [Header("Panel")]
         [SerializeField] private GameObject panel;
@@ -24,14 +28,20 @@ namespace Buzzfield.UI
         [SerializeField] private Button restoreButton;
 
         private StoreManager store;
+        private Tweener tweener;
+        private UiFeedbackSettings feedback;
         private bool dirty;
+        private bool badgeDirty;
+        private bool openedThisSession;
 
         public bool IsOpen => panel.activeSelf;
 
-        public void Init(StoreManager storeManager)
+        public void Init(StoreManager storeManager, Tweener tweenRunner, UiFeedbackSettings feedbackSettings)
         {
             Unsubscribe();
             store = storeManager;
+            tweener = tweenRunner;
+            feedback = feedbackSettings;
             store.OnChanged += MarkDirty;
             store.OnPurchaseFinished += HandlePurchaseFinished;
             store.OnRestoreFinished += HandleRestoreFinished;
@@ -47,11 +57,14 @@ namespace Buzzfield.UI
                 item.Init(Title(item.ProductId), Body(item.ProductId, catalog), Buy);
             }
             panel.SetActive(false);
+            newBadge.SetActive(false);
             MarkDirty();
         }
 
         public void Open()
         {
+            openedThisSession = true;
+            newBadge.SetActive(false);
             panel.SetActive(true);
             statusText.text = store.IsReady ? string.Empty : Strings.StoreConnecting;
             Refresh();
@@ -61,9 +74,12 @@ namespace Buzzfield.UI
 
         private void LateUpdate()
         {
-            if (store == null || !dirty || !panel.activeSelf)
+            if (store == null)
                 return;
-            Refresh();
+            if (badgeDirty)
+                RefreshBadge();
+            if (dirty && panel.activeSelf)
+                Refresh();
         }
 
         private void OnDestroy()
@@ -116,7 +132,32 @@ namespace Buzzfield.UI
             MarkDirty();
         }
 
-        private void MarkDirty() => dirty = true;
+        private void MarkDirty()
+        {
+            dirty = true;
+            badgeDirty = true;
+        }
+
+        private void RefreshBadge()
+        {
+            badgeDirty = false;
+            bool show = !openedThisSession && store.IsReady && AnyBuyable();
+            if (show == newBadge.activeSelf)
+                return;
+            newBadge.SetActive(show);
+            if (show)
+                tweener.PopIn(newBadge.transform, feedback.BadgePop, feedback.BadgePopDuration);
+        }
+
+        private bool AnyBuyable()
+        {
+            for (int i = 0; i < items.Length; i++)
+            {
+                if (store.GetState(items[i].ProductId) == ShopItemState.Buyable)
+                    return true;
+            }
+            return false;
+        }
 
         private static string Title(string productId)
         {
