@@ -87,7 +87,7 @@ namespace Buzzfield.Editor
             AssetDatabase.CreateFolder(parent, Path.GetFileName(folder));
         }
 
-        /// <summary>Writes serialized fields by name; values are float, int, double, bool, string, Color, Vector2, Vector2Int, enums or Objects.</summary>
+        /// <summary>Writes serialized fields by name; values are float, int, double, bool, string, Color, Vector2, Vector2Int, AnimationCurve, enums or Objects.</summary>
         public static void Set(Object target, params (string field, object value)[] values)
         {
             var so = new SerializedObject(target);
@@ -156,6 +156,7 @@ namespace Buzzfield.Editor
                 case Color c: property.colorValue = c; break;
                 case Vector2 v: property.vector2Value = v; break;
                 case Vector2Int v: property.vector2IntValue = v; break;
+                case AnimationCurve curve: property.animationCurveValue = curve; break;
                 case Enum e: property.enumValueIndex = Convert.ToInt32(e); break;
                 case Object[] array:
                     property.arraySize = array.Length;

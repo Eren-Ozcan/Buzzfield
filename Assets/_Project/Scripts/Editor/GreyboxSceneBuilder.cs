@@ -56,10 +56,11 @@ namespace Buzzfield.Editor
             var adSettings = Load<AdSettings>("Settings/AdSettings");
             var storeCatalog = Load<StoreCatalog>("Settings/StoreCatalog");
             var feedbackSettings = Load<UiFeedbackSettings>("Settings/UiFeedbackSettings");
+            var queenSettings = Load<QueenSettings>("Settings/QueenSettings");
             if (gameSettings == null || economySettings == null || beeSettings == null || prestigeSettings == null
                 || bloomSettings == null || addBee == null || speed == null || honeyValue == null
                 || boostSettings == null || offlineSettings == null || adSettings == null || storeCatalog == null
-                || feedbackSettings == null)
+                || feedbackSettings == null || queenSettings == null)
             {
                 Debug.LogError("Default data is missing. Run Buzzfield > Create Default Data first.");
                 return;
@@ -72,7 +73,7 @@ namespace Buzzfield.Editor
             var systems = new GameObject("Systems");
             var flowerManager = systems.AddComponent<FlowerManager>();
             var beeManager = systems.AddComponent<BeeManager>();
-            CanvasViews ui = CreateCanvas();
+            CanvasViews ui = CreateCanvas(queenSettings.Abilities.Count);
             new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
 
             var game = systems.AddComponent<GameManager>();
@@ -80,7 +81,7 @@ namespace Buzzfield.Editor
                 ("gameSettings", gameSettings), ("economySettings", economySettings),
                 ("beeSettings", beeSettings), ("bloomSettings", bloomSettings), ("prestigeSettings", prestigeSettings),
                 ("boostSettings", boostSettings), ("offlineSettings", offlineSettings), ("adSettings", adSettings), ("storeCatalog", storeCatalog),
-                ("feedbackSettings", feedbackSettings),
+                ("feedbackSettings", feedbackSettings), ("queenSettings", queenSettings),
                 ("addBeeUpgrade", addBee), ("speedUpgrade", speed), ("honeyValueUpgrade", honeyValue),
                 ("flowerManager", flowerManager), ("beeManager", beeManager),
                 ("hud", ui.Hud), ("bottomBar", ui.BottomBar), ("gardenComplete", ui.GardenComplete), ("queenPanel", ui.QueenPanel),
@@ -143,7 +144,8 @@ namespace Buzzfield.Editor
             public ButtonFeedback[] ButtonFeedbacks;
         }
 
-        static CanvasViews CreateCanvas()
+        /// <param name="abilityCount">Queen ability rows to build, one per ability in QueenSettings.</param>
+        static CanvasViews CreateCanvas(int abilityCount)
         {
             var canvasObject = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasObject.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
@@ -192,7 +194,7 @@ namespace Buzzfield.Editor
             TapBoostView tapBoost = CreateTapBoost(root);
             RewardedBoostView rewardedBoost = CreateRewardedBoost(root);
             // Modals last so they draw over the HUD and the bottom bar; the quit dialog on top.
-            QueenPanelView queenPanel = CreateQueenPanel(root, queenButton, readyBadge);
+            QueenPanelView queenPanel = CreateQueenPanel(root, queenButton, readyBadge, abilityCount);
             ShopPanelView shopPanel = CreateShopPanel(root, shopButton, shopBadge);
             WelcomeBackView welcomeBack = CreateWelcomeBack(root);
             BackButtonHandler backButton = CreateQuitDialog(root, queenPanel, welcomeBack, shopPanel);
@@ -460,27 +462,42 @@ namespace Buzzfield.Editor
             return view;
         }
 
-        /// <summary>Modal Queen panel plus its confirm dialog; both start hidden.</summary>
-        static QueenPanelView CreateQueenPanel(Transform root, Button openButton, GameObject readyBadge)
+        const float AbilityRowHeight = 138f;
+        const float AbilityRowSpacing = 12f;
+        const float AbilityListHeight = 4 * AbilityRowHeight + 3 * AbilityRowSpacing;
+
+        /// <summary>
+        /// Modal Queen panel plus its confirm dialog; both start hidden. Top: Queen level and
+        /// Royal Jelly. Middle: one row per ability in a list that scrolls once there are more
+        /// than four. Bottom: the "Move the Queen" gate, preview and button. 1560 px tall so
+        /// it still fits a 4:3 tablet at the reference scaling.
+        /// </summary>
+        static QueenPanelView CreateQueenPanel(Transform root, Button openButton, GameObject readyBadge, int abilityCount)
         {
-            RectTransform panel = CreateModal("QueenPanel", root, new Vector2(900f, 1180f), new Color(0.2f, 0.14f, 0.3f, 0.97f), out RectTransform window);
+            RectTransform panel = CreateModal("QueenPanel", root, new Vector2(960f, 1560f), new Color(0.2f, 0.14f, 0.3f, 0.97f), out RectTransform window);
 
             var titleColor = new Color(1f, 0.9f, 0.55f);
-            TMP_Text title = CreateText("Title", window, new Vector2(0f, -40f), 110f, 80f, FontStyles.Bold, titleColor);
+            TMP_Text title = CreateText("Title", window, new Vector2(0f, -24f), 90f, 70f, FontStyles.Bold, titleColor);
             title.text = Strings.QueenTitle;
-            TMP_Text jelly = CreateText("JellyText", window, new Vector2(0f, -170f), 80f, 56f, FontStyles.Bold, Color.white);
-            TMP_Text garden = CreateText("GardenText", window, new Vector2(0f, -260f), 64f, 44f, FontStyles.Normal, Color.white);
+            TMP_Text level = CreateText("LevelText", window, new Vector2(0f, -120f), 64f, 48f, FontStyles.Bold, new Color(0.85f, 0.7f, 1f));
+            TMP_Text nextLevel = CreateText("NextLevelText", window, new Vector2(0f, -186f), 46f, 32f, FontStyles.Italic, new Color(0.85f, 0.8f, 0.9f));
+            TMP_Text jelly = CreateText("JellyText", window, new Vector2(0f, -240f), 60f, 44f, FontStyles.Bold, Color.white);
 
-            TMP_Text moveTitle = CreateText("MoveTitle", window, new Vector2(0f, -380f), 80f, 60f, FontStyles.Bold, titleColor);
+            TMP_Text abilitiesTitle = CreateText("AbilitiesTitle", window, new Vector2(0f, -305f), 50f, 36f, FontStyles.Bold, titleColor);
+            abilitiesTitle.text = Strings.AbilitiesTitle;
+            QueenAbilityRowView[] rows = CreateAbilityList(window, new Vector2(0f, -360f), abilityCount);
+
+            TMP_Text moveTitle = CreateText("MoveTitle", window, new Vector2(0f, -975f), 64f, 50f, FontStyles.Bold, titleColor);
             moveTitle.text = Strings.MoveTheQueen;
-            TMP_Text requirement = CreateText("RequirementText", window, new Vector2(0f, -470f), 60f, 42f, FontStyles.Normal, Color.white);
-            TMP_Text cost = CreateText("CostText", window, new Vector2(0f, -540f), 60f, 42f, FontStyles.Normal, Color.white);
-            TMP_Text preview = CreateText("PreviewText", window, new Vector2(0f, -630f), 90f, 68f, FontStyles.Bold, new Color(0.75f, 0.95f, 0.5f));
-            TMP_Text bonus = CreateText("BonusText", window, new Vector2(0f, -730f), 60f, 40f, FontStyles.Normal, Color.white);
+            TMP_Text garden = CreateText("GardenText", window, new Vector2(0f, -1040f), 44f, 34f, FontStyles.Normal, Color.white);
+            TMP_Text requirement = CreateText("RequirementText", window, new Vector2(0f, -1085f), 44f, 34f, FontStyles.Normal, Color.white);
+            TMP_Text cost = CreateText("CostText", window, new Vector2(0f, -1130f), 44f, 34f, FontStyles.Normal, Color.white);
+            TMP_Text preview = CreateText("PreviewText", window, new Vector2(0f, -1180f), 74f, 58f, FontStyles.Bold, new Color(0.75f, 0.95f, 0.5f));
+            TMP_Text bonus = CreateText("BonusText", window, new Vector2(0f, -1256f), 44f, 32f, FontStyles.Normal, Color.white);
 
-            (Button move, Image moveImage, TMP_Text moveLabel) = CreateButton("MoveButton", window, new Vector2(0f, -830f), new Vector2(620f, 160f), new Color(0.98f, 0.76f, 0.2f));
+            (Button move, Image moveImage, TMP_Text moveLabel) = CreateButton("MoveButton", window, new Vector2(0f, -1305f), new Vector2(600f, 130f), new Color(0.98f, 0.76f, 0.2f));
             moveLabel.text = Strings.MoveTheQueen;
-            (Button close, _, TMP_Text closeLabel) = CreateButton("CloseButton", window, new Vector2(0f, -1020f), new Vector2(360f, 120f), new Color(0.5f, 0.46f, 0.55f));
+            (Button close, _, TMP_Text closeLabel) = CreateButton("CloseButton", window, new Vector2(0f, -1450f), new Vector2(320f, 96f), new Color(0.5f, 0.46f, 0.55f));
             closeLabel.text = Strings.Close;
 
             RectTransform confirm = CreateModal("Confirm", panel, new Vector2(820f, 600f), new Color(0.26f, 0.18f, 0.36f, 1f), out RectTransform confirmWindow);
@@ -498,12 +515,92 @@ namespace Buzzfield.Editor
             EditorAssets.Set(view,
                 ("openButton", openButton), ("readyBadge", readyBadge),
                 ("panel", panel.gameObject), ("closeButton", close),
+                ("levelText", level), ("nextLevelText", nextLevel), ("abilityRows", rows),
                 ("jellyText", jelly), ("gardenText", garden), ("requirementText", requirement),
                 ("costText", cost), ("previewText", preview), ("bonusText", bonus),
                 ("moveButton", move), ("moveButtonImage", moveImage),
                 ("confirm", confirm.gameObject), ("confirmBodyText", confirmBody),
                 ("confirmButton", confirmButton), ("cancelButton", cancelButton));
             panel.gameObject.SetActive(false);
+            return view;
+        }
+
+        /// <summary>Vertical list of ability rows in a scroll view; it only scrolls when the rows outgrow it.</summary>
+        static QueenAbilityRowView[] CreateAbilityList(Transform window, Vector2 position, int abilityCount)
+        {
+            RectTransform viewport = CreateRect("Abilities", window);
+            viewport.anchorMin = new Vector2(0f, 1f);
+            viewport.anchorMax = new Vector2(1f, 1f);
+            viewport.pivot = new Vector2(0.5f, 1f);
+            viewport.sizeDelta = new Vector2(-60f, AbilityListHeight);
+            viewport.anchoredPosition = position;
+            viewport.gameObject.AddComponent<RectMask2D>();
+            // A clear graphic so drags between rows still reach the scroll view.
+            viewport.gameObject.AddComponent<Image>().color = Color.clear;
+
+            RectTransform content = CreateRect("Content", viewport);
+            content.anchorMin = new Vector2(0f, 1f);
+            content.anchorMax = new Vector2(1f, 1f);
+            content.pivot = new Vector2(0.5f, 1f);
+            content.sizeDelta = Vector2.zero;
+            content.anchoredPosition = Vector2.zero;
+            var layout = content.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.spacing = AbilityRowSpacing;
+            layout.childControlWidth = true;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var scroll = viewport.gameObject.AddComponent<ScrollRect>();
+            scroll.content = content;
+            scroll.viewport = viewport;
+            scroll.horizontal = false;
+            scroll.vertical = true;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+
+            var rows = new QueenAbilityRowView[abilityCount];
+            for (int i = 0; i < abilityCount; i++)
+                rows[i] = CreateAbilityRow(content, i);
+            return rows;
+        }
+
+        /// <summary>Ability row: name and level on top, what a level does below, buy button with the jelly cost on the right.</summary>
+        static QueenAbilityRowView CreateAbilityRow(Transform list, int index)
+        {
+            RectTransform row = CreateRect($"Ability{index}", list);
+            row.sizeDelta = new Vector2(0f, AbilityRowHeight);
+            var background = row.gameObject.AddComponent<Image>();
+            background.color = new Color(0f, 0f, 0f, 0.25f);
+            background.raycastTarget = false;
+
+            const float buttonWidth = 220f;
+            TMP_Text name = CreateText("Name", row, new Vector2(0f, -12f), 54f, 40f, FontStyles.Bold, new Color(1f, 0.9f, 0.55f));
+            TMP_Text level = CreateText("Level", row, new Vector2(0f, -12f), 54f, 34f, FontStyles.Bold, Color.white);
+            TMP_Text body = CreateText("Body", row, new Vector2(0f, -70f), 56f, 28f, FontStyles.Normal, Color.white);
+            foreach (TMP_Text text in new[] { name, level, body })
+            {
+                var rect = (RectTransform)text.transform;
+                // Left column, clear of the buy button on the right.
+                rect.offsetMin = new Vector2(24f, rect.offsetMin.y);
+                rect.offsetMax = new Vector2(-(buttonWidth + 48f), rect.offsetMax.y);
+                text.alignment = TextAlignmentOptions.TopLeft;
+                text.enableAutoSizing = true;
+                text.fontSizeMin = 20f;
+                text.fontSizeMax = text.fontSize;
+            }
+            level.alignment = TextAlignmentOptions.TopRight;
+
+            (Button buy, Image buyImage, TMP_Text cost) = CreateButton("BuyButton", row, Vector2.zero, new Vector2(buttonWidth, 110f), new Color(0.98f, 0.76f, 0.2f));
+            var buyRect = (RectTransform)buy.transform;
+            buyRect.anchorMin = buyRect.anchorMax = new Vector2(1f, 0.5f);
+            buyRect.pivot = new Vector2(1f, 0.5f);
+            buyRect.anchoredPosition = new Vector2(-24f, 0f);
+            cost.fontSizeMax = 40f;
+
+            var view = row.gameObject.AddComponent<QueenAbilityRowView>();
+            EditorAssets.Set(view, ("abilityIndex", index), ("nameText", name), ("levelText", level), ("bodyText", body),
+                ("buyButton", buy), ("feedback", AddButtonFeedback(buy)), ("buyImage", buyImage), ("costText", cost));
             return view;
         }
 

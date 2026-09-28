@@ -421,13 +421,35 @@ namespace Buzzfield.Editor
 
             var abilities = new object[]
             {
-                CreateAbility("RoyalBrood", QueenEffect.StartingWorkers, perLevel: 1f, maxLevel: 5, baseCost: 2, multiplier: 2.5f),
-                CreateAbility("RoyalWings", QueenEffect.FlightSpeedPercent, perLevel: 5f, maxLevel: 10, baseCost: 1, multiplier: 1.8f),
-                CreateAbility("SweetMemory", QueenEffect.OfflineCapHours, perLevel: 1f, maxLevel: 6, baseCost: 3, multiplier: 2f),
-                CreateAbility("PollenTouch", QueenEffect.BloomPerVisitPercent, perLevel: 10f, maxLevel: 5, baseCost: 2, multiplier: 2.2f),
+                CreateAbility(QueenAbilityIds.RoyalBrood, QueenEffect.StartingWorkers, perLevel: 1f, maxLevel: 5, baseCost: 2, multiplier: 2.5f),
+                CreateAbility(QueenAbilityIds.RoyalWings, QueenEffect.FlightSpeedPercent, perLevel: 5f, maxLevel: 10, baseCost: 1, multiplier: 1.8f),
+                CreateAbility(QueenAbilityIds.SweetMemory, QueenEffect.OfflineCapHours, perLevel: 1f, maxLevel: 6, baseCost: 3, multiplier: 2f),
+                CreateAbility(QueenAbilityIds.PollenTouch, QueenEffect.BloomPerVisitPercent, perLevel: 10f, maxLevel: 5, baseCost: 2, multiplier: 2.2f),
             };
-            EditorAssets.LoadOrCreate<QueenSettings>($"{Data}/Settings/QueenSettings.asset", s => EditorAssets.SetList(s, "abilities", abilities));
+            EditorAssets.LoadOrCreate<QueenSettings>($"{Data}/Settings/QueenSettings.asset", s =>
+            {
+                EditorAssets.SetList(s, "abilities", abilities);
+                // Lifetime Royal Jelly per Queen level, +10% honey each. A first move gives a few
+                // jelly (Lv 1-2); the first three gardens reach about Lv 5; Lv 50 is the long tail.
+                EditorAssets.Set(s, ("maxLevel", 50), ("honeyBonusPerLevel", 0.1f), ("xpForLevel", LinearCurve(
+                    (1, 1), (2, 4), (3, 10), (4, 20), (5, 35), (10, 150), (20, 700), (50, 6000))));
+            });
         }
+
+        /// <summary>Straight lines between the keys, so a level never needs less than the curve shows.</summary>
+        static AnimationCurve LinearCurve(params (float time, float value)[] points)
+        {
+            var keys = new Keyframe[points.Length];
+            for (int i = 0; i < points.Length; i++)
+            {
+                float inSlope = i > 0 ? Slope(points[i - 1], points[i]) : 0f;
+                float outSlope = i < points.Length - 1 ? Slope(points[i], points[i + 1]) : 0f;
+                keys[i] = new Keyframe(points[i].time, points[i].value, inSlope, outSlope);
+            }
+            return new AnimationCurve(keys);
+        }
+
+        static float Slope((float time, float value) a, (float time, float value) b) => (b.value - a.value) / (b.time - a.time);
 
         static QueenAbility CreateAbility(string id, QueenEffect effect, float perLevel, int maxLevel, double baseCost, float multiplier) =>
             EditorAssets.LoadOrCreate<QueenAbility>($"{Data}/Settings/Queen_{id}.asset", a => EditorAssets.Set(a,
