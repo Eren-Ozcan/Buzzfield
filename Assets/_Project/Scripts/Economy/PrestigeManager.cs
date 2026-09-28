@@ -66,6 +66,15 @@ namespace Buzzfield.Economy
             MovesMade = Math.Max(0, movesMade);
         }
 
+        /// <summary>Adds Royal Jelly from outside a move (store grants). It counts as earned jelly.</summary>
+        public void GrantJelly(BigNumber jelly)
+        {
+            if (jelly.IsZero || jelly.IsNegative)
+                return;
+            RoyalJelly += jelly;
+            LifetimeJelly += jelly;
+        }
+
         /// <summary>Credits the jelly and advances to the next garden. The caller resets the run.</summary>
         public void CommitMove(BigNumber jelly)
         {

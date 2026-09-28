@@ -33,12 +33,15 @@ namespace Buzzfield.Economy
         /// <summary>Product of the timed boosts active right now.</summary>
         public double BoostMultiplier { get; set; } = 1;
 
+        /// <summary>Permanent multiplier bought in the store; stacks with every other one and survives the Queen move.</summary>
+        public double PurchasedMultiplier { get; set; } = 1;
+
         public event Action<BigNumber> OnHoneyChanged;
 
         /// <summary>Turns deposited nectar into honey and returns the amount added.</summary>
         public BigNumber Deposit(double nectar, double flowerValue, double now)
         {
-            BigNumber honey = HoneyFormula.Honey(nectar, flowerValue, HoneyValueMultiplier, BoostMultiplier);
+            BigNumber honey = HoneyFormula.Honey(nectar, flowerValue, HoneyValueMultiplier, BoostMultiplier * PurchasedMultiplier);
             if (honey.IsZero)
                 return honey;
             honeyRate.Add(now, honey);
