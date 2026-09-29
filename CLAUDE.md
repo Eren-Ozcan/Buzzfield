@@ -9,7 +9,7 @@ string lives in `Buzzfield.Core.Strings`.
 - `Assets/_Project/Scripts/` — one assembly per folder:
   - `Core/` (`Buzzfield.Core`, `noEngineReferences: true`): `BigNumber`, `NumberFormat`,
     `RollingRate`, `HoneyFormula`, `BloomMath`, `ForagingMath`, `PrestigeMath`, `QueenMath`, `IncomeMath`, `OfflineEarnings`,
-    `TapBoost`, `TimeFormat`, `TweenMath`, `AdPacing`, `Entitlements`, `SaveData` + `SaveMigration` + `SaveEnvelope` +
+    `TapBoost`, `TimeFormat`, `TweenMath`, `AdPacing`, `TcfConsent`, `Entitlements`, `SaveData` + `SaveMigration` + `SaveEnvelope` +
     `SaveFileStore`, `Strings`.
     Pure logic only, EditMode-tested.
   - `Core/Runtime/` (`Buzzfield.Core.Runtime`): Unity helpers shared by systems
@@ -17,11 +17,17 @@ string lives in `Buzzfield.Core.Strings`.
     runner (scale pop, press hold, wiggle), ticked by `GameManager`; effects come from `ParticlePool`.
   - `Flowers/`, `Bees/`, `Economy/`, `Upgrades/`, `Save/`, `UI/`, `Ads/` — one system each,
     ScriptableObject definitions next to the code that reads them.
-  - `Ads/` (`Buzzfield.Ads`): `AdManager` and `StoreManager` over `IAdService`/`IStoreService`;
-    mock services stand in until the AdMob and Unity IAP SDKs are added.
+  - `Ads/` (`Buzzfield.Ads`): `AdManager` and `StoreManager` over `IAdService`/`IConsentService`/
+    `IStoreService`, plus the editor mocks. `AdSettings.asset` holds the live AdMob unit ids and
+    the interstitial pacing; development builds always use Google's test units.
+  - `Platform/` (`Buzzfield.Platform`): the device SDKs behind those interfaces: `AdMobAdService`,
+    `UmpConsentService` (consent before any ad request, Privacy button in the shop for EEA/UK),
+    `UnityIapStoreService` (Unity IAP 5 `StoreController`), `FirebaseServices` (Analytics,
+    Crashlytics, Consent Mode). `PlatformServices` picks them on Android/iOS players only; the
+    editor, play mode tests and desktop players get the mocks.
   - `Save/` (`Buzzfield.Save`): `SaveManager` (JsonUtility, persistentDataPath, backup fallback).
     Bump `SaveMigration.CurrentVersion` and add a step whenever the `SaveData` layout changes.
-  - `Game/` (`Buzzfield.Game`): `GameManager` (+ `GameManager.Save.cs`: autosave, offline; `GameManager.Ads.cs`: rewarded placements; `GameManager.Store.cs`: purchases and entitlements; `GameManager.Queen.cs`: Queen level and ability bonuses) and `GameClock`, the composition root. It owns init order,
+  - `Game/` (`Buzzfield.Game`): `GameManager` (+ `GameManager.Save.cs`: autosave, offline; `GameManager.Ads.cs`: rewarded placements and interstitial breaks; `GameManager.Store.cs`: purchases and entitlements; `GameManager.Queen.cs`: Queen level and ability bonuses) and `GameClock`, the composition root. It owns init order,
     wires managers with plain C# events and drives all per-frame ticks.
   - `UI/`: every `Button` gets a `ButtonFeedback` (press scale, wiggle when refused), set up by
     the scene builder and initialised by `GameManager`; feel lives in `UiFeedbackSettings`.
@@ -30,8 +36,13 @@ string lives in `Buzzfield.Core.Strings`.
     SO assets; never overwrites existing ones) and *Buzzfield > Build Greybox Scene*
     (`Assets/_Project/Scenes/Main.unity`). Batchmode:
     `Unity.exe -batchmode -quit -projectPath . -executeMethod Buzzfield.Editor.GreyboxSceneBuilder.Build`.
-    *Buzzfield > Build Android Dev APK* writes `Builds/Android/Buzzfield-dev.apk` (gitignored):
+    *Buzzfield > Android > Build Dev APK* writes `Builds/Android/Buzzfield-dev.apk` (gitignored):
     `Unity.exe -batchmode -quit -buildTarget Android -projectPath . -executeMethod Buzzfield.Editor.AndroidBuild.BuildDevApk`.
+    *Build Release AAB* (`BuildReleaseAab`) signs with the upload key in the gitignored
+    `android-keystore/` (password from `BZ_KEYSTORE_PASS` or `android-keystore/buzzfield-upload.pass`;
+    backup and SHA-1 in `C:\Projects\pictures\buzzfield\android-keystore\`) and refuses to
+    overwrite an AAB of the same version code: run *Bump Version Code* (`BumpVersionCode`) first.
+    Both builds force an External Dependency Manager resolve into `Assets/Plugins/Android/*Template*`.
     Player builds rewrite some settings files (URP asset prefiltering, UnityConnect, batching);
     check `git diff` afterwards and revert what was not meant.
 - `Assets/_Project/Tests/EditMode/` — NUnit tests for `Core`
@@ -63,8 +74,17 @@ string lives in `Buzzfield.Core.Strings`.
 - No `FindObjectOfType`/`FindObjectsByType` and no singletons; pass references through
   `[SerializeField]` or `Init(...)`. Unsubscribe events in `OnDisable`/`OnDestroy`.
 - Every visual is a prefab (primitives for now) so art can be swapped without code changes.
-- Packages: URP, Input System, uGUI/TextMeshPro, Test Framework only. Ask before adding one.
-  No DOTween.
+- Packages: URP, Input System, uGUI/TextMeshPro, Test Framework, Google Mobile Ads (OpenUPM),
+  Unity IAP, Firebase App/Analytics/Crashlytics and the External Dependency Manager only. Ask
+  before adding one. No DOTween. The Firebase tarballs are not in git: run
+  `scripts/fetch-firebase.sh` after cloning. `Assets/google-services.json` is gitignored (backup in
+  the pictures repo). Locally `Packages/manifest.json` and `packages-lock.json` are marked
+  skip-worktree so the Coplay editor plugin stays out of git; commit package changes without it.
+- Ads follow the studio policy (`C:\Projects\pictures\ADS_POLICY.md`): rewarded ads only on the
+  player's tap; interstitials only after a natural break the game marks with
+  `AdManager.MarkNaturalBreak` (garden completed, Queen move), once no panel, celebration, ad or
+  purchase is on screen, never for new players or after `remove_ads`, and never inside the shared
+  cooldown. No banners, no app-open ads. A new trigger needs a check against that policy first.
 - Never name competitor games or companies in committed files (code, comments, commit
   messages, README). Refer to "the design doc". `docs/BUILD_PROMPT.md` is private and
   excluded through `.git/info/exclude`; never stage it.
