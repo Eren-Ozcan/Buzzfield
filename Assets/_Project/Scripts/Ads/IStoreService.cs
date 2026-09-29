@@ -8,6 +8,8 @@ namespace Buzzfield.Ads
         Success,
         Cancelled,
         Failed,
+        /// <summary>Paid with a slow method; the product arrives later as a deferred purchase.</summary>
+        Pending,
     }
 
     /// <summary>Outcome of one purchase.</summary>
