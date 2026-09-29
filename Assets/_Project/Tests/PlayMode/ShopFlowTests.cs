@@ -191,8 +191,7 @@ namespace Buzzfield.Tests.PlayMode
                 for (int i = 0; i < game.Flowers.Flowers.Count && !PrestigeMath.IsUnlocked(game.Bloom.Fraction, target); i++)
                 {
                     Flower flower = game.Flowers.Flowers[i];
-                    for (int visits = 0; flower.IsActive && !flower.IsBloomed && visits < 1000; visits++)
-                        game.Flowers.Collect(flower, 0.001);
+                    TestBloom.UntilBloomed(game, flower);
                 }
             }
             Assert.That(PrestigeMath.IsUnlocked(game.Bloom.Fraction, target), "Could not bloom to the move threshold.");
