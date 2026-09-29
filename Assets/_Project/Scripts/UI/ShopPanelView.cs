@@ -1,3 +1,4 @@
+using System;
 using Buzzfield.Ads;
 using Buzzfield.Core;
 using TMPro;
@@ -8,7 +9,8 @@ namespace Buzzfield.UI
 {
     /// <summary>
     /// Shop button in the top bar and the shop panel behind it: one row per product, a
-    /// restore button and a status line for the last purchase or restore. Store events only
+    /// restore button, a status line for the last purchase or restore, and a Privacy button
+    /// that reopens the ad consent choices where the law asks for one (EEA, UK). Store events only
     /// mark it dirty; the rows are refreshed at most once per frame while the panel is open.
     /// A badge on the shop button pops in once the store is ready with something to buy, and
     /// goes away for the rest of the session when the shop is opened.
@@ -26,6 +28,7 @@ namespace Buzzfield.UI
         [SerializeField] private ShopItemView[] items;
         [SerializeField] private TMP_Text statusText;
         [SerializeField] private Button restoreButton;
+        [SerializeField] private Button privacyButton;
 
         private StoreManager store;
         private Tweener tweener;
@@ -33,15 +36,22 @@ namespace Buzzfield.UI
         private bool dirty;
         private bool badgeDirty;
         private bool openedThisSession;
+        private Func<bool> privacyRequired;
+        private Action showPrivacy;
 
         public bool IsOpen => panel.activeSelf;
 
-        public void Init(StoreManager storeManager, Tweener tweenRunner, UiFeedbackSettings feedbackSettings)
+        /// <param name="privacyOptionsRequired">True where the Privacy button must be offered.</param>
+        /// <param name="showPrivacyOptions">Reopens the consent choices.</param>
+        public void Init(StoreManager storeManager, Tweener tweenRunner, UiFeedbackSettings feedbackSettings,
+            Func<bool> privacyOptionsRequired, Action showPrivacyOptions)
         {
             Unsubscribe();
             store = storeManager;
             tweener = tweenRunner;
             feedback = feedbackSettings;
+            privacyRequired = privacyOptionsRequired ?? (() => false);
+            showPrivacy = showPrivacyOptions;
             store.OnChanged += MarkDirty;
             store.OnPurchaseFinished += HandlePurchaseFinished;
             store.OnRestoreFinished += HandleRestoreFinished;
@@ -49,6 +59,7 @@ namespace Buzzfield.UI
             AddListener(openButton, Open);
             AddListener(closeButton, Close);
             AddListener(restoreButton, Restore);
+            AddListener(privacyButton, ShowPrivacy);
 
             StoreCatalog catalog = store.Catalog;
             for (int i = 0; i < items.Length; i++)
@@ -88,6 +99,7 @@ namespace Buzzfield.UI
             RemoveListener(openButton, Open);
             RemoveListener(closeButton, Close);
             RemoveListener(restoreButton, Restore);
+            RemoveListener(privacyButton, ShowPrivacy);
         }
 
         private void Refresh()
@@ -99,6 +111,7 @@ namespace Buzzfield.UI
                 items[i].Show(store.GetState(id), store.PriceText(id));
             }
             restoreButton.interactable = store.IsReady && !store.IsPurchasing;
+            privacyButton.gameObject.SetActive(privacyRequired());
             if (store.IsReady && statusText.text == Strings.StoreConnecting)
                 statusText.text = string.Empty;
         }
@@ -115,12 +128,15 @@ namespace Buzzfield.UI
             store.RestorePurchases();
         }
 
+        private void ShowPrivacy() => showPrivacy?.Invoke();
+
         private void HandlePurchaseFinished(PurchaseResult result)
         {
             switch (result.Status)
             {
                 case PurchaseStatus.Success: statusText.text = Strings.PurchaseThanks; break;
                 case PurchaseStatus.Cancelled: statusText.text = Strings.PurchaseCancelled; break;
+                case PurchaseStatus.Pending: statusText.text = Strings.PurchasePending; break;
                 default: statusText.text = Strings.PurchaseFailed; break;
             }
             MarkDirty();

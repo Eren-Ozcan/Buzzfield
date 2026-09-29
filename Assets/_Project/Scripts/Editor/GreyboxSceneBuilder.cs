@@ -384,7 +384,11 @@ namespace Buzzfield.Editor
         const float ShopRowHeight = 240f;
         const float ShopRowSpacing = 24f;
 
-        /// <summary>Modal shop: product rows in a vertical list (a hidden row leaves no gap), status line, restore and close.</summary>
+        /// <summary>
+        /// Modal shop: product rows in a vertical list (a hidden row leaves no gap), status line,
+        /// restore and close, and a small Privacy button in the corner that only shows where the
+        /// ad consent choices must be reachable.
+        /// </summary>
         static ShopPanelView CreateShopPanel(Transform root, Button openButton, GameObject newBadge)
         {
             RectTransform panel = CreateModal("ShopPanel", root, new Vector2(900f, 1320f), new Color(0.12f, 0.26f, 0.22f, 0.97f), out RectTransform window);
@@ -417,11 +421,14 @@ namespace Buzzfield.Editor
             restoreLabel.text = Strings.RestorePurchases;
             (Button close, _, TMP_Text closeLabel) = CreateButton("CloseButton", window, new Vector2(0f, -1180f), new Vector2(360f, 120f), new Color(0.5f, 0.46f, 0.55f));
             closeLabel.text = Strings.Close;
+            (Button privacy, _, TMP_Text privacyLabel) = CreateButton("PrivacyButton", window, new Vector2(-330f, -50f), new Vector2(180f, 80f), new Color(0.5f, 0.46f, 0.55f));
+            privacyLabel.text = Strings.PrivacyButton;
+            privacy.gameObject.SetActive(false);
 
             // On the always-active root, like the other panel views, so it can open the hidden panel.
             var view = root.gameObject.AddComponent<ShopPanelView>();
             EditorAssets.Set(view, ("openButton", openButton), ("newBadge", newBadge), ("panel", panel.gameObject), ("closeButton", close),
-                ("items", items), ("statusText", status), ("restoreButton", restore));
+                ("items", items), ("statusText", status), ("restoreButton", restore), ("privacyButton", privacy));
             panel.gameObject.SetActive(false);
             return view;
         }

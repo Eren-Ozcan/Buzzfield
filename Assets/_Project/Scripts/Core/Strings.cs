@@ -88,9 +88,11 @@ namespace Buzzfield.Core
         public const string PurchaseThanks = "Thank you!";
         public const string PurchaseCancelled = "Purchase cancelled.";
         public const string PurchaseFailed = "Purchase failed. Please try again.";
+        public const string PurchasePending = "Payment pending. It arrives once it clears.";
         public const string RestorePurchases = "Restore Purchases";
         public const string RestoreDone = "Purchases restored.";
         public const string RestoreNothing = "Nothing to restore.";
+        public const string PrivacyButton = "Privacy";
 
         public const string QuitTitle = "Quit the game?";
         public const string QuitBody = "Your progress is saved.";
