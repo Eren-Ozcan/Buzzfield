@@ -98,15 +98,15 @@ namespace Buzzfield.Tests.PlayMode
             Assert.That(game.Boosts.RewardedHoneySecondsLeft(now), Is.EqualTo(game.Boosts.RewardedDurationSeconds).Within(2));
             Assert.That(game.Ads.LastFullScreenAdUtc, Is.EqualTo(now).Within(2));
 
-            // The boost runs, and the shared gap blocks every other ad.
+            // The boost runs, and the shared stamp holds back interstitials.
             Assert.That(game.TryWatchBoostAd(), Is.False);
-            Assert.That(game.Ads.SecondsUntilAllowed(), Is.GreaterThan(0));
+            Assert.That(game.Ads.InterstitialCooldownLeft(), Is.GreaterThan(0));
 
             // Both the boost and the ad stamp survive a restart.
             yield return LoadMain();
             Assert.That(game.Boosts.IsRewardedHoneyActive(GameClock.DeviceUtc));
             Assert.That(game.Ads.LastFullScreenAdUtc, Is.EqualTo(now).Within(2));
-            Assert.That(game.Ads.SecondsUntilAllowed(), Is.GreaterThan(0));
+            Assert.That(game.Ads.InterstitialCooldownLeft(), Is.GreaterThan(0));
         }
 
         [UnityTest]

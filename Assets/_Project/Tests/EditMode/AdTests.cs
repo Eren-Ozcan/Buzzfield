@@ -37,6 +37,62 @@ namespace Buzzfield.Tests.EditMode
         {
             Assert.That(AdPacing.IsAllowed(1000, 1000, 0));
         }
+
+        private static ForcedAdBlock Block(double now = 10_000, double lastAd = 0, bool removed = false,
+            double playSeconds = 2000, int moves = 1) =>
+            AdPacing.InterstitialBlock(now, lastAd, 240, removed, playSeconds, 1200, moves, 1);
+
+        [Test]
+        public void Interstitial_AllowedForAnEstablishedPlayer()
+        {
+            Assert.That(Block(), Is.EqualTo(ForcedAdBlock.None));
+        }
+
+        [Test]
+        public void Interstitial_RemoveAdsWinsOverEverything()
+        {
+            Assert.That(Block(removed: true, playSeconds: 0, moves: 0), Is.EqualTo(ForcedAdBlock.Removed));
+        }
+
+        [Test]
+        public void Interstitial_NewPlayersAreLeftAlone()
+        {
+            Assert.That(Block(playSeconds: 1199), Is.EqualTo(ForcedAdBlock.TooEarly));
+            Assert.That(Block(moves: 0), Is.EqualTo(ForcedAdBlock.TooEarly));
+        }
+
+        [Test]
+        public void Interstitial_WaitsForTheSharedCooldown()
+        {
+            Assert.That(Block(now: 10_000, lastAd: 10_000 - 100), Is.EqualTo(ForcedAdBlock.Cooldown));
+            Assert.That(Block(now: 10_000, lastAd: 10_000 - 240), Is.EqualTo(ForcedAdBlock.None));
+        }
+    }
+
+    public class TcfConsentTests
+    {
+        [Test]
+        public void OutsideTheEea_AllGranted()
+        {
+            TcfConsent c = TcfConsent.From(0, null);
+            Assert.That(c.AnalyticsStorage && c.AdStorage && c.AdUserData && c.AdPersonalization);
+        }
+
+        [Test]
+        public void InsideTheEea_ReadsThePurposes()
+        {
+            // Purposes 1 and 7 given, 3 and 4 refused.
+            TcfConsent c = TcfConsent.From(1, "1100001");
+            Assert.That(c.AnalyticsStorage && c.AdStorage && c.AdUserData);
+            Assert.That(c.AdPersonalization, Is.False);
+        }
+
+        [Test]
+        public void InsideTheEea_NoAnswerMeansDenied()
+        {
+            TcfConsent c = TcfConsent.From(1, "");
+            Assert.That(c.AnalyticsStorage || c.AdStorage || c.AdUserData || c.AdPersonalization, Is.False);
+        }
     }
 
     public class AdManagerTests
@@ -53,8 +109,15 @@ namespace Buzzfield.Tests.EditMode
             private Action pending;
             public bool CanRequestAds { get; private set; }
             public bool Asked => pending != null;
+            public bool PrivacyOptionsRequired => false;
+
+#pragma warning disable 0067
+            public event Action<TcfConsent> ConsentChanged;
+#pragma warning restore 0067
 
             public void RequestConsent(Action onDone) => pending = onDone;
+
+            public void ShowPrivacyOptions(Action onDone) => onDone?.Invoke();
 
             public void Grant()
             {
@@ -67,7 +130,7 @@ namespace Buzzfield.Tests.EditMode
         public void SetUp()
         {
             settings = ScriptableObject.CreateInstance<AdSettings>();
-            Configure(delay: 1f, failure: false, gap: 30f);
+            Configure(delay: 1f, failure: false);
             service = new MockAdService(settings);
             consent = new DeferredConsent();
             modalOpen = false;
@@ -82,12 +145,15 @@ namespace Buzzfield.Tests.EditMode
             UnityEngine.Object.DestroyImmediate(settings);
         }
 
-        private void Configure(float delay, bool failure, float gap)
+        private void Configure(float delay, bool failure)
         {
             var so = new SerializedObject(settings);
             so.FindProperty("mockDelaySeconds").floatValue = delay;
             so.FindProperty("mockSimulateFailure").boolValue = failure;
-            so.FindProperty("minSecondsBetweenFullScreenAds").floatValue = gap;
+            so.FindProperty("interstitialCooldownSeconds").floatValue = 240f;
+            so.FindProperty("interstitialMinPlaySeconds").floatValue = 1200f;
+            so.FindProperty("interstitialMinQueenMoves").intValue = 1;
+            so.FindProperty("breakSettleSeconds").floatValue = 1f;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -97,6 +163,13 @@ namespace Buzzfield.Tests.EditMode
             ads.Start();
             consent.Grant();
             ads.Tick(1.1f);
+        }
+
+        /// <summary>One frame of an established player's session.</summary>
+        private void Frame(float dt, bool calm = true, double playSeconds = 2000, int moves = 1)
+        {
+            ads.TickInterstitial(dt, calm, playSeconds, moves);
+            ads.Tick(dt);
         }
 
         [Test]
@@ -131,7 +204,7 @@ namespace Buzzfield.Tests.EditMode
         [Test]
         public void SimulatedFailure_ClosesWithoutReward()
         {
-            Configure(delay: 1f, failure: true, gap: 30f);
+            Configure(delay: 1f, failure: true);
             StartAndLoad();
             bool? rewarded = null;
             ads.TryShowRewarded(r => rewarded = r);
@@ -150,28 +223,91 @@ namespace Buzzfield.Tests.EditMode
         }
 
         [Test]
-        public void OpeningStampsTheSharedTime_AndTheGapBlocksTheNextAd()
+        public void RewardedAds_StampTheSharedTime_ButNeverWaitForIt()
         {
             StartAndLoad();
             ads.TryShowRewarded(null);
             Assert.That(ads.LastFullScreenAdUtc, Is.EqualTo(now));
             ads.Tick(1.1f); // closes and starts the next load
             ads.Tick(1.1f); // next ad loaded
-            Assert.That(service.IsRewardedReady);
-            Assert.That(ads.CanShowRewarded(), Is.False);
-            Assert.That(ads.SecondsUntilAllowed(), Is.EqualTo(30));
-
-            now += 30;
-            Assert.That(ads.CanShowRewarded());
+            Assert.That(ads.CanShowRewarded(), "the player asked for it");
+            Assert.That(ads.InterstitialCooldownLeft(), Is.EqualTo(240));
         }
 
         [Test]
-        public void RestoredStamp_IsHonoured()
+        public void RestoredStamp_IsHonouredByInterstitials()
         {
             ads.Restore(now - 10);
             StartAndLoad();
-            Assert.That(ads.CanShowRewarded(), Is.False);
-            Assert.That(ads.SecondsUntilAllowed(), Is.EqualTo(20));
+            Assert.That(ads.InterstitialCooldownLeft(), Is.EqualTo(230));
+            Assert.That(ads.InterstitialBlock(2000, 1), Is.EqualTo(ForcedAdBlock.Cooldown));
+        }
+
+        [Test]
+        public void NaturalBreak_PlaysOnceTheScreenHasBeenCalm()
+        {
+            StartAndLoad();
+            Frame(0.1f);
+            Frame(1.1f); // interstitial loaded
+            Assert.That(service.IsInterstitialReady);
+
+            bool closed = false;
+            ads.InterstitialClosed += () => closed = true;
+            ads.MarkNaturalBreak("garden_complete");
+            Frame(0.5f, calm: false); // the celebration is still on screen
+            Frame(0.5f);
+            Assert.That(ads.IsShowing, Is.False, "must settle for a full second first");
+            Frame(0.6f);
+            Assert.That(ads.IsShowing);
+            Assert.That(ads.PendingBreak, Is.Null);
+            Assert.That(ads.LastFullScreenAdUtc, Is.EqualTo(now));
+
+            Frame(1.1f);
+            Assert.That(closed);
+        }
+
+        [TestCase(true, 2000, 1, "Removed")]
+        [TestCase(false, 100, 1, "TooEarly")]
+        [TestCase(false, 2000, 0, "TooEarly")]
+        public void NaturalBreak_SkippedForPayingOrNewPlayers(bool removed, double playSeconds, int moves, string reason)
+        {
+            ads.ForcedAdsRemoved = removed;
+            StartAndLoad();
+            string skipped = null;
+            ads.BreakSkipped += (_, why) => skipped = why;
+            ads.MarkNaturalBreak("queen_move");
+            Frame(1.1f, playSeconds: playSeconds, moves: moves);
+            Frame(1.1f, playSeconds: playSeconds, moves: moves);
+            Assert.That(ads.IsShowing, Is.False);
+            Assert.That(service.IsInterstitialLoading || service.IsInterstitialReady, Is.False, "never even requested");
+            Assert.That(skipped, Is.EqualTo(reason));
+        }
+
+        [Test]
+        public void NaturalBreak_SkippedInsideTheCooldown()
+        {
+            StartAndLoad();
+            ads.TryShowRewarded(null);
+            ads.Tick(1.1f);
+            string skipped = null;
+            ads.BreakSkipped += (_, why) => skipped = why;
+            ads.MarkNaturalBreak("queen_move");
+            Frame(1.1f);
+            Frame(1.1f);
+            Assert.That(ads.IsShowing, Is.False);
+            Assert.That(skipped, Is.EqualTo("Cooldown"));
+        }
+
+        [Test]
+        public void ClearedBreak_NeverPlays()
+        {
+            StartAndLoad();
+            Frame(1.1f);
+            ads.MarkNaturalBreak("garden_complete");
+            ads.ClearPendingBreak();
+            Frame(1.1f);
+            Frame(1.1f);
+            Assert.That(ads.IsShowing, Is.False);
         }
     }
 
