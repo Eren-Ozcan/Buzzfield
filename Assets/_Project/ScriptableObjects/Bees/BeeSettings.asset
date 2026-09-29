@@ -21,6 +21,7 @@ MonoBehaviour:
   poolPrewarm: 8
   depositDuration: 0.25
   retryInterval: 0.5
+  minLoadFraction: 0.75
   hoverRadius: 0.8
   bobAmplitude: 0.06
   bobFrequency: 7

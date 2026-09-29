@@ -1,4 +1,5 @@
 using System;
+using Buzzfield.Core;
 using UnityEngine;
 
 namespace Buzzfield.Flowers
@@ -51,6 +52,13 @@ namespace Buzzfield.Flowers
         public bool HasNectar => IsActive && Nectar >= 1;
 
         public bool IsAvailable => HasNectar && AssignedBees < Type.MaxBeesTargeting;
+
+        /// <summary>
+        /// Available, and the nectar left after the bees already on their way still makes a
+        /// worthwhile load for a bee of this <paramref name="capacity"/> (see <see cref="ForagingMath"/>).
+        /// </summary>
+        public bool OffersLoad(float capacity, float loadFraction) =>
+            IsAvailable && ForagingMath.OffersLoad(Nectar, Type.MaxNectar, AssignedBees, capacity, loadFraction);
 
         internal void Reserve() => AssignedBees++;
 

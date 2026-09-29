@@ -90,17 +90,18 @@ namespace Buzzfield.Flowers
         public float BloomedTargetPenalty { get; set; }
 
         /// <summary>
-        /// Nearest flower a bee may fly to, with bloomed flowers pushed back by
-        /// <see cref="BloomedTargetPenalty"/>; null if none is free. Does not reserve it.
+        /// Nearest flower that offers a bee of <paramref name="capacity"/> a worthwhile load
+        /// (<see cref="Flower.OffersLoad"/>), with bloomed flowers pushed back by
+        /// <see cref="BloomedTargetPenalty"/>; null if none does. Does not reserve it.
         /// </summary>
-        public Flower FindTarget(Vector3 from)
+        public Flower FindTarget(Vector3 from, float capacity, float loadFraction)
         {
             Flower best = null;
             float bestDistance = float.MaxValue;
             for (int i = 0; i < flowers.Count; i++)
             {
                 Flower flower = flowers[i];
-                if (!flower.IsAvailable)
+                if (!flower.OffersLoad(capacity, loadFraction))
                     continue;
                 float distance = (flower.NectarPoint - from).magnitude;
                 if (flower.IsBloomed)

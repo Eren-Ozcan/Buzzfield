@@ -16,6 +16,8 @@ namespace Buzzfield.Bees
         [SerializeField, Min(0f)] private float depositDuration = 0.25f;
         [Tooltip("Seconds between retries while no flower is available.")]
         [SerializeField, Min(0.05f)] private float retryInterval = 0.5f;
+        [Tooltip("Share of a full load (the bee's capacity, or a full flower if smaller) a flower must have left for a bee, after the bees already flying to it, before the bee flies there.")]
+        [SerializeField, Range(0f, 1f)] private float minLoadFraction = 0.75f;
         [Tooltip("Radius around the hive entrance where idle bees hover.")]
         [SerializeField, Min(0f)] private float hoverRadius = 0.8f;
         [SerializeField, Min(0f)] private float bobAmplitude = 0.06f;
@@ -45,6 +47,7 @@ namespace Buzzfield.Bees
         public int PoolPrewarm => poolPrewarm;
         public float DepositDuration => depositDuration;
         public float RetryInterval => retryInterval;
+        public float MinLoadFraction => minLoadFraction;
         public float HoverRadius => hoverRadius;
         public float BobAmplitude => bobAmplitude;
         public float BobFrequency => bobFrequency;
