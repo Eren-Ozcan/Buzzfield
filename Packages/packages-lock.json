@@ -1,5 +1,45 @@
 {
   "dependencies": {
+    "com.google.ads.mobile": {
+      "version": "11.5.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.google.external-dependency-manager": "1.2.187",
+        "com.unity.modules.androidjni": "1.0.0"
+      },
+      "url": "https://package.openupm.com"
+    },
+    "com.google.external-dependency-manager": {
+      "version": "file:firebase/com.google.external-dependency-manager-1.2.187.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {}
+    },
+    "com.google.firebase.analytics": {
+      "version": "file:firebase/com.google.firebase.analytics-13.17.0.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.firebase.app": "13.17.0"
+      }
+    },
+    "com.google.firebase.app": {
+      "version": "file:firebase/com.google.firebase.app-13.17.0.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.external-dependency-manager": "1.2.186"
+      }
+    },
+    "com.google.firebase.crashlytics": {
+      "version": "file:firebase/com.google.firebase.crashlytics-13.17.0.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.firebase.app": "13.17.0"
+      }
+    },
     "com.unity.burst": {
       "version": "1.8.30",
       "depth": 2,
@@ -70,6 +110,26 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.unity.nuget.newtonsoft-json": {
+      "version": "3.2.2",
+      "depth": 2,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.purchasing": {
+      "version": "5.4.3",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0",
+        "com.unity.services.core": "1.18.0",
+        "com.unity.modules.androidjni": "1.0.0",
+        "com.unity.modules.jsonserialize": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.render-pipelines.core": {
       "version": "17.3.0",
       "depth": 1,
@@ -107,6 +167,17 @@
       "depth": 2,
       "source": "registry",
       "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.services.core": {
+      "version": "1.18.0",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.androidjni": "1.0.0",
+        "com.unity.nuget.newtonsoft-json": "3.2.2",
+        "com.unity.modules.unitywebrequest": "1.0.0"
+      },
       "url": "https://packages.unity.com"
     },
     "com.unity.shadergraph": {
