@@ -3,16 +3,18 @@ using System;
 namespace Buzzfield.Ads
 {
     /// <summary>
-    /// Editor and development stand-in for the ad SDK. Loads and shows each take
+    /// Editor stand-in for the ad SDK. Loads and shows each take
     /// <see cref="AdSettings.MockDelaySeconds"/>; with <see cref="AdSettings.MockSimulateFailure"/>
-    /// on, the ad closes without a reward. Settings are read live, so the toggle works in play mode.
+    /// on, a rewarded ad closes without a reward. Settings are read live, so the toggle works in play mode.
     /// </summary>
     public sealed class MockAdService : IAdService, ITickableService
     {
         private readonly AdSettings settings;
-        private float loadLeft = -1f;
+        private float rewardedLoadLeft = -1f;
+        private float interstitialLoadLeft = -1f;
         private float showLeft = -1f;
-        private Action<bool> pendingShow;
+        private Action<bool> pendingRewarded;
+        private Action pendingInterstitial;
 
         public MockAdService(AdSettings settings)
         {
@@ -21,12 +23,14 @@ namespace Buzzfield.Ads
 
         public bool IsInitialized { get; private set; }
         public bool IsRewardedReady { get; private set; }
+        public bool IsInterstitialReady { get; private set; }
         public bool IsShowing => showLeft >= 0f;
-        public bool IsLoading => loadLeft >= 0f;
+        public bool IsLoading => rewardedLoadLeft >= 0f;
+        public bool IsInterstitialLoading => interstitialLoadLeft >= 0f;
 
         public event Action Opened;
-        public event Action RewardedLoaded;
         public event Action<string> RewardedLoadFailed;
+        public event Action<string> InterstitialLoadFailed;
 
         public void Initialize(Action onDone)
         {
@@ -41,9 +45,21 @@ namespace Buzzfield.Ads
                 RewardedLoadFailed?.Invoke("Not initialized.");
                 return;
             }
-            if (IsRewardedReady || IsLoading || IsShowing)
+            if (IsRewardedReady || IsLoading)
                 return;
-            loadLeft = settings.MockDelaySeconds;
+            rewardedLoadLeft = settings.MockDelaySeconds;
+        }
+
+        public void LoadInterstitial()
+        {
+            if (!IsInitialized)
+            {
+                InterstitialLoadFailed?.Invoke("Not initialized.");
+                return;
+            }
+            if (IsInterstitialReady || IsInterstitialLoading)
+                return;
+            interstitialLoadLeft = settings.MockDelaySeconds;
         }
 
         public void ShowRewarded(Action<bool> onComplete)
@@ -54,33 +70,56 @@ namespace Buzzfield.Ads
                 return;
             }
             IsRewardedReady = false;
-            pendingShow = onComplete;
+            pendingRewarded = onComplete;
+            showLeft = settings.MockDelaySeconds;
+            Opened?.Invoke();
+        }
+
+        public void ShowInterstitial(Action onClosed)
+        {
+            if (!IsInterstitialReady || IsShowing)
+            {
+                onClosed?.Invoke();
+                return;
+            }
+            IsInterstitialReady = false;
+            pendingInterstitial = onClosed;
             showLeft = settings.MockDelaySeconds;
             Opened?.Invoke();
         }
 
         public void Tick(float unscaledDeltaTime)
         {
-            if (loadLeft >= 0f)
+            if (rewardedLoadLeft >= 0f)
             {
-                loadLeft -= unscaledDeltaTime;
-                if (loadLeft < 0f)
-                {
+                rewardedLoadLeft -= unscaledDeltaTime;
+                if (rewardedLoadLeft < 0f)
                     IsRewardedReady = true;
-                    RewardedLoaded?.Invoke();
-                }
+            }
+
+            if (interstitialLoadLeft >= 0f)
+            {
+                interstitialLoadLeft -= unscaledDeltaTime;
+                if (interstitialLoadLeft < 0f)
+                    IsInterstitialReady = true;
             }
 
             if (showLeft >= 0f)
             {
                 showLeft -= unscaledDeltaTime;
                 if (showLeft < 0f)
-                {
-                    Action<bool> callback = pendingShow;
-                    pendingShow = null;
-                    callback?.Invoke(!settings.MockSimulateFailure);
-                }
+                    Close();
             }
+        }
+
+        private void Close()
+        {
+            Action<bool> rewarded = pendingRewarded;
+            Action interstitial = pendingInterstitial;
+            pendingRewarded = null;
+            pendingInterstitial = null;
+            rewarded?.Invoke(!settings.MockSimulateFailure);
+            interstitial?.Invoke();
         }
     }
 }

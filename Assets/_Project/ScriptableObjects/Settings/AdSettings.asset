@@ -12,8 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7fa281c8ca36324884c55698ac99a8b, type: 3}
   m_Name: AdSettings
   m_EditorClassIdentifier: Buzzfield.Ads::Buzzfield.Ads.AdSettings
-  androidRewardedUnitId: ca-app-pub-3940256099942544/5224354917
-  iosRewardedUnitId: ca-app-pub-3940256099942544/1712485313
-  minSecondsBetweenFullScreenAds: 30
+  androidRewardedUnitId: ca-app-pub-9709993577664180/2625455418
+  iosRewardedUnitId: 
+  androidInterstitialUnitId: ca-app-pub-9709993577664180/8364867250
+  iosInterstitialUnitId: 
+  interstitialCooldownSeconds: 240
+  interstitialMinPlaySeconds: 1200
+  interstitialMinQueenMoves: 1
+  breakSettleSeconds: 1
+  loadRetrySeconds: 30
   mockDelaySeconds: 1.5
   mockSimulateFailure: 0
