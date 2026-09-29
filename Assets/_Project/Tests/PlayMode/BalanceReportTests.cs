@@ -17,14 +17,16 @@ namespace Buzzfield.Tests.PlayMode
     /// Balance pass: a bot plays the real Main scene from a new game through the three
     /// authored gardens and two loops of the last one, and logs when each milestone of the
     /// design doc's starting targets is reached. Game time runs in fixed steps as fast as the
-    /// machine allows, so a two-hour session takes a few minutes. Explicit: run it on its own
-    /// with -testFilter BalanceReportTests; set BZ_BALANCE_OUT to a file to save the report.
+    /// machine allows (frame rate uncapped), so a 90-minute session takes a few minutes.
+    /// Explicit: run it on its own with -testFilter BalanceReportTests; set BZ_BALANCE_OUT to
+    /// a file to save the report.
     /// </summary>
     /// <remarks>
     /// The bot is an attentive active player without ads or purchases: it taps the boost
     /// whenever it is ready, evolves when it can, otherwise buys the cheapest affordable
     /// upgrade, spends Royal Jelly on the cheapest ability, and moves the Queen once the
-    /// garden is complete or bloom has stalled for <see cref="StallSeconds"/> after the gate opened.
+    /// garden is complete or no flower has grown for <see cref="StallSeconds"/> after the gate
+    /// opened. From then on it saves its honey for the move.
     /// </remarks>
     [Explicit("Long balance run; start it on its own.")]
     public class BalanceReportTests
@@ -38,6 +40,7 @@ namespace Buzzfield.Tests.PlayMode
 
         GameManager game;
         string outPath;
+        int frameRate;
 
         [UnitySetUp]
         public IEnumerator LoadMain()
@@ -47,12 +50,15 @@ namespace Buzzfield.Tests.PlayMode
             yield return null;
             game = UnityEngine.Object.FindAnyObjectByType<GameManager>();
             Assert.That(game, Is.Not.Null);
+            frameRate = Application.targetFrameRate;
+            Application.targetFrameRate = -1;
         }
 
         [UnityTearDown]
         public IEnumerator RestoreTime()
         {
             Time.captureDeltaTime = 0f;
+            Application.targetFrameRate = frameRate;
             yield return null;
         }
 
@@ -70,7 +76,7 @@ namespace Buzzfield.Tests.PlayMode
             double gardenStart = 0;
             double nextStatus = StatusSeconds;
             double lastBloomChange = 0;
-            int lastBloomed = 0;
+            float lastProgress = 0f;
             bool firstBee = false, firstEvolve = false, firstGolden = false, unlockedLogged = false, completeLogged = false;
             float decisionTimer = 0f;
             int moves = 0;
@@ -91,9 +97,10 @@ namespace Buzzfield.Tests.PlayMode
                     Assert.Fail($"Stuck in garden {game.Prestige.GardenIndex + 1}.\n{report}");
                 }
 
-                if (game.Bloom.BloomedCount != lastBloomed)
+                float progress = BloomProgress();
+                if (progress > lastProgress + 1e-4f)
                 {
-                    lastBloomed = game.Bloom.BloomedCount;
+                    lastProgress = progress;
                     lastBloomChange = now;
                 }
                 if (!unlockedLogged && game.Prestige.IsUnlocked(game.Bloom.Fraction))
@@ -126,7 +133,7 @@ namespace Buzzfield.Tests.PlayMode
                     SpendJelly(report, now);
                     gardenStart = now;
                     lastBloomChange = now;
-                    lastBloomed = 0;
+                    lastProgress = 0f;
                     unlockedLogged = completeLogged = false;
                     continue;
                 }
@@ -148,8 +155,8 @@ namespace Buzzfield.Tests.PlayMode
                     continue;
                 }
 
-                // Save up for the move once the gate is open and bloom has stalled.
-                if (game.Prestige.IsUnlocked(game.Bloom.Fraction) && now - lastBloomChange > StallSeconds)
+                // Save up for the move once the gate is open and the garden is done or has stalled.
+                if (game.Prestige.IsUnlocked(game.Bloom.Fraction) && (game.Bloom.IsComplete || now - lastBloomChange > StallSeconds))
                     continue;
 
                 if (BuyCheapest() && !firstBee && game.Upgrades.BeesBought > 0)
@@ -187,6 +194,16 @@ namespace Buzzfield.Tests.PlayMode
             Log(report, now, $"  status g{game.Prestige.GardenIndex + 1}: {game.Bloom.Percent}% bloom ({bloomed}/{flowers.Count}), " +
                 $"active {active} (untouched {untouched}, growing {growing}, available {available}), " +
                 $"{game.Bees.Count} bees, honey {NumberFormat.Abbreviate(game.Economy.Honey)}");
+        }
+
+        /// <summary>Sum of every flower's bloom progress: grows while any flower is still growing.</summary>
+        float BloomProgress()
+        {
+            float sum = 0f;
+            var flowers = game.Flowers.Flowers;
+            for (int i = 0; i < flowers.Count; i++)
+                sum += flowers[i].Bloom;
+            return sum;
         }
 
         /// <summary>Buys the cheapest affordable bottom-bar upgrade; true when something was bought.</summary>
