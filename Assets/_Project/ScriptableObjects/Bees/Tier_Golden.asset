@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d29f02b31bee68541904cdccab5342e3, type: 3}
   m_Name: Tier_Golden
   m_EditorClassIdentifier: Buzzfield.Bees::Buzzfield.Bees.BeeTier
-  speed: 4
-  capacity: 8
+  speed: 5
+  capacity: 16
   collectDuration: 0.6
   material: {fileID: 0}
   scale: 0.5

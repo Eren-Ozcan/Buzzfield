@@ -18,7 +18,7 @@ MonoBehaviour:
   bloomScalePop: 0.35
   bloomBurstPrefab: {fileID: 6934581845144953476, guid: 8ae0711532d8e004db4a682aa7029b57, type: 3}
   burstPoolSize: 6
-  sproutsPerBloom: 2
+  sproutsPerBloom: 1
   sproutGrowDuration: 0.8
   bloomedTargetPenalty: 10
   groundGrey: {r: 0.56, g: 0.56, b: 0.53, a: 1}

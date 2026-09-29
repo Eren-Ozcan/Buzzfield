@@ -16,11 +16,13 @@ namespace Buzzfield.Editor
     /// ScriptableObject with starting balance. Existing assets are never overwritten, so
     /// tuned values survive a re-run; delete an asset to regenerate it.
     ///
-    /// Balance assumptions (first pass, tune later):
+    /// Balance, checked with the balance report bot (BalanceReportTests):
     /// - One Worker round trip to the nearest Daisy is ~4.5 s for 2 nectar = ~0.45 honey/s,
     ///   so Add Bee at 4 honey is affordable within ~10 s.
-    /// - Forager evolve at 150 honey (plus 3 Workers) lands around minute 3.
-    /// - Garden 1 move cost 5K and ~16 slots targets ~8-10 min to full bloom.
+    /// - Forager evolve at 100 honey (plus 3 Workers) lands around minute 3.
+    /// - Bloom follows collected nectar and sprouts wake one per bloom: garden 1 blooms
+    ///   fully in ~9 min and its 2K move follows within a minute; garden 2 takes ~17 min,
+    ///   garden 3 ~20 min, and each loop after that ~17-19 min as the Queen grows.
     /// </summary>
     public static class DefaultDataCreator
     {
@@ -86,9 +88,10 @@ namespace Buzzfield.Editor
         static void CreateBees(Materials m)
         {
             BeeTier worker = CreateTier("Worker", m.Worker, m.Wing, speed: 2.5f, capacity: 2f, collect: 1f, scale: 0.35f, evolveCost: 0);
-            // Forager: 2x capacity and faster, so one Forager beats the three Workers it costs.
-            BeeTier forager = CreateTier("Forager", m.Forager, m.Wing, speed: 3.2f, capacity: 4f, collect: 0.8f, scale: 0.42f, evolveCost: 150);
-            BeeTier golden = CreateTier("Golden", m.Golden, m.Wing, speed: 4f, capacity: 8f, collect: 0.6f, scale: 0.5f, evolveCost: 2500);
+            // Forager: 3x capacity and faster, so one Forager beats the three Workers it costs (~+30%).
+            BeeTier forager = CreateTier("Forager", m.Forager, m.Wing, speed: 3.5f, capacity: 6f, collect: 0.8f, scale: 0.42f, evolveCost: 100);
+            // Golden: pays off on Lavender and Orchid loads; out of reach in garden 1, whose 2K move comes first.
+            BeeTier golden = CreateTier("Golden", m.Golden, m.Wing, speed: 5f, capacity: 16f, collect: 0.6f, scale: 0.5f, evolveCost: 2500);
 
             GameObject flash = EditorAssets.LoadOrCreatePrefab("MergeFlash", () =>
             {
@@ -155,13 +158,13 @@ namespace Buzzfield.Editor
         static FlowerTypes CreateFlowerTypes(Materials m) => new FlowerTypes
         {
             // Nectar to bloom over regen is the fastest a flower can bloom: ~2 min for a Daisy,
-            // ~6 min for a Lavender and ~12 min for an Orchid.
+            // ~6 min for a Lavender and ~12 min for an Orchid. Full flowers hold a Golden-sized load.
             // Daisy: cheap and quick to refill; the whole first garden starts on these.
-            Daisy = CreateFlowerType("Daisy", m.Daisy, m.Stem, DaisyColor, maxNectar: 6f, regen: 0.6f, value: 1f, maxBees: 2, nectarToBloom: 70f, headScale: 0.42f),
+            Daisy = CreateFlowerType("Daisy", m.Daisy, m.Stem, DaisyColor, maxNectar: 12f, regen: 0.6f, value: 1f, maxBees: 2, nectarToBloom: 70f, headScale: 0.42f),
             // Lavender: 3x value, sprouts in garden 1 and is common from garden 2.
-            Lavender = CreateFlowerType("Lavender", m.Lavender, m.Stem, LavenderColor, maxNectar: 10f, regen: 0.5f, value: 3f, maxBees: 3, nectarToBloom: 170f, headScale: 0.5f),
+            Lavender = CreateFlowerType("Lavender", m.Lavender, m.Stem, LavenderColor, maxNectar: 20f, regen: 0.5f, value: 3f, maxBees: 3, nectarToBloom: 170f, headScale: 0.5f),
             // Orchid: slow refill, 8x value; the late-garden earner.
-            Orchid = CreateFlowerType("Orchid", m.Orchid, m.Stem, OrchidColor, maxNectar: 16f, regen: 0.35f, value: 8f, maxBees: 3, nectarToBloom: 250f, headScale: 0.58f),
+            Orchid = CreateFlowerType("Orchid", m.Orchid, m.Stem, OrchidColor, maxNectar: 32f, regen: 0.35f, value: 8f, maxBees: 3, nectarToBloom: 250f, headScale: 0.58f),
         };
 
         static FlowerType CreateFlowerType(string name, Material head, Material stem, Color bloomed, float maxNectar, float regen, float value, int maxBees, float nectarToBloom, float headScale)
@@ -341,11 +344,12 @@ namespace Buzzfield.Editor
 
             return new List<GardenConfig>
             {
-                CreateGarden("Garden_01", garden1, valueMultiplier: 1f, moveCost: 5_000, hive, ground),
+                // Move costs sit just under the honey a full bloom brings in, so bloom stays the gate.
+                CreateGarden("Garden_01", garden1, valueMultiplier: 1f, moveCost: 2_000, hive, ground),
                 // Garden 2: 24 slots, x3 value; target 15-20 min.
-                CreateGarden("Garden_02", Generate(f, seed: 2, active: 8, total: 24, daisyShare: 0.4f, lavenderShare: 0.4f), valueMultiplier: 3f, moveCost: 60_000, hive, ground),
-                // Garden 3: 32 slots, x9 value.
-                CreateGarden("Garden_03", Generate(f, seed: 3, active: 10, total: 32, daisyShare: 0.25f, lavenderShare: 0.4f), valueMultiplier: 9f, moveCost: 800_000, hive, ground),
+                CreateGarden("Garden_02", Generate(f, seed: 2, active: 8, total: 24, daisyShare: 0.4f, lavenderShare: 0.4f), valueMultiplier: 3f, moveCost: 50_000, hive, ground),
+                // Garden 3: 32 slots, x9 value; ~20 min.
+                CreateGarden("Garden_03", Generate(f, seed: 3, active: 10, total: 32, daisyShare: 0.25f, lavenderShare: 0.4f), valueMultiplier: 9f, moveCost: 500_000, hive, ground),
             };
         }
 
@@ -417,7 +421,7 @@ namespace Buzzfield.Editor
             EditorAssets.LoadOrCreate<PrestigeSettings>($"{Data}/Settings/PrestigeSettings.asset", s =>
             {
                 EditorAssets.SetList(s, "gardens", gardens.ConvertAll(g => (object)g).ToArray());
-                // jellyBase 1000: a 5K-honey first run gives floor(sqrt(5)) = 2 Royal Jelly before bloom bonus.
+                // jellyBase 1000: a ~10K-honey first run gives floor(sqrt(10)) = 3 Royal Jelly, 6 with the full-bloom bonus.
                 EditorAssets.Set(s, ("moveUnlockBloom", 0.6f), ("jellyScale", 1f), ("jellyBase", 1000.0));
             });
 
@@ -432,7 +436,7 @@ namespace Buzzfield.Editor
             {
                 EditorAssets.SetList(s, "abilities", abilities);
                 // Lifetime Royal Jelly per Queen level, +10% honey each. A first move gives a few
-                // jelly (Lv 1-2); the first three gardens reach about Lv 5; Lv 50 is the long tail.
+                // jelly (Lv 2); the first three gardens reach about Lv 10; Lv 50 is the long tail.
                 EditorAssets.Set(s, ("maxLevel", 50), ("honeyBonusPerLevel", 0.1f), ("xpForLevel", LinearCurve(
                     (1, 1), (2, 4), (3, 10), (4, 20), (5, 35), (10, 150), (20, 700), (50, 6000))));
             });

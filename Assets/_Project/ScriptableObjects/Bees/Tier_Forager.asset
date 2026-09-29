@@ -12,10 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d29f02b31bee68541904cdccab5342e3, type: 3}
   m_Name: Tier_Forager
   m_EditorClassIdentifier: Buzzfield.Bees::Buzzfield.Bees.BeeTier
-  speed: 3.2
-  capacity: 4
+  speed: 3.5
+  capacity: 6
   collectDuration: 0.8
   material: {fileID: 0}
   scale: 0.42
   prefab: {fileID: 5660481862735341120, guid: 60b173dc0ab31f748ad118d9f2a99e36, type: 3}
-  evolveCost: 150
+  evolveCost: 100

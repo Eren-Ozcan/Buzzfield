@@ -20,7 +20,7 @@ namespace Buzzfield.Flowers
 
         [Header("Sprouting")]
         [Tooltip("Nearest inactive sprout slots activated by one bloom.")]
-        [SerializeField, Range(0, 4)] private int sproutsPerBloom = 2;
+        [SerializeField, Range(0, 4)] private int sproutsPerBloom = 1;
         [SerializeField, Min(0.05f)] private float sproutGrowDuration = 0.8f;
 
         [Header("Bee Targeting")]

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 079ba7fe93191064a9a07a05fbb5a79f, type: 3}
   m_Name: Flower_Orchid
   m_EditorClassIdentifier: Buzzfield.Flowers::Buzzfield.Flowers.FlowerType
-  maxNectar: 16
+  maxNectar: 32
   regenPerSecond: 0.35
   nectarValue: 8
   maxBeesTargeting: 3

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 079ba7fe93191064a9a07a05fbb5a79f, type: 3}
   m_Name: Flower_Lavender
   m_EditorClassIdentifier: Buzzfield.Flowers::Buzzfield.Flowers.FlowerType
-  maxNectar: 10
+  maxNectar: 20
   regenPerSecond: 0.5
   nectarValue: 3
   maxBeesTargeting: 3
