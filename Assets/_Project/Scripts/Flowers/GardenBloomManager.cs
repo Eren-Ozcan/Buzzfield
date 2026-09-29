@@ -41,8 +41,8 @@ namespace Buzzfield.Flowers
             }
         }
 
-        /// <summary>Scales every flower's bloom per visit (the Pollen Touch Queen ability).</summary>
-        public float BloomPerVisitMultiplier { get; set; } = 1f;
+        /// <summary>Scales how fast collected nectar blooms every flower (the Pollen Touch Queen ability).</summary>
+        public float BloomSpeedMultiplier { get; set; } = 1f;
 
         public int BloomedCount => bloomedCount;
         public int TotalSlots => flowerManager.Flowers.Count;
@@ -114,7 +114,7 @@ namespace Buzzfield.Flowers
         {
             if (flower.IsBloomed)
                 return;
-            flower.Bloom = BloomMath.AddVisit(flower.Bloom, flower.Type.BloomPerVisit, BloomPerVisitMultiplier);
+            flower.Bloom = BloomMath.AddNectar(flower.Bloom, taken, flower.Type.NectarToBloom, BloomSpeedMultiplier);
             groundDirty = true;
             if (flower.IsBloomed)
                 BloomFlower(flower);

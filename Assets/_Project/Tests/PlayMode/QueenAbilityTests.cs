@@ -91,7 +91,7 @@ namespace Buzzfield.Tests.PlayMode
         [Test]
         public void AbilityStopsAtItsMaxLevel()
         {
-            int pollen = IndexOf(QueenEffect.BloomPerVisitPercent);
+            int pollen = IndexOf(QueenEffect.BloomSpeedPercent);
             game.Prestige.GrantJelly(BigNumber.Create(1, 9));
             int max = game.Queen.Abilities[pollen].MaxLevel;
             for (int i = 0; i < max; i++)
@@ -112,9 +112,9 @@ namespace Buzzfield.Tests.PlayMode
             Assert.That(game.Queen.TryBuy(IndexOf(QueenEffect.FlightSpeedPercent)));
             Assert.That(game.Bees.SpeedMultiplier, Is.EqualTo(speedBefore * (1 + wings.EffectPerLevel / 100f)).Within(1e-5));
 
-            QueenAbility pollen = game.Queen.Abilities[IndexOf(QueenEffect.BloomPerVisitPercent)];
-            Assert.That(game.Queen.TryBuy(IndexOf(QueenEffect.BloomPerVisitPercent)));
-            Assert.That(game.Bloom.BloomPerVisitMultiplier, Is.EqualTo(1 + pollen.EffectPerLevel / 100f).Within(1e-5));
+            QueenAbility pollen = game.Queen.Abilities[IndexOf(QueenEffect.BloomSpeedPercent)];
+            Assert.That(game.Queen.TryBuy(IndexOf(QueenEffect.BloomSpeedPercent)));
+            Assert.That(game.Bloom.BloomSpeedMultiplier, Is.EqualTo(1 + pollen.EffectPerLevel / 100f).Within(1e-5));
 
             QueenAbility memory = game.Queen.Abilities[IndexOf(QueenEffect.OfflineCapHours)];
             Assert.That(game.Queen.TryBuy(IndexOf(QueenEffect.OfflineCapHours)));
@@ -166,10 +166,10 @@ namespace Buzzfield.Tests.PlayMode
         public IEnumerator SaveAndReload_KeepsAbilityLevels()
         {
             game.Prestige.GrantJelly(BigNumber.FromDouble(100));
-            int pollen = IndexOf(QueenEffect.BloomPerVisitPercent);
+            int pollen = IndexOf(QueenEffect.BloomSpeedPercent);
             Assert.That(game.Queen.TryBuy(pollen));
             Assert.That(game.Queen.TryBuy(pollen));
-            float bloomFactor = game.Bloom.BloomPerVisitMultiplier;
+            float bloomFactor = game.Bloom.BloomSpeedMultiplier;
             int level = game.Queen.Level;
             BigNumber jelly = game.Prestige.RoyalJelly;
             game.SaveNow();
@@ -179,7 +179,7 @@ namespace Buzzfield.Tests.PlayMode
             Assert.That(game.Queen.AbilityLevel(pollen), Is.EqualTo(2));
             Assert.That(game.Queen.Level, Is.EqualTo(level));
             Assert.That(game.Prestige.RoyalJelly, Is.EqualTo(jelly));
-            Assert.That(game.Bloom.BloomPerVisitMultiplier, Is.EqualTo(bloomFactor).Within(1e-6));
+            Assert.That(game.Bloom.BloomSpeedMultiplier, Is.EqualTo(bloomFactor).Within(1e-6));
             Assert.That(game.Economy.QueenMultiplier, Is.EqualTo(game.Queen.HoneyMultiplier));
         }
 
@@ -211,8 +211,7 @@ namespace Buzzfield.Tests.PlayMode
                 for (int i = 0; i < game.Flowers.Flowers.Count && !PrestigeMath.IsUnlocked(game.Bloom.Fraction, target); i++)
                 {
                     Flower flower = game.Flowers.Flowers[i];
-                    for (int visits = 0; flower.IsActive && !flower.IsBloomed && visits < 1000; visits++)
-                        game.Flowers.Collect(flower, 0.001);
+                    TestBloom.UntilBloomed(game, flower);
                 }
             }
             Assert.That(PrestigeMath.IsUnlocked(game.Bloom.Fraction, target), $"Could not bloom to {target:P0}.");

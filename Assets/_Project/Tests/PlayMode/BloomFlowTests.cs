@@ -33,19 +33,26 @@ namespace Buzzfield.Tests.PlayMode
         }
 
         [Test]
-        public void Visits_RaiseBloomUntilFlowerBlooms()
+        public void CollectedNectar_RaisesBloomUntilFlowerBlooms()
         {
             Flower flower = FirstActive();
-            game.Flowers.Collect(flower, 0.01);
-            Assert.That(flower.Bloom, Is.EqualTo(flower.Type.BloomPerVisit).Within(1e-6f));
+            double collected = game.Flowers.Collect(flower, 1);
+            Assert.That(collected, Is.EqualTo(1));
+            Assert.That(flower.Bloom, Is.EqualTo(1f / flower.Type.NectarToBloom).Within(1e-6f));
 
-            int visits = VisitUntilBloomed(flower);
+            double last = 0;
+            for (int visits = 0; !flower.IsBloomed && visits < 1000; visits++)
+            {
+                last = TestBloom.Visit(game, flower);
+                collected += last;
+            }
             Assert.That(flower.IsBloomed);
-            Assert.That(visits + 1, Is.EqualTo(Mathf.CeilToInt(1f / flower.Type.BloomPerVisit - 1e-4f)));
+            Assert.That(collected, Is.GreaterThanOrEqualTo(flower.Type.NectarToBloom - 1e-3), "Bloomed before enough nectar was collected.");
+            Assert.That(collected - last, Is.LessThan(flower.Type.NectarToBloom), "Should have bloomed on an earlier visit.");
             Assert.That(game.Bloom.BloomedCount, Is.EqualTo(1));
 
-            // Bloom never goes back and extra visits change nothing.
-            game.Flowers.Collect(flower, 0.01);
+            // Bloom never goes back and extra nectar changes nothing.
+            TestBloom.Visit(game, flower);
             Assert.That(flower.Bloom, Is.EqualTo(1f));
             Assert.That(game.Bloom.BloomedCount, Is.EqualTo(1));
         }
@@ -58,11 +65,11 @@ namespace Buzzfield.Tests.PlayMode
             Flower nearestSprout = NearestInactive(flower);
             Assert.That(nearestSprout, Is.Not.Null, "Garden 1 should start with sprout slots.");
 
-            VisitUntilBloomed(flower);
+            TestBloom.UntilBloomed(game, flower);
 
             Assert.That(nearestSprout.IsActive);
             Assert.That(nearestSprout.View.gameObject.activeSelf);
-            Assert.That(ActiveCount(), Is.EqualTo(activeBefore + 2));
+            Assert.That(ActiveCount(), Is.EqualTo(activeBefore + 1), "One sprout per bloom (BloomSettings).");
         }
 
         [UnityTest]
@@ -73,7 +80,7 @@ namespace Buzzfield.Tests.PlayMode
             Color bloomed = flower.Type.BloomedColor;
             Assert.That(ColorDistance(head.GetColor("_BaseColor"), bloomed), Is.GreaterThan(0.1f), "Unbloomed head should be grey.");
 
-            VisitUntilBloomed(flower);
+            TestBloom.UntilBloomed(game, flower);
             yield return new WaitForSeconds(1f);
 
             Assert.That(ColorDistance(flower.View.HeadRenderer.sharedMaterial.GetColor("_BaseColor"), bloomed), Is.LessThan(1e-3f));
@@ -92,7 +99,7 @@ namespace Buzzfield.Tests.PlayMode
             Flower flower = FirstActive();
             Vector2Int tile = TileUnder(flower, tiles);
             Color before = tiles.GetPixel(tile.x, tile.y);
-            VisitUntilBloomed(flower);
+            TestBloom.UntilBloomed(game, flower);
             yield return null;
 
             Color after = tiles.GetPixel(tile.x, tile.y);
@@ -114,7 +121,7 @@ namespace Buzzfield.Tests.PlayMode
                 foreach (Flower flower in game.Flowers.Flowers)
                 {
                     if (flower.IsActive && !flower.IsBloomed)
-                        VisitUntilBloomed(flower);
+                        TestBloom.UntilBloomed(game, flower);
                 }
             }
 
@@ -164,18 +171,6 @@ namespace Buzzfield.Tests.PlayMode
                 if (flower.IsActive)
                     count++;
             return count;
-        }
-
-        /// <summary>Tiny collections so the flower never runs dry; returns the number of visits.</summary>
-        int VisitUntilBloomed(Flower flower)
-        {
-            int visits = 0;
-            while (!flower.IsBloomed && visits < 1000)
-            {
-                game.Flowers.Collect(flower, 0.001);
-                visits++;
-            }
-            return visits;
         }
 
         static Vector2Int TileUnder(Flower flower, Texture2D tiles)

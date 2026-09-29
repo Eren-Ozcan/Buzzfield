@@ -16,6 +16,6 @@ MonoBehaviour:
   regenPerSecond: 0.6
   nectarValue: 1
   maxBeesTargeting: 2
-  bloomPerVisit: 0.12
+  nectarToBloom: 70
   bloomedColor: {r: 1, g: 0.95, b: 0.55, a: 1}
   prefab: {fileID: 8894327027167665981, guid: 6236152b222179b4abfb702ff43fe508, type: 3}

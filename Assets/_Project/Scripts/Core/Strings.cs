@@ -55,7 +55,7 @@ namespace Buzzfield.Core
         public const string EffectStartingWorkersFormat = "+{0} Worker at the start of every garden";
         public const string EffectFlightSpeedFormat = "+{0}% bee flight speed";
         public const string EffectOfflineCapFormat = "+{0}h offline earning time";
-        public const string EffectBloomPerVisitFormat = "+{0}% bloom per flower visit";
+        public const string EffectBloomSpeedFormat = "+{0}% flower bloom speed";
         public const string PerLevelSuffix = " per level";
         public const string Cancel = "Cancel";
         public const string Close = "Close";

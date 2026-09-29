@@ -8,12 +8,20 @@ namespace Buzzfield.Core
     /// </summary>
     public static class BloomMath
     {
-        /// <summary>Flower bloom after one nectar collection, clamped to 1. Never decreases.</summary>
-        public static float AddVisit(float bloom, float perVisit, float multiplier)
+        /// <summary>
+        /// Flower bloom after bees take <paramref name="nectar"/> units from it: a flower blooms
+        /// once <paramref name="nectarToBloom"/> units have been collected (sooner with a
+        /// <paramref name="multiplier"/> above 1). Clamped to 1; never decreases.
+        /// </summary>
+        /// <remarks>
+        /// Progress follows the nectar, not the number of visits, so evolving into bees that
+        /// carry more per trip never slows the bloom down.
+        /// </remarks>
+        public static float AddNectar(float bloom, double nectar, float nectarToBloom, float multiplier)
         {
-            if (perVisit <= 0f || multiplier <= 0f)
+            if (nectar <= 0 || nectarToBloom <= 0f || multiplier <= 0f)
                 return bloom;
-            return Math.Min(1f, bloom + perVisit * multiplier);
+            return (float)Math.Min(1.0, bloom + nectar * multiplier / nectarToBloom);
         }
 
         /// <summary>Garden bloom = bloomed slots / all slots, sprout slots included.</summary>

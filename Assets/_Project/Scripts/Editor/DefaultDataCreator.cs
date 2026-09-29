@@ -154,15 +154,17 @@ namespace Buzzfield.Editor
 
         static FlowerTypes CreateFlowerTypes(Materials m) => new FlowerTypes
         {
+            // Nectar to bloom over regen is the fastest a flower can bloom: ~2 min for a Daisy,
+            // ~6 min for a Lavender and ~12 min for an Orchid.
             // Daisy: cheap and quick to refill; the whole first garden starts on these.
-            Daisy = CreateFlowerType("Daisy", m.Daisy, m.Stem, DaisyColor, maxNectar: 6f, regen: 0.6f, value: 1f, maxBees: 2, bloomPerVisit: 0.12f, headScale: 0.42f),
+            Daisy = CreateFlowerType("Daisy", m.Daisy, m.Stem, DaisyColor, maxNectar: 6f, regen: 0.6f, value: 1f, maxBees: 2, nectarToBloom: 70f, headScale: 0.42f),
             // Lavender: 3x value, sprouts in garden 1 and is common from garden 2.
-            Lavender = CreateFlowerType("Lavender", m.Lavender, m.Stem, LavenderColor, maxNectar: 10f, regen: 0.5f, value: 3f, maxBees: 3, bloomPerVisit: 0.08f, headScale: 0.5f),
+            Lavender = CreateFlowerType("Lavender", m.Lavender, m.Stem, LavenderColor, maxNectar: 10f, regen: 0.5f, value: 3f, maxBees: 3, nectarToBloom: 170f, headScale: 0.5f),
             // Orchid: slow refill, 8x value; the late-garden earner.
-            Orchid = CreateFlowerType("Orchid", m.Orchid, m.Stem, OrchidColor, maxNectar: 16f, regen: 0.35f, value: 8f, maxBees: 3, bloomPerVisit: 0.05f, headScale: 0.58f),
+            Orchid = CreateFlowerType("Orchid", m.Orchid, m.Stem, OrchidColor, maxNectar: 16f, regen: 0.35f, value: 8f, maxBees: 3, nectarToBloom: 250f, headScale: 0.58f),
         };
 
-        static FlowerType CreateFlowerType(string name, Material head, Material stem, Color bloomed, float maxNectar, float regen, float value, int maxBees, float bloomPerVisit, float headScale)
+        static FlowerType CreateFlowerType(string name, Material head, Material stem, Color bloomed, float maxNectar, float regen, float value, int maxBees, float nectarToBloom, float headScale)
         {
             GameObject prefab = EditorAssets.LoadOrCreatePrefab($"Flower_{name}", () =>
             {
@@ -180,7 +182,7 @@ namespace Buzzfield.Editor
 
             return EditorAssets.LoadOrCreate<FlowerType>($"{Data}/Flowers/Flower_{name}.asset", t => EditorAssets.Set(t,
                 ("maxNectar", maxNectar), ("regenPerSecond", regen), ("nectarValue", value),
-                ("maxBeesTargeting", maxBees), ("bloomPerVisit", bloomPerVisit), ("bloomedColor", bloomed),
+                ("maxBeesTargeting", maxBees), ("nectarToBloom", nectarToBloom), ("bloomedColor", bloomed),
                 ("prefab", prefab.GetComponent<FlowerView>())));
         }
 
@@ -424,7 +426,7 @@ namespace Buzzfield.Editor
                 CreateAbility(QueenAbilityIds.RoyalBrood, QueenEffect.StartingWorkers, perLevel: 1f, maxLevel: 5, baseCost: 2, multiplier: 2.5f),
                 CreateAbility(QueenAbilityIds.RoyalWings, QueenEffect.FlightSpeedPercent, perLevel: 5f, maxLevel: 10, baseCost: 1, multiplier: 1.8f),
                 CreateAbility(QueenAbilityIds.SweetMemory, QueenEffect.OfflineCapHours, perLevel: 1f, maxLevel: 6, baseCost: 3, multiplier: 2f),
-                CreateAbility(QueenAbilityIds.PollenTouch, QueenEffect.BloomPerVisitPercent, perLevel: 10f, maxLevel: 5, baseCost: 2, multiplier: 2.2f),
+                CreateAbility(QueenAbilityIds.PollenTouch, QueenEffect.BloomSpeedPercent, perLevel: 10f, maxLevel: 5, baseCost: 2, multiplier: 2.2f),
             };
             EditorAssets.LoadOrCreate<QueenSettings>($"{Data}/Settings/QueenSettings.asset", s =>
             {

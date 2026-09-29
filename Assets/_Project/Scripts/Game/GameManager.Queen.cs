@@ -45,7 +45,7 @@ namespace Buzzfield.Game
         {
             economy.QueenMultiplier = queen.HoneyMultiplier;
             upgrades.QueenSpeedMultiplier = (float)QueenMath.PercentFactor(queen.EffectTotal(QueenEffect.FlightSpeedPercent));
-            bloom.BloomPerVisitMultiplier = (float)QueenMath.PercentFactor(queen.EffectTotal(QueenEffect.BloomPerVisitPercent));
+            bloom.BloomSpeedMultiplier = (float)QueenMath.PercentFactor(queen.EffectTotal(QueenEffect.BloomSpeedPercent));
         }
 
         /// <summary>

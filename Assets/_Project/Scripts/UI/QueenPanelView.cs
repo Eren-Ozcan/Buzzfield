@@ -244,7 +244,7 @@ namespace Buzzfield.UI
                 case QueenEffect.StartingWorkers: format = Strings.EffectStartingWorkersFormat; break;
                 case QueenEffect.FlightSpeedPercent: format = Strings.EffectFlightSpeedFormat; break;
                 case QueenEffect.OfflineCapHours: format = Strings.EffectOfflineCapFormat; break;
-                case QueenEffect.BloomPerVisitPercent: format = Strings.EffectBloomPerVisitFormat; break;
+                case QueenEffect.BloomSpeedPercent: format = Strings.EffectBloomSpeedFormat; break;
                 default: return string.Empty;
             }
             return string.Format(format, amount) + Strings.PerLevelSuffix;

@@ -8,7 +8,7 @@ namespace Buzzfield.Economy
         StartingWorkers,
         FlightSpeedPercent,
         OfflineCapHours,
-        BloomPerVisitPercent,
+        BloomSpeedPercent,
     }
 
     /// <summary>Ids of the authored abilities; saves and display names key on these.</summary>

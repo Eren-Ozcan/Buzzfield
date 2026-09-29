@@ -6,37 +6,38 @@ namespace Buzzfield.Tests.EditMode
     public class BloomMathTests
     {
         [Test]
-        public void AddVisit_AddsScaledProgress()
+        public void AddNectar_AddsNectarShareScaled()
         {
-            Assert.That(BloomMath.AddVisit(0.2f, 0.1f, 1f), Is.EqualTo(0.3f).Within(1e-6f));
-            Assert.That(BloomMath.AddVisit(0.2f, 0.1f, 1.5f), Is.EqualTo(0.35f).Within(1e-6f));
+            Assert.That(BloomMath.AddNectar(0.2f, 7, 70f, 1f), Is.EqualTo(0.3f).Within(1e-6f));
+            Assert.That(BloomMath.AddNectar(0.2f, 7, 70f, 1.5f), Is.EqualTo(0.35f).Within(1e-6f));
         }
 
         [Test]
-        public void AddVisit_ClampsAtOne()
+        public void AddNectar_ClampsAtOne()
         {
-            Assert.That(BloomMath.AddVisit(0.95f, 0.12f, 1f), Is.EqualTo(1f));
-            Assert.That(BloomMath.AddVisit(1f, 0.12f, 1f), Is.EqualTo(1f));
+            Assert.That(BloomMath.AddNectar(0.95f, 12, 70f, 1f), Is.EqualTo(1f));
+            Assert.That(BloomMath.AddNectar(1f, 12, 70f, 1f), Is.EqualTo(1f));
         }
 
         [Test]
-        public void AddVisit_NeverDecreases()
+        public void AddNectar_NeverDecreases()
         {
-            Assert.That(BloomMath.AddVisit(0.5f, -0.2f, 1f), Is.EqualTo(0.5f));
-            Assert.That(BloomMath.AddVisit(0.5f, 0.2f, -1f), Is.EqualTo(0.5f));
+            Assert.That(BloomMath.AddNectar(0.5f, -2, 70f, 1f), Is.EqualTo(0.5f));
+            Assert.That(BloomMath.AddNectar(0.5f, 2, 70f, -1f), Is.EqualTo(0.5f));
+            Assert.That(BloomMath.AddNectar(0.5f, 2, 0f, 1f), Is.EqualTo(0.5f));
         }
 
         [Test]
-        public void AddVisit_DaisyBloomsAfterNineVisits()
+        public void AddNectar_SameNectarBloomsTheSameInSmallOrBigLoads()
         {
-            float bloom = 0f;
-            int visits = 0;
-            while (bloom < 1f)
-            {
-                bloom = BloomMath.AddVisit(bloom, 0.12f, 1f);
-                visits++;
-            }
-            Assert.That(visits, Is.EqualTo(9));
+            float small = 0f, big = 0f;
+            for (int i = 0; i < 30; i++)
+                small = BloomMath.AddNectar(small, 2, 70f, 1f);
+            for (int i = 0; i < 10; i++)
+                big = BloomMath.AddNectar(big, 6, 70f, 1f);
+            Assert.That(small, Is.EqualTo(big).Within(1e-5f));
+            Assert.That(small, Is.LessThan(1f));
+            Assert.That(BloomMath.AddNectar(small, 10.01, 70f, 1f), Is.EqualTo(1f), "About 70 units in all bloom the flower.");
         }
 
         [Test]
