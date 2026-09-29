@@ -8,7 +8,7 @@ string lives in `Buzzfield.Core.Strings`.
 
 - `Assets/_Project/Scripts/` — one assembly per folder:
   - `Core/` (`Buzzfield.Core`, `noEngineReferences: true`): `BigNumber`, `NumberFormat`,
-    `RollingRate`, `HoneyFormula`, `BloomMath`, `PrestigeMath`, `QueenMath`, `IncomeMath`, `OfflineEarnings`,
+    `RollingRate`, `HoneyFormula`, `BloomMath`, `ForagingMath`, `PrestigeMath`, `QueenMath`, `IncomeMath`, `OfflineEarnings`,
     `TapBoost`, `TimeFormat`, `TweenMath`, `AdPacing`, `Entitlements`, `SaveData` + `SaveMigration` + `SaveEnvelope` +
     `SaveFileStore`, `Strings`.
     Pure logic only, EditMode-tested.
@@ -46,6 +46,8 @@ string lives in `Buzzfield.Core.Strings`.
   (TMP allocates in the editor): `-runTests -testPlatform StandaloneWindows64 -testFilter PerformanceTests`.
   `BalanceReportTests` is explicit: a bot plays three gardens and two loops at fixed 0.1 s steps
   and logs milestone times (`-testFilter BalanceReportTests`, `BZ_BALANCE_OUT` for a file).
+  Re-run it after any balance change. Tests bloom flowers through `TestBloom` (bloom follows
+  collected nectar, `FlowerType.nectarToBloom`).
 - Queen abilities are data: add a `QueenAbility` asset to `QueenSettings.abilities` (reusing a
   `QueenEffect`) and rebuild the scene so the panel gets a row. Saves key ability levels by id.
 - Batchmode TMP import: `-executeMethod Buzzfield.Editor.TmpResources.ImportAndExit`
