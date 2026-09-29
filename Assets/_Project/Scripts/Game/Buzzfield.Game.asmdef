@@ -10,7 +10,8 @@
         "Buzzfield.Economy",
         "Buzzfield.Save",
         "Buzzfield.Upgrades",
-        "Buzzfield.UI"
+        "Buzzfield.UI",
+        "Buzzfield.Platform"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

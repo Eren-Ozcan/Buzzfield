@@ -31,6 +31,12 @@ namespace Buzzfield.Game
         private BigNumber lastRate;
         private bool paused;
 
+        /// <summary>
+        /// The app lost the screen to a full-screen ad or the store's payment sheet, not to the
+        /// player leaving: the time away is still credited, but no Welcome back panel opens.
+        /// </summary>
+        private bool pausedByOverlay;
+
         /// <summary>A return that waits for trusted time (the device rebooted while away).</summary>
         private PendingReturn? pendingReturn;
 
@@ -141,6 +147,10 @@ namespace Buzzfield.Game
             if (pauseStatus)
             {
                 paused = true;
+                pausedByOverlay = ads.IsShowing || store.IsPurchasing;
+                // A break the player walked away from is not a break any more.
+                if (!pausedByOverlay)
+                    ads.ClearPendingBreak();
                 SaveNow();
                 return;
             }
@@ -150,6 +160,7 @@ namespace Buzzfield.Game
             paused = false;
             pendingReturn = null;
             EvaluateReturn(lastStamp, lastRate, GameClock.DeviceUtc, GameClock.MonotonicSeconds);
+            pausedByOverlay = false;
             SaveNow();
         }
 
@@ -200,7 +211,7 @@ namespace Buzzfield.Game
             if (!result.IsPayable)
                 return;
             GrantOffline(result.Amount);
-            if (result.ElapsedSeconds >= offlineSettings.MinAwaySeconds)
+            if (result.ElapsedSeconds >= offlineSettings.MinAwaySeconds && !pausedByOverlay)
                 OfferOfflineAd(result.Amount, result.ElapsedSeconds, result.CapReached, capSeconds);
         }
 

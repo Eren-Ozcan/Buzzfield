@@ -1,21 +1,22 @@
 using Buzzfield.Ads;
 using Buzzfield.Core;
+using Buzzfield.Platform;
 
 namespace Buzzfield.Game
 {
     /// <summary>
     /// In-app purchases: grants what each product gives and applies the entitlements
-    /// (permanent honey multiplier, forced ads off). Every grant saves the game, so a kill
+    /// (permanent honey multiplier, interstitials off). Every grant saves the game, so a kill
     /// right after a purchase never loses it. Entitlements survive the Queen move.
     /// </summary>
     public sealed partial class GameManager
     {
         private void InitStore()
         {
-            // The mock stands in until Unity IAP is added.
-            store = new StoreManager(new MockStoreService(storeCatalog), storeCatalog);
+            // Unity IAP on a phone, the mock in the editor.
+            store = new StoreManager(PlatformServices.CreateStoreService(storeCatalog), storeCatalog);
             store.OnProductGranted += HandleProductGranted;
-            shopPanel.Init(store, tweener, feedbackSettings);
+            shopPanel.Init(store, tweener, feedbackSettings, () => ads.PrivacyOptionsRequired, ShowPrivacyOptions);
             ApplyEntitlements();
         }
 
@@ -39,6 +40,8 @@ namespace Buzzfield.Game
             economy.PurchasedMultiplier = owned.permanentHoney2x ? storeCatalog.PermanentHoneyMultiplier : 1;
             ads.ForcedAdsRemoved = owned.removeAds;
         }
+
+        private void ShowPrivacyOptions() => ads.ShowPrivacyOptions(null);
 
         private void HandleProductGranted(StoreProduct product)
         {

@@ -3,6 +3,7 @@ using Buzzfield.Bees;
 using Buzzfield.Core;
 using Buzzfield.Economy;
 using Buzzfield.Flowers;
+using Buzzfield.Platform;
 using Buzzfield.Save;
 using Buzzfield.UI;
 using Buzzfield.Upgrades;
@@ -14,7 +15,7 @@ namespace Buzzfield.Game
     /// <summary>
     /// Composition root: owns the init order, wires the managers together and drives
     /// the per-frame ticks in a fixed order (flowers regenerate before bees read them).
-    /// Saving, loading and offline earnings live in GameManager.Save.cs, rewarded ads in
+    /// Saving, loading and offline earnings live in GameManager.Save.cs, ads in
     /// GameManager.Ads.cs, the store in GameManager.Store.cs and Queen bonuses in GameManager.Queen.cs.
     /// </summary>
     public sealed partial class GameManager : MonoBehaviour
@@ -139,6 +140,7 @@ namespace Buzzfield.Game
             beeManager.Tick(deltaTime);
             bloom.Tick(deltaTime);
             ads.Tick(Time.unscaledDeltaTime);
+            TickInterstitial(Time.unscaledDeltaTime);
             store.Tick(Time.unscaledDeltaTime);
             TickAutosave(Time.unscaledDeltaTime);
             tweener.Tick(Time.unscaledDeltaTime);
@@ -160,7 +162,7 @@ namespace Buzzfield.Game
             }
             if (tapCatcher != null)
                 tapCatcher.OnWorldTapped -= HandleWorldTapped;
-            ads?.Dispose();
+            DisposeAds();
             DisposeQueen();
             DisposeStore();
             DisposeSave();
@@ -191,6 +193,8 @@ namespace Buzzfield.Game
             LoadGarden(null);
             SpawnStartingBees();
             SaveNow();
+            FirebaseServices.Log("queen_move", ("moves", prestige.MovesMade), ("play_minutes", (long)(stats.playSeconds / 60)));
+            ads.MarkNaturalBreak(BreakQueenMove);
             return true;
         }
 
@@ -235,6 +239,8 @@ namespace Buzzfield.Game
         {
             stats.gardensCompleted++;
             gardenComplete.Play();
+            FirebaseServices.Log("garden_complete", ("garden", prestige.MovesMade + 1), ("play_minutes", (long)(stats.playSeconds / 60)));
+            ads.MarkNaturalBreak(BreakGardenComplete);
         }
     }
 }
