@@ -13,6 +13,7 @@ namespace Buzzfield.Editor
         public const string DataRoot = Root + "/ScriptableObjects";
         public const string PrefabRoot = Root + "/Prefabs";
         public const string MaterialRoot = Root + "/Materials";
+        public const string MeshRoot = Root + "/Meshes";
         public const string ScenePath = Root + "/Scenes/Main.unity";
 
         /// <summary>Loads the asset at <paramref name="path"/>, or creates it and runs <paramref name="init"/> once.</summary>
@@ -60,6 +61,38 @@ namespace Buzzfield.Editor
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(temp, path);
             Object.DestroyImmediate(temp);
             return prefab;
+        }
+
+        /// <summary>
+        /// Saves a generated mesh as an asset named after it. An older mesh of the same name is
+        /// overwritten in place, so prefabs that use it keep their reference.
+        /// </summary>
+        public static Mesh SaveMesh(Mesh mesh)
+        {
+            string path = $"{MeshRoot}/{mesh.name}.asset";
+            EnsureFolder(MeshRoot);
+            var existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+            if (existing == null)
+            {
+                AssetDatabase.CreateAsset(mesh, path);
+                return mesh;
+            }
+            EditorUtility.CopySerialized(mesh, existing);
+            Object.DestroyImmediate(mesh);
+            EditorUtility.SetDirty(existing);
+            return existing;
+        }
+
+        /// <summary>Child object drawing <paramref name="mesh"/> with <paramref name="material"/>, without shadows.</summary>
+        public static GameObject MeshObject(string name, Transform parent, Mesh mesh, Material material)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var renderer = go.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return go;
         }
 
         /// <summary>A primitive without its collider (bees and flowers never use physics).</summary>
