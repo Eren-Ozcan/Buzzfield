@@ -51,6 +51,8 @@ namespace Buzzfield.Core
         public long gardensCompleted;
         public long beesEvolved;
         public double playSeconds;
+        /// <summary>Flowers shaken for pollen; the swipe hint shows until the first few.</summary>
+        public long flowersShaken;
     }
 
     /// <summary>One Queen ability level, keyed by the ability id so the list can be reordered or grow.</summary>

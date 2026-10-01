@@ -256,6 +256,17 @@ namespace Buzzfield.Tests.EditMode
         }
 
         [Test]
+        public void Migration_VersionThree_StartsTheShakeCountAtZero()
+        {
+            SaveData data = JsonUtility.FromJson<SaveData>("{\"saveVersion\":3,\"stats\":{\"flowersBloomed\":12}}");
+
+            Assert.That(SaveMigration.Upgrade(data, 3));
+            Assert.That(data.saveVersion, Is.EqualTo(SaveMigration.CurrentVersion));
+            Assert.That(data.stats.flowersShaken, Is.Zero);
+            Assert.That(data.stats.flowersBloomed, Is.EqualTo(12));
+        }
+
+        [Test]
         public void AbilityLevels_RoundTripThroughJsonUtility()
         {
             var data = new SaveData
