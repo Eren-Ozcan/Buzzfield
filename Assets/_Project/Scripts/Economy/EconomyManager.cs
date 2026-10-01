@@ -42,20 +42,41 @@ namespace Buzzfield.Economy
         /// <summary>Permanent multiplier bought in the store; stacks with every other one and survives the Queen move.</summary>
         public double PurchasedMultiplier { get; set; } = 1;
 
+        /// <summary>Every multiplier on honey per nectar unit right now: upgrade, permanent and timed boosts.</summary>
+        public BigNumber TotalMultiplier => HoneyValueMultiplier * (BoostMultiplier * PermanentMultiplier);
+
         public event Action<BigNumber> OnHoneyChanged;
 
-        /// <summary>Turns deposited nectar into honey and returns the amount added.</summary>
+        /// <summary>Turns nectar the bees deposited into honey and returns the amount added.</summary>
         public BigNumber Deposit(double nectar, double flowerValue, double now)
         {
             BigNumber honey = HoneyFormula.Honey(nectar, flowerValue, HoneyValueMultiplier, BoostMultiplier * PermanentMultiplier);
             if (honey.IsZero)
                 return honey;
             honeyRate.Add(now, honey);
+            Earn(honey);
+            return honey;
+        }
+
+        /// <summary>
+        /// Turns nectar shaken out of a flower into honey and returns the amount added. Counts
+        /// toward the run and lifetime totals like a deposit, but not toward honey per second:
+        /// that rate measures the bees and sizes the shake, so it must not feed on itself.
+        /// </summary>
+        public BigNumber Harvest(double nectar, double flowerValue)
+        {
+            BigNumber honey = HoneyFormula.Honey(nectar, flowerValue, HoneyValueMultiplier, BoostMultiplier * PermanentMultiplier);
+            if (!honey.IsZero)
+                Earn(honey);
+            return honey;
+        }
+
+        private void Earn(BigNumber honey)
+        {
             RunHoneyEarned += honey;
             LifetimeHoneyEarned += honey;
             Honey += honey;
             OnHoneyChanged?.Invoke(Honey);
-            return honey;
         }
 
         public bool CanAfford(BigNumber cost) => Honey >= cost;
