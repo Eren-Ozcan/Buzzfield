@@ -68,7 +68,7 @@ The game is English only, so the listing is English only.
     • Come back to a pot of honey, or double it
 
     NO RUSH
-    • Tap the meadow for a short burst of speed when you feel like it
+    • Swipe across the flowers to shake out extra pollen when you feel like it
     • One-handed, portrait play that fits a few spare minutes
 
 **Category**: Game › Simulation (idle). **Tags**: Idle, Casual, Simulation.
