@@ -9,7 +9,7 @@ string lives in `Buzzfield.Core.Strings`.
 - `Assets/_Project/Scripts/` — one assembly per folder:
   - `Core/` (`Buzzfield.Core`, `noEngineReferences: true`): `BigNumber`, `NumberFormat`,
     `RollingRate`, `HoneyFormula`, `BloomMath`, `ForagingMath`, `PrestigeMath`, `QueenMath`, `IncomeMath`, `OfflineEarnings`,
-    `TapBoost`, `TimeFormat`, `TweenMath`, `AdPacing`, `TcfConsent`, `Entitlements`, `SaveData` + `SaveMigration` + `SaveEnvelope` +
+    `PollenMath`, `TimeFormat`, `TweenMath`, `AdPacing`, `TcfConsent`, `Entitlements`, `SaveData` + `SaveMigration` + `SaveEnvelope` +
     `SaveFileStore`, `Strings`.
     Pure logic only, EditMode-tested.
   - `Core/Runtime/` (`Buzzfield.Core.Runtime`): Unity helpers shared by systems
@@ -17,6 +17,14 @@ string lives in `Buzzfield.Core.Strings`.
     runner (scale pop, press hold, wiggle), ticked by `GameManager`; effects come from `ParticlePool`.
   - `Flowers/`, `Bees/`, `Economy/`, `Upgrades/`, `Save/`, `UI/`, `Ads/` — one system each,
     ScriptableObject definitions next to the code that reads them.
+  - Pollen shake (the active-play mechanic): `SwipeCatcher` (UI) sends finger strokes to
+    `GameManager.Pollen.cs`, `PollenShaker` (Flowers) shakes the flowers they cross, and each shake
+    pays `PollenMath.ShakeNectar` through `EconomyManager.Harvest` (counts for the run, never for
+    honey/sec, which sizes the shake). Tuning in `PollenSettings`; `bloomShare` keeps the bloom gate.
+  - Garden look: each flower slot is a patch prefab (`FlowerPatch_*`), and `GardenDecor` (grass,
+    bushes, stones, fence) is laid out from the garden's seed and merged per material by
+    `GardenDecorView` when the garden spawns. Placeholder meshes are flat-shaded low-poly, built by
+    the editor `LowPolyBuilder` into `Assets/_Project/Meshes/`.
   - `Ads/` (`Buzzfield.Ads`): `AdManager` and `StoreManager` over `IAdService`/`IConsentService`/
     `IStoreService`, plus the editor mocks. `AdSettings.asset` holds the live AdMob unit ids and
     the interstitial pacing; development builds always use Google's test units.
@@ -73,7 +81,9 @@ string lives in `Buzzfield.Core.Strings`.
   `GameManager`. No allocations, LINQ or `GetComponent` in per-frame code. Pool spawned objects.
 - No `FindObjectOfType`/`FindObjectsByType` and no singletons; pass references through
   `[SerializeField]` or `Init(...)`. Unsubscribe events in `OnDisable`/`OnDestroy`.
-- Every visual is a prefab (primitives for now) so art can be swapped without code changes.
+- Every visual is a prefab (primitives and generated low-poly placeholders for now) so art can
+  be swapped without code changes. To regenerate a placeholder, delete its prefab (for a decor
+  piece also `GardenDecor.asset`) and run Create Default Data.
 - Packages: URP, Input System, uGUI/TextMeshPro, Test Framework, Google Mobile Ads (OpenUPM),
   Unity IAP, Firebase App/Analytics/Crashlytics and the External Dependency Manager only. Ask
   before adding one. No DOTween. The Firebase tarballs are not in git: run
