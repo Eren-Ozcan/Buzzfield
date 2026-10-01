@@ -18,4 +18,4 @@ MonoBehaviour:
   maxBeesTargeting: 3
   nectarToBloom: 250
   bloomedColor: {r: 0.95, g: 0.4, b: 0.7, a: 1}
-  prefab: {fileID: 1005153913463623587, guid: bd473669e97a8b349bedddc327ddfcc0, type: 3}
+  prefab: {fileID: 7973748861555843166, guid: 55262c7ca1d6a1945a99f9403a923aeb, type: 3}

@@ -42,6 +42,7 @@ namespace Buzzfield.Editor
             var gardens = CreateGardens(flowers, hive, ground);
             CreateBloom(materials);
             CreatePollen(materials);
+            CreatePollen(materials);
 
             CreateEconomy(gardens);
             CreateUpgrades();
@@ -156,38 +157,156 @@ namespace Buzzfield.Editor
             public FlowerType Daisy, Lavender, Orchid;
         }
 
+        /// <summary>Patches are built at a comfortable size, then scaled up to read from the camera.</summary>
+        const float PatchScale = 1.4f;
+
+        enum PatchShape
+        {
+            Daisy,
+            Lavender,
+            Orchid,
+        }
+
         static FlowerTypes CreateFlowerTypes(Materials m) => new FlowerTypes
         {
             // Nectar to bloom over regen is the fastest a flower can bloom: ~2 min for a Daisy,
             // ~6 min for a Lavender and ~12 min for an Orchid. Full flowers hold a Golden-sized load.
             // Daisy: cheap and quick to refill; the whole first garden starts on these.
-            Daisy = CreateFlowerType("Daisy", m.Daisy, m.Stem, DaisyColor, maxNectar: 12f, regen: 0.6f, value: 1f, maxBees: 2, nectarToBloom: 70f, headScale: 0.42f),
+            Daisy = CreateFlowerType("Daisy", PatchShape.Daisy, m.Daisy, m.Stem, DaisyColor, maxNectar: 12f, regen: 0.6f, value: 1f, maxBees: 2, nectarToBloom: 70f),
             // Lavender: 3x value, sprouts in garden 1 and is common from garden 2.
-            Lavender = CreateFlowerType("Lavender", m.Lavender, m.Stem, LavenderColor, maxNectar: 20f, regen: 0.5f, value: 3f, maxBees: 3, nectarToBloom: 170f, headScale: 0.5f),
+            Lavender = CreateFlowerType("Lavender", PatchShape.Lavender, m.Lavender, m.Stem, LavenderColor, maxNectar: 20f, regen: 0.5f, value: 3f, maxBees: 3, nectarToBloom: 170f),
             // Orchid: slow refill, 8x value; the late-garden earner.
-            Orchid = CreateFlowerType("Orchid", m.Orchid, m.Stem, OrchidColor, maxNectar: 32f, regen: 0.35f, value: 8f, maxBees: 3, nectarToBloom: 250f, headScale: 0.58f),
+            Orchid = CreateFlowerType("Orchid", PatchShape.Orchid, m.Orchid, m.Stem, OrchidColor, maxNectar: 32f, regen: 0.35f, value: 8f, maxBees: 3, nectarToBloom: 250f),
         };
 
-        static FlowerType CreateFlowerType(string name, Material head, Material stem, Color bloomed, float maxNectar, float regen, float value, int maxBees, float nectarToBloom, float headScale)
+        static FlowerType CreateFlowerType(string name, PatchShape shape, Material head, Material stem, Color bloomed, float maxNectar, float regen, float value, int maxBees, float nectarToBloom)
         {
-            GameObject prefab = EditorAssets.LoadOrCreatePrefab($"Flower_{name}", () =>
+            FlowerView patch = CreateFlowerPatch(name, shape, head, stem);
+            FlowerType type = EditorAssets.LoadOrCreate<FlowerType>($"{Data}/Flowers/Flower_{name}.asset", t => EditorAssets.Set(t,
+                ("maxNectar", maxNectar), ("regenPerSecond", regen), ("nectarValue", value),
+                ("maxBeesTargeting", maxBees), ("nectarToBloom", nectarToBloom), ("bloomedColor", bloomed),
+                ("prefab", patch)));
+            // Patches replaced the single placeholder flower after the first data; filled on older data too.
+            EditorAssets.SetIfMissing(type, "prefab", patch);
+            return type;
+        }
+
+        /// <summary>
+        /// A patch of several flowers of one kind: one merged mesh for the stems and leaves, one
+        /// for the heads (the part the bloom tints) and the nectar point just above the tallest head.
+        /// </summary>
+        static FlowerView CreateFlowerPatch(string name, PatchShape shape, Material head, Material stem)
+        {
+            GameObject prefab = EditorAssets.LoadOrCreatePrefab($"FlowerPatch_{name}", () =>
             {
-                var root = new GameObject($"Flower_{name}");
-                EditorAssets.Primitive(PrimitiveType.Capsule, "Stem", root.transform, new Vector3(0f, 0.45f, 0f), new Vector3(0.12f, 0.45f, 0.12f), stem);
-                GameObject headObject = EditorAssets.Primitive(PrimitiveType.Sphere, "Head", root.transform, new Vector3(0f, 0.95f, 0f), Vector3.one * headScale, head);
+                var greens = new LowPolyBuilder(seed: 11 + (int)shape);
+                var heads = new LowPolyBuilder(seed: 23 + (int)shape);
+                float top = shape switch
+                {
+                    PatchShape.Daisy => DaisyPatch(greens, heads),
+                    PatchShape.Lavender => LavenderPatch(greens, heads),
+                    _ => OrchidPatch(greens, heads),
+                };
+                Mesh greenMesh = EditorAssets.SaveMesh(greens.ToMesh($"FlowerPatch_{name}_Greens", PatchScale));
+                Mesh headMesh = EditorAssets.SaveMesh(heads.ToMesh($"FlowerPatch_{name}_Heads", PatchScale));
+
+                var root = new GameObject($"FlowerPatch_{name}");
+                EditorAssets.MeshObject("Greens", root.transform, greenMesh, stem);
+                GameObject headObject = EditorAssets.MeshObject("Heads", root.transform, headMesh, head);
                 var nectarPoint = new GameObject("NectarPoint").transform;
                 nectarPoint.SetParent(root.transform, false);
-                nectarPoint.localPosition = new Vector3(0f, 0.95f + headScale * 0.5f + 0.1f, 0f);
+                nectarPoint.localPosition = new Vector3(0f, top * PatchScale + 0.1f, 0f);
 
                 var view = root.AddComponent<FlowerView>();
                 EditorAssets.Set(view, ("nectarPoint", nectarPoint), ("headRenderer", headObject.GetComponent<Renderer>()));
                 return root;
             });
+            return prefab.GetComponent<FlowerView>();
+        }
 
-            return EditorAssets.LoadOrCreate<FlowerType>($"{Data}/Flowers/Flower_{name}.asset", t => EditorAssets.Set(t,
-                ("maxNectar", maxNectar), ("regenPerSecond", regen), ("nectarValue", value),
-                ("maxBeesTargeting", maxBees), ("nectarToBloom", nectarToBloom), ("bloomedColor", bloomed),
-                ("prefab", prefab.GetComponent<FlowerView>())));
+        /// <summary>Direction <paramref name="index"/> of a sunflower spiral, so stems never line up.</summary>
+        static Vector3 SpiralDirection(int index, float offsetDegrees)
+        {
+            float angle = (index * 137.5f + offsetDegrees) * Mathf.Deg2Rad;
+            return new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+        }
+
+        /// <summary>Repeatable 0..1 spread for the heights in a patch.</summary>
+        static float Spread(int index) => index * 0.618f % 1f;
+
+        static void Leaves(LowPolyBuilder greens, int count, float length, float lift, float width, float offsetDegrees)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                float angle = (i * 360f / count + offsetDegrees) * Mathf.Deg2Rad;
+                var direction = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                greens.Leaf(new Vector3(0f, 0.02f, 0f), direction * length + Vector3.up * lift, width);
+            }
+        }
+
+        /// <summary>Five flat flower discs on thin stems over a rosette of leaves. Returns the top height.</summary>
+        static float DaisyPatch(LowPolyBuilder greens, LowPolyBuilder heads)
+        {
+            const int count = 5;
+            float top = 0f;
+            for (int k = 0; k < count; k++)
+            {
+                Vector3 direction = SpiralDirection(k, 20f);
+                float radius = 0.08f + 0.26f * Mathf.Sqrt((k + 0.5f) / count);
+                float height = 0.48f + 0.2f * Spread(k);
+                Vector3 tip = direction * radius + Vector3.up * height;
+                greens.Stalk(direction * (radius * 0.5f), tip, 0.025f, 4);
+                Quaternion tilt = Quaternion.AngleAxis(14f, Vector3.Cross(Vector3.up, direction));
+                heads.Blob(tip + Vector3.up * 0.03f, new Vector3(0.17f, 0.06f, 0.17f), tilt, 0.08f);
+                top = Mathf.Max(top, height + 0.09f);
+            }
+            Leaves(greens, 5, 0.38f, 0.12f, 0.13f, 10f);
+            return top;
+        }
+
+        /// <summary>Seven tall spikes of buds among narrow upright leaves. Returns the top height.</summary>
+        static float LavenderPatch(LowPolyBuilder greens, LowPolyBuilder heads)
+        {
+            const int count = 7;
+            float top = 0f;
+            for (int k = 0; k < count; k++)
+            {
+                Vector3 direction = SpiralDirection(k, 60f);
+                float radius = 0.05f + 0.24f * Mathf.Sqrt((k + 0.5f) / count);
+                float height = 0.7f + 0.28f * Spread(k);
+                Vector3 foot = direction * (radius * 0.4f);
+                Vector3 tip = direction * radius + Vector3.up * height;
+                greens.Stalk(foot, tip, 0.018f, 4);
+                Quaternion along = Quaternion.FromToRotation(Vector3.up, (tip - foot).normalized);
+                heads.Blob(tip + Vector3.up * 0.06f, new Vector3(0.065f, 0.2f, 0.065f), along, 0.1f);
+                top = Mathf.Max(top, height + 0.26f);
+            }
+            Leaves(greens, 6, 0.3f, 0.3f, 0.05f, 25f);
+            return top;
+        }
+
+        /// <summary>Three arching stems, each with a wide bloom and a bud, over broad leaves. Returns the top height.</summary>
+        static float OrchidPatch(LowPolyBuilder greens, LowPolyBuilder heads)
+        {
+            const int count = 3;
+            float top = 0f;
+            for (int k = 0; k < count; k++)
+            {
+                float angle = (k * 120f + 15f) * Mathf.Deg2Rad;
+                var direction = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+                float height = 0.62f + 0.14f * Spread(k);
+                Vector3 foot = direction * 0.06f;
+                Vector3 bend = direction * 0.16f + Vector3.up * (height * 0.65f);
+                Vector3 tip = direction * 0.3f + Vector3.up * height;
+                greens.Stalk(foot, bend, 0.03f, 5);
+                greens.Stalk(bend, tip, 0.026f, 5);
+                Quaternion tilt = Quaternion.AngleAxis(25f, Vector3.Cross(Vector3.up, direction));
+                heads.Blob(tip + direction * 0.05f + Vector3.up * 0.04f, new Vector3(0.2f, 0.13f, 0.2f), tilt, 0.12f);
+                heads.Blob(bend + direction * 0.1f + Vector3.up * 0.1f, new Vector3(0.08f, 0.07f, 0.08f), tilt, 0.1f);
+                top = Mathf.Max(top, height + 0.17f);
+            }
+            Leaves(greens, 3, 0.42f, 0.06f, 0.22f, 75f);
+            return top;
         }
 
         static HiveView CreateHivePrefab(Materials m)
@@ -287,6 +406,59 @@ namespace Buzzfield.Editor
             BloomSettings settings = EditorAssets.LoadOrCreate<BloomSettings>($"{Data}/Flowers/BloomSettings.asset", _ => { });
             EditorAssets.SetIfMissing(settings, "bloomBurstPrefab", burst);
             EditorAssets.SetIfMissing(settings, "confettiPrefab", confetti);
+        }
+
+        // ---- Pollen ----
+
+        static void CreatePollen(Materials m)
+        {
+            var pollen = new ParticleSystem.MinMaxGradient(new Color(1f, 0.85f, 0.25f), new Color(1f, 0.97f, 0.65f));
+
+            // Only ever emitted into by PollenShaker: both loop with no emission of their own.
+            ParticleSystem puff = CreateParticlePrefab("PollenPuff", m.BloomParticle, ps =>
+            {
+                ParticleSystem.MainModule main = ps.main;
+                main.loop = true;
+                main.playOnAwake = true;
+                main.startLifetime = new ParticleSystem.MinMaxCurve(0.5f, 0.9f);
+                main.startSpeed = new ParticleSystem.MinMaxCurve(0.6f, 1.6f);
+                main.startSize = new ParticleSystem.MinMaxCurve(0.06f, 0.12f);
+                main.startColor = pollen;
+                main.gravityModifier = 0.15f;
+                main.maxParticles = 400;
+
+                ParticleSystem.EmissionModule emission = ps.emission;
+                emission.rateOverTime = 0f;
+
+                ParticleSystem.ShapeModule shape = ps.shape;
+                shape.shapeType = ParticleSystemShapeType.Sphere;
+                shape.radius = 0.3f;
+            });
+
+            ParticleSystem mote = CreateParticlePrefab("PollenMote", m.BloomParticle, ps =>
+            {
+                ParticleSystem.MainModule main = ps.main;
+                main.loop = true;
+                main.playOnAwake = true;
+                main.startLifetime = new ParticleSystem.MinMaxCurve(1.6f, 2.4f);
+                main.startSpeed = new ParticleSystem.MinMaxCurve(0.05f, 0.2f);
+                main.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.13f);
+                main.startColor = pollen;
+                // Motes drift up out of the flowers.
+                main.gravityModifier = -0.05f;
+                main.maxParticles = 200;
+
+                ParticleSystem.EmissionModule emission = ps.emission;
+                emission.rateOverTime = 0f;
+
+                ParticleSystem.ShapeModule shape = ps.shape;
+                shape.shapeType = ParticleSystemShapeType.Sphere;
+                shape.radius = 0.3f;
+            });
+
+            PollenSettings settings = EditorAssets.LoadOrCreate<PollenSettings>($"{Data}/Flowers/PollenSettings.asset", _ => { });
+            EditorAssets.SetIfMissing(settings, "puffPrefab", puff);
+            EditorAssets.SetIfMissing(settings, "motePrefab", mote);
         }
 
         // ---- Pollen ----
