@@ -22,7 +22,9 @@ namespace Buzzfield.Editor
     /// - Forager evolve at 100 honey (plus 3 Workers) lands around minute 3.
     /// - Bloom follows collected nectar and sprouts wake one per bloom: garden 1 blooms
     ///   fully in ~9 min and its 2K move follows within a minute; garden 2 takes ~17 min,
-    ///   garden 3 ~20 min, and each loop after that ~17-19 min as the Queen grows.
+    ///   garden 3 ~19 min, and each loop after that ~16-17 min as the Queen grows.
+    /// - The bot shakes every flower the moment it has pollen again: 2.5 s of bee income per
+    ///   10 s sweep (+25% honey) with 40% of that nectar going to bloom.
     /// </summary>
     public static class DefaultDataCreator
     {
@@ -42,8 +44,6 @@ namespace Buzzfield.Editor
             var gardens = CreateGardens(flowers, hive, ground);
             CreateDecor(materials, gardens);
             CreateBloom(materials);
-            CreatePollen(materials);
-            CreatePollen(materials);
             CreatePollen(materials);
 
             CreateEconomy(gardens);
@@ -163,16 +163,6 @@ namespace Buzzfield.Editor
         struct FlowerTypes
         {
             public FlowerType Daisy, Lavender, Orchid;
-        }
-
-        /// <summary>Patches are built at a comfortable size, then scaled up to read from the camera.</summary>
-        const float PatchScale = 1.4f;
-
-        enum PatchShape
-        {
-            Daisy,
-            Lavender,
-            Orchid,
         }
 
         /// <summary>Patches are built at a comfortable size, then scaled up to read from the camera.</summary>
@@ -496,112 +486,6 @@ namespace Buzzfield.Editor
             BloomSettings settings = EditorAssets.LoadOrCreate<BloomSettings>($"{Data}/Flowers/BloomSettings.asset", _ => { });
             EditorAssets.SetIfMissing(settings, "bloomBurstPrefab", burst);
             EditorAssets.SetIfMissing(settings, "confettiPrefab", confetti);
-        }
-
-        // ---- Pollen ----
-
-        static void CreatePollen(Materials m)
-        {
-            var pollen = new ParticleSystem.MinMaxGradient(new Color(1f, 0.85f, 0.25f), new Color(1f, 0.97f, 0.65f));
-
-            // Only ever emitted into by PollenShaker: both loop with no emission of their own.
-            ParticleSystem puff = CreateParticlePrefab("PollenPuff", m.BloomParticle, ps =>
-            {
-                ParticleSystem.MainModule main = ps.main;
-                main.loop = true;
-                main.playOnAwake = true;
-                main.startLifetime = new ParticleSystem.MinMaxCurve(0.5f, 0.9f);
-                main.startSpeed = new ParticleSystem.MinMaxCurve(0.6f, 1.6f);
-                main.startSize = new ParticleSystem.MinMaxCurve(0.06f, 0.12f);
-                main.startColor = pollen;
-                main.gravityModifier = 0.15f;
-                main.maxParticles = 400;
-
-                ParticleSystem.EmissionModule emission = ps.emission;
-                emission.rateOverTime = 0f;
-
-                ParticleSystem.ShapeModule shape = ps.shape;
-                shape.shapeType = ParticleSystemShapeType.Sphere;
-                shape.radius = 0.3f;
-            });
-
-            ParticleSystem mote = CreateParticlePrefab("PollenMote", m.BloomParticle, ps =>
-            {
-                ParticleSystem.MainModule main = ps.main;
-                main.loop = true;
-                main.playOnAwake = true;
-                main.startLifetime = new ParticleSystem.MinMaxCurve(1.6f, 2.4f);
-                main.startSpeed = new ParticleSystem.MinMaxCurve(0.05f, 0.2f);
-                main.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.13f);
-                main.startColor = pollen;
-                // Motes drift up out of the flowers.
-                main.gravityModifier = -0.05f;
-                main.maxParticles = 200;
-
-                ParticleSystem.EmissionModule emission = ps.emission;
-                emission.rateOverTime = 0f;
-
-                ParticleSystem.ShapeModule shape = ps.shape;
-                shape.shapeType = ParticleSystemShapeType.Sphere;
-                shape.radius = 0.3f;
-            });
-
-            PollenSettings settings = EditorAssets.LoadOrCreate<PollenSettings>($"{Data}/Flowers/PollenSettings.asset", _ => { });
-            EditorAssets.SetIfMissing(settings, "puffPrefab", puff);
-            EditorAssets.SetIfMissing(settings, "motePrefab", mote);
-        }
-
-        // ---- Pollen ----
-
-        static void CreatePollen(Materials m)
-        {
-            var pollen = new ParticleSystem.MinMaxGradient(new Color(1f, 0.85f, 0.25f), new Color(1f, 0.97f, 0.65f));
-
-            // Only ever emitted into by PollenShaker: both loop with no emission of their own.
-            ParticleSystem puff = CreateParticlePrefab("PollenPuff", m.BloomParticle, ps =>
-            {
-                ParticleSystem.MainModule main = ps.main;
-                main.loop = true;
-                main.playOnAwake = true;
-                main.startLifetime = new ParticleSystem.MinMaxCurve(0.5f, 0.9f);
-                main.startSpeed = new ParticleSystem.MinMaxCurve(0.6f, 1.6f);
-                main.startSize = new ParticleSystem.MinMaxCurve(0.06f, 0.12f);
-                main.startColor = pollen;
-                main.gravityModifier = 0.15f;
-                main.maxParticles = 400;
-
-                ParticleSystem.EmissionModule emission = ps.emission;
-                emission.rateOverTime = 0f;
-
-                ParticleSystem.ShapeModule shape = ps.shape;
-                shape.shapeType = ParticleSystemShapeType.Sphere;
-                shape.radius = 0.3f;
-            });
-
-            ParticleSystem mote = CreateParticlePrefab("PollenMote", m.BloomParticle, ps =>
-            {
-                ParticleSystem.MainModule main = ps.main;
-                main.loop = true;
-                main.playOnAwake = true;
-                main.startLifetime = new ParticleSystem.MinMaxCurve(1.6f, 2.4f);
-                main.startSpeed = new ParticleSystem.MinMaxCurve(0.05f, 0.2f);
-                main.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.13f);
-                main.startColor = pollen;
-                // Motes drift up out of the flowers.
-                main.gravityModifier = -0.05f;
-                main.maxParticles = 200;
-
-                ParticleSystem.EmissionModule emission = ps.emission;
-                emission.rateOverTime = 0f;
-
-                ParticleSystem.ShapeModule shape = ps.shape;
-                shape.shapeType = ParticleSystemShapeType.Sphere;
-                shape.radius = 0.3f;
-            });
-
-            PollenSettings settings = EditorAssets.LoadOrCreate<PollenSettings>($"{Data}/Flowers/PollenSettings.asset", _ => { });
-            EditorAssets.SetIfMissing(settings, "puffPrefab", puff);
-            EditorAssets.SetIfMissing(settings, "motePrefab", mote);
         }
 
         // ---- Pollen ----
