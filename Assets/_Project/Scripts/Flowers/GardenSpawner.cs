@@ -8,18 +8,21 @@ namespace Buzzfield.Flowers
         public readonly Transform Root;
         public readonly HiveView Hive;
         public readonly GroundView Ground;
+        /// <summary>Merged decor; null when the garden has none.</summary>
+        public readonly GardenDecorView Decor;
         public readonly Bounds Bounds;
 
-        public GardenInstance(Transform root, HiveView hive, GroundView ground, Bounds bounds)
+        public GardenInstance(Transform root, HiveView hive, GroundView ground, GardenDecorView decor, Bounds bounds)
         {
             Root = root;
             Hive = hive;
             Ground = ground;
+            Decor = decor;
             Bounds = bounds;
         }
     }
 
-    /// <summary>Builds the ground and hive of a garden from its config. Flowers come from <see cref="FlowerManager"/>.</summary>
+    /// <summary>Builds the ground, hive and decor of a garden from its config. Flowers come from <see cref="FlowerManager"/>.</summary>
     public static class GardenSpawner
     {
         /// <summary>Height of the box the camera keeps in view (tallest flower or hive plus bees).</summary>
@@ -56,8 +59,10 @@ namespace Buzzfield.Flowers
                 Debug.LogError($"Garden '{garden.name}' has no hive prefab.", garden);
             }
 
+            GardenDecorView decor = GardenDecorView.Build(garden, root);
+
             var bounds = new Bounds(new Vector3(0f, ViewHeight * 0.5f, 0f), new Vector3(size.x, ViewHeight, size.y));
-            return new GardenInstance(root, hive, ground, bounds);
+            return new GardenInstance(root, hive, ground, decor, bounds);
         }
     }
 }

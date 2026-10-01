@@ -19,6 +19,7 @@ namespace Buzzfield.Flowers
 
         private GardenConfig garden;
         private GroundView ground;
+        private GardenDecorView decor;
         private Color32[] tileColors;
         private readonly ParticlePool bursts;
         private readonly ParticleSystem confetti;
@@ -61,6 +62,7 @@ namespace Buzzfield.Flowers
         {
             garden = config;
             ground = instance.Ground;
+            decor = instance.Decor;
             animating.Clear();
             bloomedCount = 0;
             IsComplete = false;
@@ -242,9 +244,14 @@ namespace Buzzfield.Flowers
             return Color.Lerp(settings.UnbloomedHeadColor, flower.Type.BloomedColor, flower.Bloom * settings.ProgressTint);
         }
 
-        /// <summary>Tile green = strongest nearby flower influence, never below the garden-wide share.</summary>
+        /// <summary>
+        /// Tile green = strongest nearby flower influence, never below the garden-wide share.
+        /// The decor greens with the garden-wide bloom.
+        /// </summary>
         private void RefreshGround()
         {
+            if (decor != null)
+                decor.SetBloom(Fraction);
             if (ground == null || garden == null)
                 return;
 

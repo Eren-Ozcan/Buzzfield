@@ -10,6 +10,9 @@ namespace Buzzfield.Flowers
     /// </summary>
     public sealed class FlowerManager : MonoBehaviour
     {
+        /// <summary>Turn between neighbouring slots, so no two flower patches face the same way.</summary>
+        private const float SlotTurnDegrees = 137.5f;
+
         private readonly List<Flower> flowers = new List<Flower>(64);
         private Transform flowerRoot;
 
@@ -35,7 +38,8 @@ namespace Buzzfield.Flowers
                     continue;
                 }
 
-                FlowerView view = Instantiate(slot.type.Prefab, GardenConfig.ToWorld(slot.position), Quaternion.identity, flowerRoot);
+                Quaternion turn = Quaternion.Euler(0f, i * SlotTurnDegrees, 0f);
+                FlowerView view = Instantiate(slot.type.Prefab, GardenConfig.ToWorld(slot.position), turn, flowerRoot);
                 view.name = $"{slot.type.name}_{i:00}";
                 // Sprout slots stay hidden until the bloom system activates them.
                 view.gameObject.SetActive(slot.startsActive);

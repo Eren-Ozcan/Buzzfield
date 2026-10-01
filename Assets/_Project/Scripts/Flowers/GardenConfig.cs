@@ -33,6 +33,10 @@ namespace Buzzfield.Flowers
         [SerializeField] private HiveView hivePrefab;
         [Tooltip("1x1 ground prefab, scaled to the ground size; its surface shows the bloom tiles.")]
         [SerializeField] private GroundView groundView;
+        [Tooltip("Grass, bushes, stones and fence; none when empty.")]
+        [SerializeField] private GardenDecor decor;
+        [Tooltip("Seeds the decor layout, so every garden looks its own and always the same.")]
+        [SerializeField] private int decorSeed = 1;
 
         public Vector2 GroundSize => groundSize;
         public Vector2Int TileGrid => tileGrid;
@@ -43,6 +47,8 @@ namespace Buzzfield.Flowers
         public double MoveHoneyCost => moveHoneyCost;
         public HiveView HivePrefab => hivePrefab;
         public GroundView GroundView => groundView;
+        public GardenDecor Decor => decor;
+        public int DecorSeed => decorSeed;
 
         public static Vector3 ToWorld(Vector2 gardenPosition) => new Vector3(gardenPosition.x, 0f, gardenPosition.y);
 
