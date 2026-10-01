@@ -3,63 +3,6 @@ using NUnit.Framework;
 
 namespace Buzzfield.Tests.EditMode
 {
-    public class TapBoostTests
-    {
-        [Test]
-        public void ReadyAtStart_ActivatesAndSpeedsUp()
-        {
-            var boost = new TapBoost(5, 15, 2);
-            Assert.That(boost.IsReady(0));
-            Assert.That(boost.SpeedMultiplier(0), Is.EqualTo(1));
-            Assert.That(boost.TryActivate(100));
-            Assert.That(boost.IsActive(100));
-            Assert.That(boost.SpeedMultiplier(104.9), Is.EqualTo(2));
-            Assert.That(boost.SpeedMultiplier(105), Is.EqualTo(1));
-        }
-
-        [Test]
-        public void Cooldown_RunsFromTheTap()
-        {
-            var boost = new TapBoost(5, 15, 2);
-            boost.TryActivate(100);
-            Assert.That(boost.TryActivate(103), Is.False, "Tap during the boost.");
-            Assert.That(boost.TryActivate(114.9), Is.False, "Tap during the cooldown.");
-            Assert.That(boost.ActiveUntil, Is.EqualTo(105), "A refused tap does not extend the boost.");
-            Assert.That(boost.TryActivate(115));
-        }
-
-        [Test]
-        public void Fractions_DrainAndRefill()
-        {
-            var boost = new TapBoost(5, 15, 2);
-            boost.TryActivate(0);
-            Assert.That(boost.ActiveFraction(0), Is.EqualTo(1).Within(1e-9));
-            Assert.That(boost.ActiveFraction(2.5), Is.EqualTo(0.5).Within(1e-9));
-            Assert.That(boost.ActiveFraction(6), Is.Zero);
-            Assert.That(boost.CooldownFraction(7.5), Is.EqualTo(0.5).Within(1e-9));
-            Assert.That(boost.CooldownFraction(15), Is.EqualTo(1));
-        }
-
-        [Test]
-        public void CooldownShorterThanBoost_IsRaisedToBoostLength()
-        {
-            var boost = new TapBoost(5, 2, 2);
-            boost.TryActivate(0);
-            Assert.That(boost.TryActivate(3), Is.False);
-            Assert.That(boost.TryActivate(5));
-        }
-
-        [Test]
-        public void Reset_EndsBoostAndCooldown()
-        {
-            var boost = new TapBoost(5, 15, 2);
-            boost.TryActivate(0);
-            boost.Reset();
-            Assert.That(boost.IsActive(1), Is.False);
-            Assert.That(boost.IsReady(1));
-        }
-    }
-
     public class IncomeMathTests
     {
         [Test]

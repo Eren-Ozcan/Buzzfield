@@ -22,10 +22,10 @@ namespace Buzzfield.Tests.PlayMode
     /// a file to save the report.
     /// </summary>
     /// <remarks>
-    /// The bot is an attentive active player without ads or purchases: it taps the boost
-    /// whenever it is ready, evolves when it can, otherwise buys the cheapest affordable
-    /// upgrade, spends Royal Jelly on the cheapest ability, and moves the Queen once the
-    /// garden is complete or no flower has grown for <see cref="StallSeconds"/> after the gate
+    /// The bot is an attentive active player without ads or purchases: it shakes every
+    /// flower the moment it has pollen again, evolves when it can, otherwise buys the
+    /// cheapest affordable upgrade, spends Royal Jelly on the cheapest ability, and moves
+    /// the Queen once the garden is complete or no flower has grown for <see cref="StallSeconds"/> after the gate
     /// opened. From then on it saves its honey for the move.
     /// </remarks>
     [Explicit("Long balance run; start it on its own.")]
@@ -114,7 +114,7 @@ namespace Buzzfield.Tests.PlayMode
                     Log(report, now, $"garden {game.Prestige.GardenIndex + 1}: complete after {Clock(now - gardenStart)}");
                 }
 
-                game.TryTapBoost();
+                game.ShakeAllFlowers();
                 decisionTimer -= StepSeconds;
                 if (decisionTimer > 0f)
                     continue;

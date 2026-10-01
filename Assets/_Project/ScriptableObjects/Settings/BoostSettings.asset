@@ -12,8 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76e89fafbed9a6541be322cbbedc34a9, type: 3}
   m_Name: BoostSettings
   m_EditorClassIdentifier: Buzzfield.Economy::Buzzfield.Economy.BoostSettings
-  tapSpeedMultiplier: 2
-  tapDurationSeconds: 5
-  tapCooldownSeconds: 15
   rewardedHoneyMultiplier: 2
   rewardedDurationSeconds: 300

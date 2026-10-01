@@ -66,8 +66,8 @@ namespace Buzzfield.Tests.PlayMode
             var tweener = (Tweener)typeof(GameManager).GetField("tweener", flags).GetValue(game);
             var autosave = (Action<float>)typeof(GameManager).GetMethod("TickAutosave", flags).CreateDelegate(typeof(Action<float>), game);
             AddTick(ticks, tickNames, "BoostManager.Tick", () => game.Boosts.Tick(GameClock.DeviceUtc));
-            AddTick(ticks, tickNames, "BoostManager.SpeedMultiplier", () => game.Bees.BoostSpeedMultiplier = game.Boosts.SpeedMultiplier(Time.timeAsDouble));
             AddTick(ticks, tickNames, "FlowerManager.Tick", () => game.Flowers.Tick(Time.deltaTime));
+            AddTick(ticks, tickNames, "PollenShaker.Tick", () => game.Pollen.Tick(Time.deltaTime));
             AddTick(ticks, tickNames, "BeeManager.Tick", () => game.Bees.Tick(Time.deltaTime));
             AddTick(ticks, tickNames, "GardenBloomManager.Tick", () => game.Bloom.Tick(Time.deltaTime));
             AddTick(ticks, tickNames, "AdManager.Tick", () => game.Ads.Tick(Time.unscaledDeltaTime));

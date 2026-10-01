@@ -14,7 +14,7 @@ using UnityEngine.TestTools;
 namespace Buzzfield.Tests.PlayMode
 {
     /// <summary>
-    /// Save/load, backup fallback, offline earnings, tap boost, back button and safe area
+    /// Save/load, backup fallback, offline earnings, back button and safe area
     /// against the real Main scene.
     /// </summary>
     public class SaveFlowTests
@@ -244,28 +244,6 @@ namespace Buzzfield.Tests.PlayMode
 
             Assert.That(game.Boosts.IsRewardedHoneyActive(GameClock.DeviceUtc));
             Assert.That(game.Economy.BoostMultiplier, Is.GreaterThan(1));
-        }
-
-        [UnityTest]
-        public IEnumerator TapOnWorld_BoostsBeesThenCoolsDown()
-        {
-            Object.FindAnyObjectByType<TapCatcher>().OnPointerDown(null);
-            yield return null;
-            Assert.That(game.Bees.BoostSpeedMultiplier, Is.GreaterThan(1f));
-            Assert.That(game.TryTapBoost(), Is.False, "Second tap during the boost.");
-
-            Time.timeScale = 5f;
-            double end = game.Boosts.Tap.ActiveUntil;
-            while (Time.timeAsDouble < end)
-                yield return null;
-            yield return null;
-            Assert.That(game.Bees.BoostSpeedMultiplier, Is.EqualTo(1f));
-            Assert.That(game.TryTapBoost(), Is.False, "Still cooling down.");
-
-            double ready = game.Boosts.Tap.ReadyAt;
-            while (Time.timeAsDouble < ready)
-                yield return null;
-            Assert.That(game.TryTapBoost());
         }
 
         [UnityTest]

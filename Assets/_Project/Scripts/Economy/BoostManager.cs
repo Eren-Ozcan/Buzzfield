@@ -1,12 +1,10 @@
 using System;
-using Buzzfield.Core;
 
 namespace Buzzfield.Economy
 {
     /// <summary>
-    /// Timed boosts: the tap boost (bee speed, game time) and the rewarded 2x honey boost
-    /// (honey, UTC so it runs on while the game is closed). GameManager ticks it and applies
-    /// <see cref="SpeedMultiplier"/> to the bees.
+    /// The rewarded 2x honey boost. It runs on UTC so it keeps going while the game is
+    /// closed; GameManager ticks it and it sets the economy's boost multiplier.
     /// </summary>
     public sealed class BoostManager
     {
@@ -17,30 +15,13 @@ namespace Buzzfield.Economy
         {
             this.settings = settings;
             this.economy = economy;
-            Tap = new TapBoost(settings.TapDurationSeconds, settings.TapCooldownSeconds, settings.TapSpeedMultiplier);
         }
-
-        public TapBoost Tap { get; }
 
         /// <summary>UTC end of the rewarded 2x honey boost; in the past when inactive.</summary>
         public double RewardedHoneyEndUtc { get; private set; }
 
-        public float TapSpeedMultiplier => settings.TapSpeedMultiplier;
         public float RewardedHoneyMultiplier => settings.RewardedHoneyMultiplier;
         public float RewardedDurationSeconds => settings.RewardedDurationSeconds;
-
-        /// <summary>Raised when a tap starts the boost.</summary>
-        public event Action OnTapBoostStarted;
-
-        public bool TryTapBoost(double gameTime)
-        {
-            if (!Tap.TryActivate(gameTime))
-                return false;
-            OnTapBoostStarted?.Invoke();
-            return true;
-        }
-
-        public float SpeedMultiplier(double gameTime) => (float)Tap.SpeedMultiplier(gameTime);
 
         public bool IsRewardedHoneyActive(double utcNow) => utcNow < RewardedHoneyEndUtc;
 
@@ -66,8 +47,5 @@ namespace Buzzfield.Economy
             if (economy.BoostMultiplier != multiplier)
                 economy.BoostMultiplier = multiplier;
         }
-
-        /// <summary>Queen move: the tap boost ends; the rewarded boost keeps running.</summary>
-        public void ResetTapBoost() => Tap.Reset();
     }
 }

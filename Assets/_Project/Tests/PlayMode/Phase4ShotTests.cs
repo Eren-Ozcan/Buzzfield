@@ -12,7 +12,7 @@ using UnityEngine.UI;
 namespace Buzzfield.Tests.PlayMode
 {
     /// <summary>
-    /// Walks the Phase 4 screens (tap boost ring, Welcome back, quit dialog, safe area, a
+    /// Walks the Phase 4 screens (swipe hint, Welcome back, quit dialog, safe area, a
     /// reload) and checks their state; with BZ_SHOT_DIR set it also saves a shot of each.
     /// </summary>
     public class Phase4ShotTests
@@ -49,37 +49,18 @@ namespace Buzzfield.Tests.PlayMode
             TestShots.SaveIfRequested($"p4_{name}_1440x1920.png", 1440, 1920);
         }
 
-        static TapBoostView Ring => Object.FindAnyObjectByType<TapBoostView>();
-
-        static string RingLabel => Ring.GetComponentInChildren<TMPro.TMP_Text>().text;
-
-        static Image RingFill => Ring.transform.Find("Ring").GetComponent<Image>();
-
         [UnityTest]
-        public IEnumerator TapBoostRing_ReadyActiveCooldown()
+        public IEnumerator SwipeHint_ShowsUntilTheFirstShakes()
         {
+            var hint = Object.FindAnyObjectByType<SwipeHintView>();
+            Assert.That(hint.IsVisible, "A new player sees the swipe hint.");
+            Assert.That(hint.GetComponentInChildren<TMPro.TMP_Text>().text, Is.EqualTo(Strings.SwipeHint));
+            yield return Shot("swipe_hint");
+
+            Assert.That(game.ShakeAllFlowers(), Is.GreaterThanOrEqualTo(3));
             yield return null;
-            Assert.That(RingLabel, Is.EqualTo(Strings.TapBoostReady));
-            Assert.That(RingFill.fillAmount, Is.EqualTo(1f));
-            yield return Shot("tap_ready");
-
-            Object.FindAnyObjectByType<TapCatcher>().OnPointerDown(null);
-            Time.timeScale = 1f;
-            double halfway = Time.timeAsDouble + 2.5;
-            while (Time.timeAsDouble < halfway)
-                yield return null;
-            Assert.That(RingLabel, Does.StartWith("x"));
-            Assert.That(RingFill.fillAmount, Is.InRange(0.3f, 0.7f));
-            yield return Shot("tap_active");
-
-            Time.timeScale = 4f;
-            double midCooldown = game.Boosts.Tap.ActiveUntil + 5;
-            while (Time.timeAsDouble < midCooldown)
-                yield return null;
-            Time.timeScale = 1f;
-            Assert.That(RingLabel, Is.Empty);
-            Assert.That(RingFill.fillAmount, Is.InRange(0.3f, 0.95f));
-            yield return Shot("tap_cooldown");
+            Assert.That(hint.IsVisible, Is.False);
+            yield return Shot("swipe_done");
         }
 
         [UnityTest]

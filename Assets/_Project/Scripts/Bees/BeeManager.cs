@@ -42,9 +42,6 @@ namespace Buzzfield.Bees
         /// <summary>Permanent flight speed factor from upgrades and the Queen.</summary>
         public float SpeedMultiplier { get; set; } = 1f;
 
-        /// <summary>Temporary flight speed factor from the tap boost; set every frame by the game.</summary>
-        public float BoostSpeedMultiplier { get; set; } = 1f;
-
         /// <summary>Raised when a bee unloads at the hive: nectar units and honey value per unit.</summary>
         public event Action<double, double> OnNectarDeposited;
 
@@ -189,7 +186,7 @@ namespace Buzzfield.Bees
 
         private void TickBee(Bee bee, float deltaTime)
         {
-            float step = bee.Tier.Speed * SpeedMultiplier * BoostSpeedMultiplier * deltaTime;
+            float step = bee.Tier.Speed * SpeedMultiplier * deltaTime;
             switch (bee.State)
             {
                 case BeeState.Idle:
