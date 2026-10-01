@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e43e4f273ba27c449a70aa99b8cb750a, type: 3}
   m_Name: UiFeedbackSettings
   m_EditorClassIdentifier: Buzzfield.UI::Buzzfield.UI.UiFeedbackSettings
-  tweenCapacity: 48
+  tweenCapacity: 96
   pressScale: 0.93
   pressDuration: 0.08
   releasePop: 0.05

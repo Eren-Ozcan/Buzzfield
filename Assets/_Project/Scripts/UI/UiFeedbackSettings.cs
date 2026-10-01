@@ -7,7 +7,7 @@ namespace Buzzfield.UI
     public sealed class UiFeedbackSettings : ScriptableObject
     {
         [Tooltip("Tweens that can run at once; extra requests are dropped.")]
-        [SerializeField, Min(1)] private int tweenCapacity = 48;
+        [SerializeField, Min(1)] private int tweenCapacity = 96;
 
         [Header("Button press")]
         [Tooltip("Scale while a button is held down.")]

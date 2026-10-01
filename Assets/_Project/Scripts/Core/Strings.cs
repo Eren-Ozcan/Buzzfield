@@ -70,8 +70,7 @@ namespace Buzzfield.Core
         public const string RewardedBoostOfferFormat = "Watch ad\nx{0} honey {1}";
         public const string RewardedBoostActiveFormat = "x{0} honey\n{1}";
 
-        public const string TapBoostReady = "Tap!";
-        public const string TapBoostActiveFormat = "x{0}";
+        public const string SwipeHint = "Swipe across the flowers\nto shake out pollen!";
 
         public const string ShopButton = "Shop";
         public const string ShopTitle = "Shop";
