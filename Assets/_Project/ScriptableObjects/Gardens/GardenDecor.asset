@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9104d69f255698047926fa2241160491, type: 3}
+  m_Name: GardenDecor
+  m_EditorClassIdentifier: Buzzfield.Flowers::Buzzfield.Flowers.GardenDecor
+  scatters:
+  - prefab: {fileID: 9111173643655824672, guid: 54fcd87492a802246bcf7d955a8f8f2c, type: 3}
+    count: 110
+    scaleRange: {x: 0.8, y: 1.35}
+    clearance: 0.55
+    spacing: 0.42
+    placement: 0
+    tinted: 1
+  - prefab: {fileID: 5213370476613447091, guid: 813fe3d0fad3b0449b24705b5e2ba156, type: 3}
+    count: 14
+    scaleRange: {x: 0.75, y: 1.2}
+    clearance: 1
+    spacing: 1.4
+    placement: 1
+    tinted: 1
+  - prefab: {fileID: 8286063943567412540, guid: 22a0667480b41904db2fd30ca63693e9, type: 3}
+    count: 8
+    scaleRange: {x: 0.7, y: 1.3}
+    clearance: 0.8
+    spacing: 1.6
+    placement: 0
+    tinted: 0
+  hiveClearance: 1.6
+  borderInset: 0.5
+  fencePost: {fileID: 3781143714786526811, guid: 32516ab6955a4324aa0e1f85c06ab4bb, type: 3}
+  fenceRail: {fileID: 7099071919518695920, guid: af80d8dfb9651794897fc6f4078c3de4, type: 3}
+  postSpacing: 1.5
+  dryColor: {r: 0.66, g: 0.64, b: 0.55, a: 1}

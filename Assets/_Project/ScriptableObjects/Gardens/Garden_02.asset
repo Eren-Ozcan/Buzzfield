@@ -93,3 +93,5 @@ MonoBehaviour:
   moveHoneyCost: 50000
   hivePrefab: {fileID: 5126540283087801417, guid: 64253252f4f49ac4ebdacf37b5c5ed08, type: 3}
   groundView: {fileID: 5958315175847541985, guid: c70682c6a74bd404f97e15f6856cd408, type: 3}
+  decor: {fileID: 11400000, guid: 48322a8da2bdc0448becadbe452b1515, type: 2}
+  decorSeed: 2
