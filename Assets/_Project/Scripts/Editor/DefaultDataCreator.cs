@@ -41,6 +41,7 @@ namespace Buzzfield.Editor
             var ground = CreateGroundPrefab(materials);
             var gardens = CreateGardens(flowers, hive, ground);
             CreateBloom(materials);
+            CreatePollen(materials);
 
             CreateEconomy(gardens);
             CreateUpgrades();
@@ -286,6 +287,59 @@ namespace Buzzfield.Editor
             BloomSettings settings = EditorAssets.LoadOrCreate<BloomSettings>($"{Data}/Flowers/BloomSettings.asset", _ => { });
             EditorAssets.SetIfMissing(settings, "bloomBurstPrefab", burst);
             EditorAssets.SetIfMissing(settings, "confettiPrefab", confetti);
+        }
+
+        // ---- Pollen ----
+
+        static void CreatePollen(Materials m)
+        {
+            var pollen = new ParticleSystem.MinMaxGradient(new Color(1f, 0.85f, 0.25f), new Color(1f, 0.97f, 0.65f));
+
+            // Only ever emitted into by PollenShaker: both loop with no emission of their own.
+            ParticleSystem puff = CreateParticlePrefab("PollenPuff", m.BloomParticle, ps =>
+            {
+                ParticleSystem.MainModule main = ps.main;
+                main.loop = true;
+                main.playOnAwake = true;
+                main.startLifetime = new ParticleSystem.MinMaxCurve(0.5f, 0.9f);
+                main.startSpeed = new ParticleSystem.MinMaxCurve(0.6f, 1.6f);
+                main.startSize = new ParticleSystem.MinMaxCurve(0.06f, 0.12f);
+                main.startColor = pollen;
+                main.gravityModifier = 0.15f;
+                main.maxParticles = 400;
+
+                ParticleSystem.EmissionModule emission = ps.emission;
+                emission.rateOverTime = 0f;
+
+                ParticleSystem.ShapeModule shape = ps.shape;
+                shape.shapeType = ParticleSystemShapeType.Sphere;
+                shape.radius = 0.3f;
+            });
+
+            ParticleSystem mote = CreateParticlePrefab("PollenMote", m.BloomParticle, ps =>
+            {
+                ParticleSystem.MainModule main = ps.main;
+                main.loop = true;
+                main.playOnAwake = true;
+                main.startLifetime = new ParticleSystem.MinMaxCurve(1.6f, 2.4f);
+                main.startSpeed = new ParticleSystem.MinMaxCurve(0.05f, 0.2f);
+                main.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.13f);
+                main.startColor = pollen;
+                // Motes drift up out of the flowers.
+                main.gravityModifier = -0.05f;
+                main.maxParticles = 200;
+
+                ParticleSystem.EmissionModule emission = ps.emission;
+                emission.rateOverTime = 0f;
+
+                ParticleSystem.ShapeModule shape = ps.shape;
+                shape.shapeType = ParticleSystemShapeType.Sphere;
+                shape.radius = 0.3f;
+            });
+
+            PollenSettings settings = EditorAssets.LoadOrCreate<PollenSettings>($"{Data}/Flowers/PollenSettings.asset", _ => { });
+            EditorAssets.SetIfMissing(settings, "puffPrefab", puff);
+            EditorAssets.SetIfMissing(settings, "motePrefab", mote);
         }
 
         /// <summary>One-shot particle prefab: no play on awake, world space, particles shrink out.</summary>

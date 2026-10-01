@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a63c7bab2d51df24db5d281e90bcf7bc, type: 3}
+  m_Name: PollenSettings
+  m_EditorClassIdentifier: Buzzfield.Flowers::Buzzfield.Flowers.PollenSettings
+  hitRadius: 1
+  hitPlaneHeight: 0.9
+  cooldownSeconds: 10
+  incomeSeconds: 2.5
+  minimumNectar: 0.5
+  bloomShare: 0.4
+  wiggleDegrees: 12
+  wiggleCycles: 2.5
+  wiggleDuration: 0.55
+  puffPrefab: {fileID: 4792871150890514624, guid: 705d44c8a172c784fbcb9c7dc9830e6e, type: 3}
+  puffParticles: 12
+  motePrefab: {fileID: 6276337181704379122, guid: 73203635d7630dc42a7b636ea1e01437, type: 3}
+  moteInterval: 1.4
+  hintUntilShakes: 3

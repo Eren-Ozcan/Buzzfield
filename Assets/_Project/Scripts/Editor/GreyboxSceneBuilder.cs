@@ -48,6 +48,7 @@ namespace Buzzfield.Editor
             var beeSettings = Load<BeeSettings>("Bees/BeeSettings");
             var prestigeSettings = Load<PrestigeSettings>("Settings/PrestigeSettings");
             var bloomSettings = Load<BloomSettings>("Flowers/BloomSettings");
+            var pollenSettings = Load<PollenSettings>("Flowers/PollenSettings");
             var addBee = Load<UpgradeDefinition>("Upgrades/Upgrade_AddBee");
             var speed = Load<UpgradeDefinition>("Upgrades/Upgrade_Speed");
             var honeyValue = Load<UpgradeDefinition>("Upgrades/Upgrade_HoneyValue");
@@ -58,7 +59,7 @@ namespace Buzzfield.Editor
             var feedbackSettings = Load<UiFeedbackSettings>("Settings/UiFeedbackSettings");
             var queenSettings = Load<QueenSettings>("Settings/QueenSettings");
             if (gameSettings == null || economySettings == null || beeSettings == null || prestigeSettings == null
-                || bloomSettings == null || addBee == null || speed == null || honeyValue == null
+                || bloomSettings == null || pollenSettings == null || addBee == null || speed == null || honeyValue == null
                 || boostSettings == null || offlineSettings == null || adSettings == null || storeCatalog == null
                 || feedbackSettings == null || queenSettings == null)
             {
@@ -79,13 +80,14 @@ namespace Buzzfield.Editor
             var game = systems.AddComponent<GameManager>();
             EditorAssets.Set(game,
                 ("gameSettings", gameSettings), ("economySettings", economySettings),
-                ("beeSettings", beeSettings), ("bloomSettings", bloomSettings), ("prestigeSettings", prestigeSettings),
+                ("beeSettings", beeSettings), ("bloomSettings", bloomSettings), ("pollenSettings", pollenSettings), ("prestigeSettings", prestigeSettings),
                 ("boostSettings", boostSettings), ("offlineSettings", offlineSettings), ("adSettings", adSettings), ("storeCatalog", storeCatalog),
                 ("feedbackSettings", feedbackSettings), ("queenSettings", queenSettings),
                 ("addBeeUpgrade", addBee), ("speedUpgrade", speed), ("honeyValueUpgrade", honeyValue),
                 ("flowerManager", flowerManager), ("beeManager", beeManager),
                 ("hud", ui.Hud), ("bottomBar", ui.BottomBar), ("gardenComplete", ui.GardenComplete), ("queenPanel", ui.QueenPanel),
-                ("welcomeBack", ui.WelcomeBack), ("tapBoostView", ui.TapBoost), ("rewardedBoostView", ui.RewardedBoost), ("shopPanel", ui.ShopPanel), ("tapCatcher", ui.TapCatcher), ("backButton", ui.BackButton),
+                ("welcomeBack", ui.WelcomeBack), ("rewardedBoostView", ui.RewardedBoost), ("shopPanel", ui.ShopPanel),
+                ("swipeCatcher", ui.SwipeCatcher), ("swipeHint", ui.SwipeHint), ("backButton", ui.BackButton),
                 ("buttonFeedbacks", ui.ButtonFeedbacks),
                 ("cameraFitter", fitter), ("worldRoot", world));
 
@@ -136,10 +138,10 @@ namespace Buzzfield.Editor
             public GardenCompleteView GardenComplete;
             public QueenPanelView QueenPanel;
             public WelcomeBackView WelcomeBack;
-            public TapBoostView TapBoost;
             public RewardedBoostView RewardedBoost;
             public ShopPanelView ShopPanel;
-            public TapCatcher TapCatcher;
+            public SwipeCatcher SwipeCatcher;
+            public SwipeHintView SwipeHint;
             public BackButtonHandler BackButton;
             public ButtonFeedback[] ButtonFeedbacks;
         }
@@ -155,11 +157,11 @@ namespace Buzzfield.Editor
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0.5f;
 
-            // Behind everything else: presses that no UI element takes are taps on the world.
-            RectTransform catcherRect = CreateRect("TapCatcher", canvasObject.transform);
+            // Behind everything else: presses and drags that no UI element takes are swipes on the world.
+            RectTransform catcherRect = CreateRect("SwipeCatcher", canvasObject.transform);
             Stretch(catcherRect);
             catcherRect.gameObject.AddComponent<Image>().color = Color.clear;
-            var tapCatcher = catcherRect.gameObject.AddComponent<TapCatcher>();
+            var swipeCatcher = catcherRect.gameObject.AddComponent<SwipeCatcher>();
 
             // Root panel for everything on screen, fitted to the notch-free area.
             RectTransform root = CreateRect("SafeArea", canvasObject.transform);
@@ -174,7 +176,7 @@ namespace Buzzfield.Editor
             topBar.anchoredPosition = Vector2.zero;
             var background = topBar.gameObject.AddComponent<Image>();
             background.color = new Color(0.12f, 0.09f, 0.04f, 0.55f);
-            // Blocks the tap catcher: a press on the top bar is not a tap on the world.
+            // Blocks the swipe catcher: a press on the top bar is not a swipe on the world.
             background.raycastTarget = true;
 
             TMP_Text honey = CreateText("HoneyText", topBar, new Vector2(0f, -20f), 110f, 96f, FontStyles.Bold, new Color(1f, 0.85f, 0.3f));
@@ -191,7 +193,7 @@ namespace Buzzfield.Editor
             EditorAssets.Set(hud, ("honeyText", honey), ("rateText", rate), ("bloomText", bloom), ("bloomFill", bloomFill));
             GardenCompleteView gardenComplete = CreateGardenComplete(root);
             BottomBarView bottomBar = CreateBottomBar(root);
-            TapBoostView tapBoost = CreateTapBoost(root);
+            SwipeHintView swipeHint = CreateSwipeHint(root);
             RewardedBoostView rewardedBoost = CreateRewardedBoost(root);
             // Modals last so they draw over the HUD and the bottom bar; the quit dialog on top.
             QueenPanelView queenPanel = CreateQueenPanel(root, queenButton, readyBadge, abilityCount);
@@ -202,46 +204,44 @@ namespace Buzzfield.Editor
             {
                 ButtonFeedbacks = AddButtonFeedback(canvasObject.transform),
                 Hud = hud, BottomBar = bottomBar, GardenComplete = gardenComplete, QueenPanel = queenPanel,
-                WelcomeBack = welcomeBack, TapBoost = tapBoost, RewardedBoost = rewardedBoost, ShopPanel = shopPanel, TapCatcher = tapCatcher, BackButton = backButton,
+                WelcomeBack = welcomeBack, RewardedBoost = rewardedBoost, ShopPanel = shopPanel,
+                SwipeCatcher = swipeCatcher, SwipeHint = swipeHint, BackButton = backButton,
             };
         }
 
-        /// <summary>Round cooldown indicator in the bottom-right corner, just above the bottom bar.</summary>
-        static TapBoostView CreateTapBoost(Transform root)
+        /// <summary>Swipe hint right of the rewarded boost button, just above the bottom bar; never blocks a swipe.</summary>
+        static SwipeHintView CreateSwipeHint(Transform root)
         {
-            RectTransform rect = CreateRect("TapBoost", root);
-            rect.anchorMin = rect.anchorMax = new Vector2(1f, 0f);
-            rect.pivot = new Vector2(1f, 0f);
-            rect.sizeDelta = new Vector2(130f, 130f);
-            rect.anchoredPosition = new Vector2(-30f, 330f);
+            RectTransform holder = CreateRect("SwipeHint", root);
+            holder.anchorMin = Vector2.zero;
+            holder.anchorMax = new Vector2(1f, 0f);
+            holder.pivot = new Vector2(0.5f, 0f);
+            holder.offsetMin = new Vector2(360f, 330f);
+            holder.offsetMax = new Vector2(-30f, 460f);
 
-            Sprite circle = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/Knob.psd");
-            var track = rect.gameObject.AddComponent<Image>();
-            track.sprite = circle;
-            track.color = new Color(0.12f, 0.09f, 0.04f, 0.55f);
-            track.raycastTarget = false;
+            RectTransform panel = CreateRect("Panel", holder);
+            Stretch(panel);
+            var background = panel.gameObject.AddComponent<Image>();
+            background.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd");
+            background.type = Image.Type.Sliced;
+            background.color = new Color(0.12f, 0.09f, 0.04f, 0.55f);
+            background.raycastTarget = false;
 
-            RectTransform ringRect = CreateRect("Ring", rect);
-            Stretch(ringRect);
-            var ring = ringRect.gameObject.AddComponent<Image>();
-            ring.sprite = circle;
-            ring.type = Image.Type.Filled;
-            ring.fillMethod = Image.FillMethod.Radial360;
-            ring.fillOrigin = (int)Image.Origin360.Top;
-            ring.fillClockwise = false;
-            ring.raycastTarget = false;
-
-            TMP_Text label = CreateText("Label", rect, Vector2.zero, 130f, 40f, FontStyles.Bold, new Color(0.2f, 0.12f, 0.02f));
+            TMP_Text label = CreateText("Label", panel, Vector2.zero, 130f, 40f, FontStyles.Bold, new Color(1f, 0.9f, 0.55f));
             Stretch((RectTransform)label.transform);
             label.verticalAlignment = VerticalAlignmentOptions.Middle;
-            label.text = Strings.TapBoostReady;
+            label.enableAutoSizing = true;
+            label.fontSizeMin = 24f;
+            label.fontSizeMax = 40f;
+            label.margin = new Vector4(20f, 0f, 20f, 0f);
+            label.text = Strings.SwipeHint;
 
-            var view = rect.gameObject.AddComponent<TapBoostView>();
-            EditorAssets.Set(view, ("ring", ring), ("label", label));
+            var view = holder.gameObject.AddComponent<SwipeHintView>();
+            EditorAssets.Set(view, ("panel", panel.gameObject));
             return view;
         }
 
-        /// <summary>Rewarded honey boost button in the bottom-left corner, opposite the tap boost ring.</summary>
+        /// <summary>Rewarded honey boost button in the bottom-left corner, beside the swipe hint.</summary>
         static RewardedBoostView CreateRewardedBoost(Transform root)
         {
             (Button button, Image image, TMP_Text label) = CreateButton("RewardedBoost", root, Vector2.zero, new Vector2(300f, 130f), new Color(0.45f, 0.8f, 0.95f));
