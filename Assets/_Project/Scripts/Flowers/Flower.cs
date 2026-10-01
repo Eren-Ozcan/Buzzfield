@@ -48,8 +48,17 @@ namespace Buzzfield.Flowers
         internal FlowerAnimation Animation;
         internal float AnimationTime;
 
+        /// <summary>Seconds until a swipe can shake pollen out of this flower again; 0 when it can.</summary>
+        public float PollenCooldown { get; internal set; }
+
+        // Seconds to the next drifting pollen mote while the flower has pollen; driven by PollenShaker.
+        internal float MoteTimer;
+
         /// <summary>At least one whole unit is left to collect.</summary>
         public bool HasNectar => IsActive && Nectar >= 1;
+
+        /// <summary>A swipe across this flower shakes pollen out of it now.</summary>
+        public bool HasPollen => IsActive && PollenCooldown <= 0f;
 
         public bool IsAvailable => HasNectar && AssignedBees < Type.MaxBeesTargeting;
 

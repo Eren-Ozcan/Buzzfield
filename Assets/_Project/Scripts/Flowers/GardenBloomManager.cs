@@ -110,11 +110,14 @@ namespace Buzzfield.Flowers
             flowerManager.OnNectarCollected -= HandleNectarCollected;
         }
 
-        private void HandleNectarCollected(Flower flower, double taken)
+        private void HandleNectarCollected(Flower flower, double taken) => AddNectar(flower, taken);
+
+        /// <summary>Grows the flower's bloom by <paramref name="nectar"/> units (a bee's load or a pollen shake).</summary>
+        public void AddNectar(Flower flower, double nectar)
         {
-            if (flower.IsBloomed)
+            if (flower.IsBloomed || nectar <= 0)
                 return;
-            flower.Bloom = BloomMath.AddNectar(flower.Bloom, taken, flower.Type.NectarToBloom, BloomSpeedMultiplier);
+            flower.Bloom = BloomMath.AddNectar(flower.Bloom, nectar, flower.Type.NectarToBloom, BloomSpeedMultiplier);
             groundDirty = true;
             if (flower.IsBloomed)
                 BloomFlower(flower);

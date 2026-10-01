@@ -125,6 +125,18 @@ namespace Buzzfield.Flowers
             return true;
         }
 
+        /// <summary>Sum of <see cref="Flower.Value"/> over the active flowers.</summary>
+        public double SumActiveValue()
+        {
+            double sum = 0;
+            for (int i = 0; i < flowers.Count; i++)
+            {
+                if (flowers[i].IsActive)
+                    sum += flowers[i].Value;
+            }
+            return sum;
+        }
+
         public void Reserve(Flower flower) => flower.Reserve();
 
         public void Release(Flower flower) => flower.Release();
