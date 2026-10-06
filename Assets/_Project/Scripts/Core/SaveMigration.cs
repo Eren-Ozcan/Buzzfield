@@ -9,8 +9,12 @@ namespace Buzzfield.Core
     /// </summary>
     public static class SaveMigration
     {
-        /// <summary>1: first release layout (Phase 4). 2: store entitlements. 3: Queen abilities by id. 4: shaken flower count.</summary>
-        public const int CurrentVersion = 4;
+        /// <summary>
+        /// 1: first release layout (Phase 4). 2: store entitlements. 3: Queen abilities by id. 4: shaken
+        /// flower count. 5: player settings, goal index and the first-return gift. 6: Dewdrops and the
+        /// endless goals' starting count.
+        /// </summary>
+        public const int CurrentVersion = 6;
 
         /// <summary>
         /// Upgrades a loaded save in place; returns true when anything changed.
@@ -40,6 +44,19 @@ namespace Buzzfield.Core
 
             // Version 4 adds stats.flowersShaken (the pollen shake replaced the tap boost).
             // JsonUtility reads the missing field as 0, so older players see the swipe hint once.
+
+            // Version 5 adds the settings panel, the goal chain and the first-return gift. Older
+            // saves get the default settings (sound and music on); a missing bool would read as
+            // off. The goal chain starts at its first goal and the gift is still to come.
+            if (savedVersion < 5)
+            {
+                data.settings = new PlayerSettings();
+                data.goalIndex = 0;
+                data.welcomeGiftGiven = false;
+            }
+
+            // Version 6 adds Dewdrops and goalBase. Nobody had Dewdrops before, and no save could
+            // be past the authored goal chain yet, so JsonUtility's zeros are right.
 
             data.saveVersion = CurrentVersion;
             return true;

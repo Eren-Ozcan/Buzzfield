@@ -55,6 +55,15 @@ namespace Buzzfield.Core
         public long flowersShaken;
     }
 
+    /// <summary>The player's choices in the settings panel.</summary>
+    [Serializable]
+    public sealed class PlayerSettings
+    {
+        public bool musicOn = true;
+        public bool soundOn = true;
+        public VibrationMode vibration = VibrationMode.All;
+    }
+
     /// <summary>One Queen ability level, keyed by the ability id so the list can be reordered or grow.</summary>
     [Serializable]
     public struct AbilityLevel
@@ -97,6 +106,17 @@ namespace Buzzfield.Core
         public double lastFullScreenAdUtc;
         public Entitlements entitlements = new Entitlements();
         public LifetimeStats stats = new LifetimeStats();
+        /// <summary>Goals claimed so far; the next one in the goal list is the current goal.</summary>
+        public int goalIndex;
+        /// <summary>Count the current endless goal started from (it counts from the moment it began).</summary>
+        public long goalBase;
+        /// <summary>Dewdrops, the premium currency.</summary>
+        public long dewdrops;
+        /// <summary>Every Dewdrop ever earned or bought; the counter shows from the first one.</summary>
+        public long dewEarned;
+        /// <summary>The one-time gift on the first Welcome back has been given.</summary>
+        public bool welcomeGiftGiven;
+        public PlayerSettings settings = new PlayerSettings();
 
         // Offline earnings
         /// <summary>Theoretical honey per second at save time, paid (times efficiency) while away.</summary>
@@ -113,6 +133,15 @@ namespace Buzzfield.Core
             abilities = abilities ?? Array.Empty<AbilityLevel>();
             stats = stats ?? new LifetimeStats();
             entitlements = entitlements ?? new Entitlements();
+            settings = settings ?? new PlayerSettings();
+            if (goalIndex < 0)
+                goalIndex = 0;
+            if (goalBase < 0)
+                goalBase = 0;
+            if (dewdrops < 0)
+                dewdrops = 0;
+            if (dewEarned < dewdrops)
+                dewEarned = dewdrops;
         }
     }
 }

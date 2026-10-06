@@ -267,6 +267,83 @@ namespace Buzzfield.Tests.EditMode
         }
 
         [Test]
+        public void Migration_VersionFour_TurnsSoundOnAndStartsTheGoals()
+        {
+            // A version 4 save has no settings object; whatever JsonUtility fills in, the step sets the defaults.
+            SaveData data = JsonUtility.FromJson<SaveData>("{\"saveVersion\":4,\"settings\":{\"musicOn\":false,\"soundOn\":false,\"vibration\":0},\"goalIndex\":7}");
+
+            Assert.That(SaveMigration.Upgrade(data, 4));
+            Assert.That(data.saveVersion, Is.EqualTo(SaveMigration.CurrentVersion));
+            Assert.That(data.settings.musicOn, Is.True);
+            Assert.That(data.settings.soundOn, Is.True);
+            Assert.That(data.settings.vibration, Is.EqualTo(VibrationMode.All));
+            Assert.That(data.goalIndex, Is.Zero);
+            Assert.That(data.welcomeGiftGiven, Is.False);
+        }
+
+        [Test]
+        public void Settings_GoalsAndGift_RoundTripThroughJsonUtility()
+        {
+            var data = new SaveData
+            {
+                goalIndex = 6,
+                welcomeGiftGiven = true,
+                settings = new PlayerSettings { musicOn = false, soundOn = true, vibration = VibrationMode.Important },
+            };
+            SaveData read = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(data));
+            Assert.That(read.goalIndex, Is.EqualTo(6));
+            Assert.That(read.welcomeGiftGiven, Is.True);
+            Assert.That(read.settings.musicOn, Is.False);
+            Assert.That(read.settings.soundOn, Is.True);
+            Assert.That(read.settings.vibration, Is.EqualTo(VibrationMode.Important));
+        }
+
+        [Test]
+        public void Dewdrops_RoundTripThroughJsonUtility()
+        {
+            var data = new SaveData { dewdrops = 125, dewEarned = 400, goalIndex = 21, goalBase = 812 };
+            SaveData read = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(data));
+            Assert.That(read.dewdrops, Is.EqualTo(125));
+            Assert.That(read.dewEarned, Is.EqualTo(400));
+            Assert.That(read.goalIndex, Is.EqualTo(21));
+            Assert.That(read.goalBase, Is.EqualTo(812));
+        }
+
+        [Test]
+        public void Migration_VersionFive_StartsWithoutDewdrops()
+        {
+            SaveData data = JsonUtility.FromJson<SaveData>("{\"saveVersion\":5,\"goalIndex\":4}");
+            Assert.That(SaveMigration.Upgrade(data, 5));
+            Assert.That(data.saveVersion, Is.EqualTo(SaveMigration.CurrentVersion));
+            Assert.That(data.dewdrops, Is.Zero);
+            Assert.That(data.dewEarned, Is.Zero);
+            Assert.That(data.goalBase, Is.Zero);
+            Assert.That(data.goalIndex, Is.EqualTo(4), "Version 5 progress is kept.");
+        }
+
+        [Test]
+        public void Normalize_KeepsDewdropsSane()
+        {
+            var data = new SaveData { dewdrops = -5, dewEarned = 2, goalBase = -1 };
+            data.Normalize();
+            Assert.That(data.dewdrops, Is.Zero);
+            Assert.That(data.goalBase, Is.Zero);
+            data = new SaveData { dewdrops = 50, dewEarned = 10 };
+            data.Normalize();
+            Assert.That(data.dewEarned, Is.EqualTo(50), "Nobody holds more than they ever earned.");
+        }
+
+        [Test]
+        public void Normalize_FillsMissingSettings_AndClampsTheGoalIndex()
+        {
+            var data = new SaveData { settings = null, goalIndex = -3 };
+            data.Normalize();
+            Assert.That(data.settings, Is.Not.Null);
+            Assert.That(data.settings.soundOn, Is.True);
+            Assert.That(data.goalIndex, Is.Zero);
+        }
+
+        [Test]
         public void AbilityLevels_RoundTripThroughJsonUtility()
         {
             var data = new SaveData
