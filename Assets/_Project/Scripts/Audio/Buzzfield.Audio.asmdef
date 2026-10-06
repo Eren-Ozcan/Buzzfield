@@ -1,0 +1,16 @@
+{
+    "name": "Buzzfield.Audio",
+    "rootNamespace": "Buzzfield.Audio",
+    "references": [
+        "Buzzfield.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

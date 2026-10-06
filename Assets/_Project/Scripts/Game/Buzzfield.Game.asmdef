@@ -5,6 +5,7 @@
         "Buzzfield.Core",
         "Buzzfield.Core.Runtime",
         "Buzzfield.Ads",
+        "Buzzfield.Audio",
         "Buzzfield.Flowers",
         "Buzzfield.Bees",
         "Buzzfield.Economy",
