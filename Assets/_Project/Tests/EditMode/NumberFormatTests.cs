@@ -71,6 +71,19 @@ namespace Buzzfield.Tests.EditMode
             Assert.That(NumberFormat.PerSecond(value), Is.EqualTo(expected));
         }
 
+        [TestCase(0.5, "0.5")]
+        [TestCase(0.04, "0")]
+        [TestCase(3.0, "3")]
+        [TestCase(9.99, "9.9")]
+        [TestCase(12.7, "12")]
+        [TestCase(2500.0, "2.5K")]
+        public void WriteGain_KeepsADecimalBelowTen(double value, string expected)
+        {
+            var buffer = new char[NumberFormat.MaxLength];
+            int length = NumberFormat.WriteGain(value, buffer);
+            Assert.That(new string(buffer, 0, length), Is.EqualTo(expected));
+        }
+
         [TestCase(1234.0, "1.23K")]
         [TestCase(-45600.0, "-45.6K")]
         [TestCase(0.45, "0")]

@@ -82,6 +82,17 @@ namespace Buzzfield.Core
             return length;
         }
 
+        /// <summary>
+        /// A gain shown on its own ("+0.5" over a shaken flower): like <see cref="Write"/>, but values
+        /// under 10 keep one decimal, so the small early gains do not read as 0.
+        /// </summary>
+        public static int WriteGain(BigNumber value, char[] buffer)
+        {
+            if (!value.IsNegative && value < 10)
+                return WriteFixed((long)Math.Floor(value.ToDouble() * 10 + 1e-9), 1, buffer, 0);
+            return Write(value, buffer);
+        }
+
         /// <summary>Suffix for a power-of-1000 tier: 0 = none, 1 = K ... 4 = T, 5 = aa, 6 = ab.</summary>
         public static string Suffix(int tier)
         {

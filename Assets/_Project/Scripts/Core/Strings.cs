@@ -93,6 +93,45 @@ namespace Buzzfield.Core
         public const string RestoreNothing = "Nothing to restore.";
         public const string PrivacyButton = "Privacy";
 
+        public const string SettingsTitle = "Settings";
+        public const string MusicOn = "Music: On";
+        public const string MusicOff = "Music: Off";
+        public const string SoundOn = "Sound: On";
+        public const string SoundOff = "Sound: Off";
+        public const string VibrationAll = "Vibration: On";
+        public const string VibrationImportant = "Vibration: Big moments";
+        public const string VibrationOff = "Vibration: Off";
+        public const string PrivacyChoices = "Ad privacy choices";
+        public const string PrivacyPolicy = "Privacy Policy";
+        public const string DeleteData = "Delete my data";
+        public const string DeleteDataConfirm = "Tap again: your garden and progress\nare deleted. This cannot be undone.";
+        public const string KeepProgress = "Keep my progress";
+        public const string VersionFormat = "Buzzfield {0}";
+
+        /// <summary>A goal in progress: what to do, then how far along it is.</summary>
+        public const string GoalProgressFormat = "{0}  {1}/{2}";
+        public const string GoalClaimFormat = "Goal done! Tap for +{0}";
+        public const string GoalShakeFlowers = "Shake {0} flowers";
+        public const string GoalOwnBees = "Have {0} bees";
+        public const string GoalSpeedLevel = "Speed to Lv {0}";
+        public const string GoalHoneyValueLevel = "Honey Value to Lv {0}";
+        public const string GoalBloomFlowers = "Bloom {0} flowers";
+        public const string GoalEvolveOnce = "Evolve a bee";
+        public const string GoalEvolveBees = "Evolve {0} times";
+        public const string GoalGardenBloom = "Bloom the garden to {0}%";
+        public const string GoalMoveQueenOnce = "Move the Queen";
+        public const string GoalMoveQueen = "Move the Queen {0} times";
+        public const string GoalAbilityLevels = "Buy {0} Queen ability levels";
+        public const string GoalCompleteGardenOnce = "Complete a garden";
+        public const string GoalCompleteGardens = "Complete {0} gardens";
+
+        public const string GiftDoubleFormat = "Watch ad\n+{0} more";
+
+        public const string Dewdrops = "Dewdrops";
+        /// <summary>Dewdrops a reward pays, next to the crystal icon.</summary>
+        public const string DewGainFormat = "+{0}";
+        public const string WelcomeGiftFormat = "Your bees found a honey jar: +{0}";
+
         public const string QuitTitle = "Quit the game?";
         public const string QuitBody = "Your progress is saved.";
         public const string Quit = "Quit";
