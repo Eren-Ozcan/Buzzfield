@@ -9,6 +9,15 @@ namespace Buzzfield.Upgrades
         HoneyValue,
     }
 
+    /// <summary>The four cards of the bottom bar, left to right.</summary>
+    public enum UpgradeCard
+    {
+        AddBee,
+        Speed,
+        Evolve,
+        HoneyValue,
+    }
+
     /// <summary>
     /// A levelled upgrade on the bottom bar. Cost = baseCost * costMultiplier^level.
     /// Evolve is not levelled; its cost lives on the target bee tier.

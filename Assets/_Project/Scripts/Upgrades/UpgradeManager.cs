@@ -57,6 +57,9 @@ namespace Buzzfield.Upgrades
         /// <summary>Raised after any purchase or reset.</summary>
         public event Action OnUpgradesChanged;
 
+        /// <summary>Raised after a purchase went through, with the bottom-bar card it came from.</summary>
+        public event Action<UpgradeCard> OnPurchased;
+
         // ---- Add Bee ----
 
         public BigNumber AddBeeCost => UpgradeMath.Cost(addBee.BaseCost, addBee.CostMultiplier, BeesBought);
@@ -70,6 +73,7 @@ namespace Buzzfield.Upgrades
             bees.Spawn(0);
             BeesBought++;
             OnUpgradesChanged?.Invoke();
+            OnPurchased?.Invoke(UpgradeCard.AddBee);
             return true;
         }
 
@@ -86,6 +90,7 @@ namespace Buzzfield.Upgrades
             SpeedLevel++;
             ApplyEffects();
             OnUpgradesChanged?.Invoke();
+            OnPurchased?.Invoke(UpgradeCard.Speed);
             return true;
         }
 
@@ -102,6 +107,7 @@ namespace Buzzfield.Upgrades
             HoneyValueLevel++;
             ApplyEffects();
             OnUpgradesChanged?.Invoke();
+            OnPurchased?.Invoke(UpgradeCard.HoneyValue);
             return true;
         }
 
@@ -135,6 +141,7 @@ namespace Buzzfield.Upgrades
                 return false;
             economy.TrySpend(cost);
             OnUpgradesChanged?.Invoke();
+            OnPurchased?.Invoke(UpgradeCard.Evolve);
             return true;
         }
 
