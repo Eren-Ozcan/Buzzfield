@@ -93,7 +93,7 @@ namespace Buzzfield.Flowers
                 child.AddComponent<MeshFilter>().sharedMesh = mesh;
                 var meshRenderer = child.AddComponent<MeshRenderer>();
                 meshRenderer.sharedMaterial = material;
-                meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
             }
             SetBloom(0f);
         }

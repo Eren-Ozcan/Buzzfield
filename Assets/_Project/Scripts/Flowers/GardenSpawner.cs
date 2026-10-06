@@ -10,19 +10,22 @@ namespace Buzzfield.Flowers
         public readonly GroundView Ground;
         /// <summary>Merged decor; null when the garden has none.</summary>
         public readonly GardenDecorView Decor;
+        /// <summary>The land around the garden; null when the garden has none.</summary>
+        public readonly SceneryView Scenery;
         public readonly Bounds Bounds;
 
-        public GardenInstance(Transform root, HiveView hive, GroundView ground, GardenDecorView decor, Bounds bounds)
+        public GardenInstance(Transform root, HiveView hive, GroundView ground, GardenDecorView decor, SceneryView scenery, Bounds bounds)
         {
             Root = root;
             Hive = hive;
             Ground = ground;
             Decor = decor;
+            Scenery = scenery;
             Bounds = bounds;
         }
     }
 
-    /// <summary>Builds the ground, hive and decor of a garden from its config. Flowers come from <see cref="FlowerManager"/>.</summary>
+    /// <summary>Builds the ground, hive, decor and scenery of a garden from its config. Flowers come from <see cref="FlowerManager"/>.</summary>
     public static class GardenSpawner
     {
         /// <summary>Height of the box the camera keeps in view (tallest flower or hive plus bees).</summary>
@@ -61,8 +64,16 @@ namespace Buzzfield.Flowers
 
             GardenDecorView decor = GardenDecorView.Build(garden, root);
 
+            SceneryView scenery = null;
+            if (garden.Scenery != null)
+            {
+                scenery = Object.Instantiate(garden.Scenery, root);
+                scenery.name = "Scenery";
+            }
+
+            // The camera frames the garden only; the scenery is what shows around it.
             var bounds = new Bounds(new Vector3(0f, ViewHeight * 0.5f, 0f), new Vector3(size.x, ViewHeight, size.y));
-            return new GardenInstance(root, hive, ground, decor, bounds);
+            return new GardenInstance(root, hive, ground, decor, scenery, bounds);
         }
     }
 }

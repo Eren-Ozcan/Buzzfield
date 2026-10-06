@@ -32,6 +32,12 @@ namespace Buzzfield.Flowers
         [SerializeField] private ParticleSystem puffPrefab;
         [SerializeField, Min(1)] private int puffParticles = 12;
 
+        [Header("Trail")]
+        [Tooltip("Glowing streak that follows the finger over the garden; optional.")]
+        [SerializeField] private TrailRenderer trailPrefab;
+        [Tooltip("Height of the streak above the swipe plane, so it draws over the flower heads.")]
+        [SerializeField] private float trailLift = 0.25f;
+
         [Header("Ready cue")]
         [Tooltip("Looping system with no emission of its own; flowers with pollen emit drifting motes into it.")]
         [SerializeField] private ParticleSystem motePrefab;
@@ -53,6 +59,8 @@ namespace Buzzfield.Flowers
         public float WiggleDuration => wiggleDuration;
         public ParticleSystem PuffPrefab => puffPrefab;
         public int PuffParticles => puffParticles;
+        public TrailRenderer TrailPrefab => trailPrefab;
+        public float TrailLift => trailLift;
         public ParticleSystem MotePrefab => motePrefab;
         public float MoteInterval => moteInterval;
         public int HintUntilShakes => hintUntilShakes;

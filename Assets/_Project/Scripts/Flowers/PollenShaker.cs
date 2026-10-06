@@ -18,6 +18,7 @@ namespace Buzzfield.Flowers
         private readonly Tweener tweener;
         private readonly ParticlePool puffs;
         private readonly ParticlePool motes;
+        private readonly TrailRenderer trail;
 
         /// <param name="effectsRoot">Parent of the pollen particle systems; outlives every garden.</param>
         public PollenShaker(PollenSettings settings, FlowerManager flowerManager, Tweener tweener, Transform effectsRoot)
@@ -29,6 +30,30 @@ namespace Buzzfield.Flowers
                 puffs = new ParticlePool(settings.PuffPrefab, effectsRoot, 1);
             if (settings.MotePrefab != null)
                 motes = new ParticlePool(settings.MotePrefab, effectsRoot, 1);
+            if (settings.TrailPrefab != null)
+            {
+                trail = UnityEngine.Object.Instantiate(settings.TrailPrefab, effectsRoot);
+                trail.name = settings.TrailPrefab.name;
+                trail.emitting = false;
+            }
+        }
+
+        /// <summary>The finger touched the world: the trail starts under it, cut off from the last stroke.</summary>
+        public void BeginTrail(Ray ray)
+        {
+            if (trail == null || !TryProject(ray, out Vector3 point))
+                return;
+            trail.emitting = false;
+            trail.transform.position = Lifted(point);
+            trail.Clear();
+            trail.emitting = true;
+        }
+
+        /// <summary>The finger lifted: the trail stops growing and fades out.</summary>
+        public void EndTrail()
+        {
+            if (trail != null)
+                trail.emitting = false;
         }
 
         /// <summary>Raised for every flower a swipe shook, after its cooldown started.</summary>
@@ -40,11 +65,26 @@ namespace Buzzfield.Flowers
         /// </summary>
         public int Stroke(Ray from, Ray to)
         {
-            var plane = new Plane(Vector3.up, new Vector3(0f, settings.HitPlaneHeight, 0f));
-            if (!plane.Raycast(from, out float fromDistance) || !plane.Raycast(to, out float toDistance))
+            if (!TryProject(from, out Vector3 start) || !TryProject(to, out Vector3 end))
                 return 0;
-            return Stroke(from.GetPoint(fromDistance), to.GetPoint(toDistance));
+            if (trail != null && trail.emitting)
+                trail.transform.position = Lifted(end);
+            return Stroke(start, end);
         }
+
+        private bool TryProject(Ray ray, out Vector3 point)
+        {
+            var plane = new Plane(Vector3.up, new Vector3(0f, settings.HitPlaneHeight, 0f));
+            if (plane.Raycast(ray, out float distance))
+            {
+                point = ray.GetPoint(distance);
+                return true;
+            }
+            point = default;
+            return false;
+        }
+
+        private Vector3 Lifted(Vector3 point) => point + new Vector3(0f, settings.TrailLift, 0f);
 
         /// <summary>Shakes every flower with pollen within the hit radius of the world segment (XZ only).</summary>
         public int Stroke(Vector3 from, Vector3 to)
@@ -78,6 +118,14 @@ namespace Buzzfield.Flowers
                 shaken++;
             }
             return shaken;
+        }
+
+        /// <summary>Gives every flower its pollen back now (play test tools).</summary>
+        public void Refill()
+        {
+            IReadOnlyList<Flower> flowers = flowerManager.Flowers;
+            for (int i = 0; i < flowers.Count; i++)
+                flowers[i].PollenCooldown = 0f;
         }
 
         /// <summary>Runs the cooldowns and lets flowers with pollen emit their motes.</summary>
