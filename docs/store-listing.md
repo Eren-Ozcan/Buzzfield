@@ -23,7 +23,7 @@ Ad placement rules: `C:\Projects\pictures\ADS_POLICY.md`.
 | Internal test release uploaded (registers the package for developer verification) | todo |
 | In-app products created in Play Console | todo |
 | Store listing text | ready (below) |
-| Store graphics | waiting for art |
+| Store graphics | rendered from the game once bees and hive match the Flow concepts (`pictures/buzzfield/masters/flow/`) |
 | Content rating, target audience, data safety, ads declaration | todo |
 | Closed test with 12+ testers for 14+ days | todo |
 | yilkgames.com game card | waiting for card art |
@@ -80,18 +80,19 @@ data to it before pointing Play at it, see STUDIO.md "Gizlilik ve veri silme").
 
 ## Graphics to make
 
-Play requirements and a starting prompt for each. The prompts describe the game's look (low-poly
-3D, soft daylight, warm honey tones); adjust freely. Screenshots are different: Play requires
-them to show the real game, so they are captured in game (PlayMode tests with `BZ_SHOT_DIR`
-save 1080x1920 frames with the HUD), never generated.
+Every store graphic comes from the real game: rendered or recorded in Unity, never generated.
+Google Flow is only used for concept art (the look the in-game art is built toward); the concept
+prompts are private: `pictures/buzzfield/masters/PROMPTS.md`, mirrored in
+`docs/store-assets-originals/PROMPTS.md`. Screenshots are captured in game (PlayMode tests with
+`BZ_SHOT_DIR` save 1080x1920 frames with the HUD).
 
-| Asset | Spec | Prompt |
+| Asset | Spec | Source |
 | --- | --- | --- |
-| App icon | 512x512 PNG, 32-bit, max 1 MB; Play rounds the corners, keep the subject in the middle 80% | "Game app icon, a cheerful chubby low-poly honey bee in flight in front of a glowing golden honeycomb, soft warm daylight, simple bold shapes, saturated yellow and warm orange on a soft green background, no text, centered, square" |
-| Feature graphic | 1024x500 PNG or JPG, no transparency | "Wide banner for a relaxing idle game, low-poly 3D meadow at golden hour, a small wooden beehive on the left, a swarm of cute bees flying toward blooming daisies, lavender and orchids, soft depth of field, warm honey and green palette, empty space on the right third for a title, no text" |
+| App icon | 512x512 PNG, 32-bit, max 1 MB; Play rounds the corners, keep the subject in the middle 80% | render of the in-game bee hugging a honey drop before a honeycomb (concept 1a) |
+| Feature graphic | 1024x500 PNG or JPG, no transparency | wide render of a bloomed garden: hive left, flowers centre, right third free for the title (concept 2a) |
 | Phone screenshots | 2 to 8, 9:16, 1080x1920; 4+ for game recommendations | captured in game |
-| Promo video (optional) | YouTube link | Flow: "Slow cinematic flight over a low-poly flower meadow, bees leave a small hive and fly to daisies that burst into bloom, warm afternoon light, 8 seconds" |
-| yilkgames.com card | same style as the other cards in `yilkgames_web/assets/games/` | reuse the feature graphic art, cropped |
+| Promo video (optional) | YouTube link | recorded gameplay, shots after the Flow storyboard |
+| yilkgames.com card | 1024x500 like the other cards in `yilkgames_web/assets/games/` | the feature graphic render |
 
 ## In-app products (Play Console › Monetize › Products)
 
