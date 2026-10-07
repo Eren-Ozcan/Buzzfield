@@ -1,3 +1,4 @@
+using Buzzfield.Audio;
 using Buzzfield.Core;
 using Buzzfield.Economy;
 using UnityEngine;
@@ -61,6 +62,8 @@ namespace Buzzfield.Game
                 for (int i = 0; i < workers; i++)
                     beeManager.Spawn(0);
             }
+            sound.Play(Sfx.AbilityBuy);
+            Pulse(false);
             SaveNow();
         }
     }

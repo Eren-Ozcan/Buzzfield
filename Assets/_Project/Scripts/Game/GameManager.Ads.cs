@@ -1,4 +1,5 @@
 using Buzzfield.Ads;
+using Buzzfield.Audio;
 using Buzzfield.Core;
 using Buzzfield.Platform;
 
@@ -56,10 +57,22 @@ namespace Buzzfield.Game
 
         private bool CanWatchOfflineAd() => welcomeBack.IsAdOffered && !offlineAdBase.IsZero && ads.CanShowRewarded(fromOpenPanel: true);
 
+        /// <summary>
+        /// Opens Welcome back with its ad offer. The first one ever also brings a one-time gift
+        /// from the bees, credited right away like the offline honey.
+        /// </summary>
         private void OfferOfflineAd(BigNumber amount, double awaySeconds, bool capReached, double capSeconds)
         {
             offlineAdBase = amount;
-            welcomeBack.Show(awaySeconds, amount, capReached, capSeconds);
+            BigNumber gift = BigNumber.Zero;
+            if (!welcomeGiftGiven)
+            {
+                welcomeGiftGiven = true;
+                gift = RewardMath.IncomeSeconds(TheoreticalHoneyPerSecond(), gameSettings.WelcomeGiftSeconds, gameSettings.WelcomeGiftMinimum);
+                economy.Grant(gift);
+                FirebaseServices.Log("welcome_gift");
+            }
+            welcomeBack.Show(awaySeconds, amount, capReached, capSeconds, gift);
         }
 
         /// <summary>
@@ -77,6 +90,7 @@ namespace Buzzfield.Game
             if (rewarded)
             {
                 boosts.StartRewardedHoney(UtcNow());
+                sound.Play(Sfx.Reward);
                 FirebaseServices.Log("ad_rewarded", ("placement", "honey_boost"));
             }
             SaveNow();
@@ -92,6 +106,7 @@ namespace Buzzfield.Game
                 double multiplier = offlineSettings.RewardedMultiplier;
                 GrantOffline(amount * (multiplier - 1));
                 welcomeBack.AdFinished(true, amount * multiplier);
+                sound.Play(Sfx.Reward);
                 FirebaseServices.Log("ad_rewarded", ("placement", "welcome_back"));
             }
             else

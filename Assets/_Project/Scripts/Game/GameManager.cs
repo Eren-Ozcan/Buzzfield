@@ -1,4 +1,5 @@
 using Buzzfield.Ads;
+using Buzzfield.Audio;
 using Buzzfield.Bees;
 using Buzzfield.Core;
 using Buzzfield.Economy;
@@ -16,8 +17,10 @@ namespace Buzzfield.Game
     /// Composition root: owns the init order, wires the managers together and drives
     /// the per-frame ticks in a fixed order (flowers regenerate before bees read them).
     /// Saving, loading and offline earnings live in GameManager.Save.cs, ads in
-    /// GameManager.Ads.cs, the store in GameManager.Store.cs, Queen bonuses in GameManager.Queen.cs
-    /// and the pollen shake in GameManager.Pollen.cs.
+    /// GameManager.Ads.cs, the store in GameManager.Store.cs, Queen bonuses in GameManager.Queen.cs,
+    /// the pollen shake in GameManager.Pollen.cs, sound and touch feedback in GameManager.Feel.cs,
+    /// the goal chain in GameManager.Goals.cs, the butterfly in GameManager.Visitors.cs, the
+    /// settings panel in GameManager.Settings.cs and Dewdrops in GameManager.Dew.cs.
     /// </summary>
     public sealed partial class GameManager : MonoBehaviour
     {
@@ -87,7 +90,7 @@ namespace Buzzfield.Game
 
             tweener = new Tweener(feedbackSettings.TweenCapacity);
             for (int i = 0; i < buttonFeedbacks.Length; i++)
-                buttonFeedbacks[i].Init(tweener, feedbackSettings);
+                buttonFeedbacks[i].Init(tweener, feedbackSettings, this);
 
             economy = new EconomyManager(economySettings, Time.timeAsDouble);
             flowerManager.BloomedTargetPenalty = bloomSettings.BloomedTargetPenalty;
@@ -108,6 +111,11 @@ namespace Buzzfield.Game
             InitPollen();
             InitAds();
             InitStore();
+            InitFeel();
+            InitDew();
+            InitGoals();
+            InitVisitors();
+            InitSettings();
 
             InitSave();
             SaveData data = saveManager.Load();
@@ -140,10 +148,13 @@ namespace Buzzfield.Game
             pollen.Tick(deltaTime);
             beeManager.Tick(deltaTime);
             bloom.Tick(deltaTime);
+            TickVisitors(deltaTime);
             ads.Tick(Time.unscaledDeltaTime);
             TickInterstitial(Time.unscaledDeltaTime);
             store.Tick(Time.unscaledDeltaTime);
             TickAutosave(Time.unscaledDeltaTime);
+            TickGoals(Time.unscaledDeltaTime);
+            TickFeel(Time.unscaledDeltaTime);
             tweener.Tick(Time.unscaledDeltaTime);
         }
 
@@ -162,6 +173,8 @@ namespace Buzzfield.Game
                 bloom.Dispose();
             }
             DisposePollen();
+            DisposeVisitors();
+            DisposeFeel();
             DisposeAds();
             DisposeQueen();
             DisposeStore();
@@ -189,6 +202,8 @@ namespace Buzzfield.Game
             LoadGarden(null);
             SpawnStartingBees();
             SaveNow();
+            sound.Play(Sfx.QueenMove);
+            Pulse(true);
             FirebaseServices.Log("queen_move", ("moves", prestige.MovesMade), ("play_minutes", (long)(stats.playSeconds / 60)));
             ads.MarkNaturalBreak(BreakQueenMove);
             return true;
@@ -199,6 +214,8 @@ namespace Buzzfield.Game
         {
             if (garden.Root != null)
                 Destroy(garden.Root.gameObject);
+            visitors?.Cancel();
+            goalRewardSet = false;
 
             GardenConfig config = prestige.CurrentGarden;
             garden = GardenSpawner.Spawn(config, worldRoot);
@@ -209,6 +226,7 @@ namespace Buzzfield.Game
             if (garden.Hive != null)
                 beeManager.SetHive(garden.Hive.EntrancePoint);
             cameraFitter.Fit(garden.Bounds);
+            RefreshSwipeHintPath();
         }
 
         private void SpawnStartingBees()
@@ -221,18 +239,30 @@ namespace Buzzfield.Game
         private void HandleNectarDeposited(double nectar, double flowerValue)
         {
             economy.Deposit(nectar, flowerValue, Time.timeAsDouble);
+            sound.Play(Sfx.HoneyDeposit);
         }
 
         private void HandleBloomChanged() => hud.ShowBloom(bloom.Percent, bloom.Fraction);
 
-        private void HandleFlowerBloomed(Flower _) => stats.flowersBloomed++;
+        private void HandleFlowerBloomed(Flower _)
+        {
+            stats.flowersBloomed++;
+            sound.PlayNote(Sfx.FlowerBloom);
+        }
 
-        private void HandleBeeEvolved(Bee _) => stats.beesEvolved++;
+        private void HandleBeeEvolved(Bee _)
+        {
+            stats.beesEvolved++;
+            sound.Play(Sfx.BeeEvolve);
+        }
 
         private void HandleGardenCompleted()
         {
             stats.gardensCompleted++;
             gardenComplete.Play();
+            sound.Play(Sfx.GardenComplete);
+            Pulse(true);
+            GrantGardenDew();
             FirebaseServices.Log("garden_complete", ("garden", prestige.MovesMade + 1), ("play_minutes", (long)(stats.playSeconds / 60)));
             ads.MarkNaturalBreak(BreakGardenComplete);
         }

@@ -31,6 +31,9 @@ namespace Buzzfield.Game
         private BigNumber lastRate;
         private bool paused;
 
+        /// <summary>The one-time gift on the first Welcome back has been given.</summary>
+        private bool welcomeGiftGiven;
+
         /// <summary>
         /// The app lost the screen to a full-screen ad or the store's payment sheet, not to the
         /// player leaving: the time away is still credited, but no Welcome back panel opens.
@@ -82,7 +85,7 @@ namespace Buzzfield.Game
         /// <summary>Writes the game now. Also stamps the clock and the offline rate.</summary>
         public void SaveNow()
         {
-            if (saveManager == null)
+            if (saveManager == null || dataDeleted)
                 return;
             Capture(saveData);
             lastStamp = saveData.clock;
@@ -262,6 +265,12 @@ namespace Buzzfield.Game
             data.lastFullScreenAdUtc = ads.LastFullScreenAdUtc;
             data.entitlements.CopyFrom(store.Entitlements);
             data.stats = stats;
+            data.goalIndex = goals.Index;
+            data.goalBase = goals.Baseline;
+            data.dewdrops = dew.Balance;
+            data.dewEarned = dew.TotalEarned;
+            data.welcomeGiftGiven = welcomeGiftGiven;
+            data.settings = playerSettings;
             data.offlineRate = BigNumberData.From(TheoreticalHoneyPerSecond());
             data.clock = clock.Stamp();
         }
@@ -272,6 +281,10 @@ namespace Buzzfield.Game
             economy.Restore(data.honey.ToNonNegative(), data.runHoneyEarned.ToNonNegative(), data.lifetimeHoneyEarned.ToNonNegative());
             upgrades.Restore(data.beesBought, data.speedLevel, data.honeyValueLevel);
             stats = data.stats;
+            goals.Restore(data.goalIndex, data.goalBase);
+            dew.Restore(data.dewdrops, data.dewEarned);
+            welcomeGiftGiven = data.welcomeGiftGiven;
+            RestoreSettings(data.settings);
             queen.Restore(data.abilities);
             ads.Restore(data.lastFullScreenAdUtc);
             RestoreStore(data.entitlements);

@@ -1,4 +1,5 @@
 using Buzzfield.Ads;
+using Buzzfield.Audio;
 using Buzzfield.Core;
 using Buzzfield.Platform;
 
@@ -50,6 +51,8 @@ namespace Buzzfield.Game
             if (product.jellyGrant > 0)
                 prestige.GrantJelly(BigNumber.FromDouble(product.jellyGrant));
             ApplyEntitlements();
+            sound.Play(Sfx.PurchaseSuccess);
+            Pulse(true);
             SaveNow();
         }
     }
