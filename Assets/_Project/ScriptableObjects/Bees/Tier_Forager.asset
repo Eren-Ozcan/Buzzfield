@@ -17,5 +17,5 @@ MonoBehaviour:
   collectDuration: 0.8
   material: {fileID: 0}
   scale: 0.42
-  prefab: {fileID: 5660481862735341120, guid: 60b173dc0ab31f748ad118d9f2a99e36, type: 3}
+  prefab: {fileID: 8712768815689564261, guid: 60b173dc0ab31f748ad118d9f2a99e36, type: 3}
   evolveCost: 100

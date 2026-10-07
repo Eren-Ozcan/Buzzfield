@@ -1,0 +1,105 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26a8409a608a48a428acc2b0c2194a5c, type: 3}
+  m_Name: GoalSettings
+  m_EditorClassIdentifier: Buzzfield.Economy::Buzzfield.Economy.GoalSettings
+  goals:
+  - kind: 0
+    target: 10
+    rewardSeconds: 30
+    dewReward: 5
+  - kind: 1
+    target: 3
+    rewardSeconds: 30
+    dewReward: 5
+  - kind: 2
+    target: 2
+    rewardSeconds: 30
+    dewReward: 5
+  - kind: 4
+    target: 2
+    rewardSeconds: 40
+    dewReward: 5
+  - kind: 5
+    target: 1
+    rewardSeconds: 45
+    dewReward: 10
+  - kind: 3
+    target: 3
+    rewardSeconds: 45
+    dewReward: 10
+  - kind: 1
+    target: 8
+    rewardSeconds: 60
+    dewReward: 10
+  - kind: 6
+    target: 60
+    rewardSeconds: 60
+    dewReward: 10
+  - kind: 7
+    target: 1
+    rewardSeconds: 60
+    dewReward: 10
+  - kind: 8
+    target: 1
+    rewardSeconds: 60
+    dewReward: 10
+  - kind: 0
+    target: 300
+    rewardSeconds: 90
+    dewReward: 15
+  - kind: 9
+    target: 1
+    rewardSeconds: 90
+    dewReward: 15
+  - kind: 5
+    target: 8
+    rewardSeconds: 90
+    dewReward: 20
+  - kind: 4
+    target: 60
+    rewardSeconds: 90
+    dewReward: 20
+  - kind: 7
+    target: 3
+    rewardSeconds: 120
+    dewReward: 20
+  - kind: 8
+    target: 6
+    rewardSeconds: 120
+    dewReward: 25
+  - kind: 9
+    target: 3
+    rewardSeconds: 120
+    dewReward: 25
+  - kind: 7
+    target: 5
+    rewardSeconds: 150
+    dewReward: 25
+  endlessGoals:
+  - kind: 0
+    target: 500
+    rewardSeconds: 60
+    dewReward: 15
+  - kind: 4
+    target: 30
+    rewardSeconds: 60
+    dewReward: 15
+  - kind: 5
+    target: 10
+    rewardSeconds: 60
+    dewReward: 15
+  - kind: 7
+    target: 1
+    rewardSeconds: 90
+    dewReward: 15
+  minimumReward: 20

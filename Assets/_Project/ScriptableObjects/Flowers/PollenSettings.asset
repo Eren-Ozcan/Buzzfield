@@ -23,6 +23,8 @@ MonoBehaviour:
   wiggleDuration: 0.55
   puffPrefab: {fileID: 4792871150890514624, guid: 705d44c8a172c784fbcb9c7dc9830e6e, type: 3}
   puffParticles: 12
+  trailPrefab: {fileID: 72992852805208506, guid: d4cd6c2cdf1359541bd503cf04a0ed9b, type: 3}
+  trailLift: 0.25
   motePrefab: {fileID: 6276337181704379122, guid: 73203635d7630dc42a7b636ea1e01437, type: 3}
   moteInterval: 1.4
   hintUntilShakes: 3

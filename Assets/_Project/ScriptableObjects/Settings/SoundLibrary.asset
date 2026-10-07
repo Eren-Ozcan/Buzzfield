@@ -1,0 +1,174 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9a979773a2e73b4fa25dee2b36851db, type: 3}
+  m_Name: SoundLibrary
+  m_EditorClassIdentifier: Buzzfield.Audio::Buzzfield.Audio.SoundLibrary
+  effects:
+  - id: 0
+    bus: 1
+    clips: []
+    volume: 0.6
+    maxPerSecond: 12
+    pitchJitter: 0.04
+  - id: 1
+    bus: 1
+    clips: []
+    volume: 0.7
+    maxPerSecond: 4
+    pitchJitter: 0
+  - id: 2
+    bus: 1
+    clips: []
+    volume: 0.6
+    maxPerSecond: 4
+    pitchJitter: 0
+  - id: 3
+    bus: 1
+    clips: []
+    volume: 0.6
+    maxPerSecond: 4
+    pitchJitter: 0
+  - id: 4
+    bus: 0
+    clips: []
+    volume: 0.8
+    maxPerSecond: 8
+    pitchJitter: 0.05
+  - id: 5
+    bus: 0
+    clips: []
+    volume: 0.8
+    maxPerSecond: 8
+    pitchJitter: 0.06
+  - id: 6
+    bus: 0
+    clips: []
+    volume: 0.9
+    maxPerSecond: 4
+    pitchJitter: 0
+  - id: 7
+    bus: 0
+    clips: []
+    volume: 0.35
+    maxPerSecond: 4
+    pitchJitter: 0.08
+  - id: 8
+    bus: 0
+    clips: []
+    volume: 0.7
+    maxPerSecond: 8
+    pitchJitter: 0.06
+  - id: 9
+    bus: 0
+    clips: []
+    volume: 0.8
+    maxPerSecond: 6
+    pitchJitter: 0
+  - id: 10
+    bus: 0
+    clips: []
+    volume: 0.6
+    maxPerSecond: 6
+    pitchJitter: 0.05
+  - id: 11
+    bus: 0
+    clips: []
+    volume: 0.9
+    maxPerSecond: 2
+    pitchJitter: 0
+  - id: 12
+    bus: 0
+    clips: []
+    volume: 0.9
+    maxPerSecond: 2
+    pitchJitter: 0
+  - id: 13
+    bus: 0
+    clips: []
+    volume: 0.9
+    maxPerSecond: 2
+    pitchJitter: 0
+  - id: 14
+    bus: 0
+    clips: []
+    volume: 0.9
+    maxPerSecond: 2
+    pitchJitter: 0
+  - id: 15
+    bus: 2
+    clips: []
+    volume: 1
+    maxPerSecond: 1
+    pitchJitter: 0
+  - id: 16
+    bus: 2
+    clips: []
+    volume: 1
+    maxPerSecond: 1
+    pitchJitter: 0
+  - id: 17
+    bus: 2
+    clips: []
+    volume: 1
+    maxPerSecond: 1
+    pitchJitter: 0
+  - id: 18
+    bus: 0
+    clips: []
+    volume: 0.9
+    maxPerSecond: 2
+    pitchJitter: 0
+  - id: 19
+    bus: 0
+    clips: []
+    volume: 0.6
+    maxPerSecond: 1
+    pitchJitter: 0
+  - id: 20
+    bus: 0
+    clips: []
+    volume: 0.9
+    maxPerSecond: 2
+    pitchJitter: 0
+  - id: 21
+    bus: 0
+    clips: []
+    volume: 0.9
+    maxPerSecond: 2
+    pitchJitter: 0
+  loops:
+  - id: 0
+    clip: {fileID: 0}
+    volume: 0.6
+  - id: 1
+    clip: {fileID: 0}
+    volume: 0.35
+  - id: 2
+    clip: {fileID: 0}
+    volume: 0.35
+  - id: 3
+    clip: {fileID: 0}
+    volume: 0.3
+  - id: 4
+    clip: {fileID: 0}
+    volume: 0.3
+  - id: 5
+    clip: {fileID: 0}
+    volume: 0.3
+  effectVoices: 8
+  effectsVolume: 0.8
+  uiVolume: 0.7
+  stingerDuck: 0.5
+  fadeSpeed: 1.5
+  swarmMediumFrom: 10
+  swarmLargeFrom: 50
+  runGapSeconds: 0.6
