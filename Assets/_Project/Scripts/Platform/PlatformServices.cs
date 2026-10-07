@@ -1,4 +1,5 @@
 using Buzzfield.Ads;
+using Buzzfield.Core;
 using UnityEngine;
 
 namespace Buzzfield.Platform
@@ -23,5 +24,8 @@ namespace Buzzfield.Platform
 
         public static IStoreService CreateStoreService(StoreCatalog catalog) =>
             UseDeviceServices ? new UnityIapStoreService() : new MockStoreService(catalog);
-    }
+
+        /// <summary>The phone's vibration motor on Android; silent everywhere else (iOS comes later).</summary>
+        public static IHapticService CreateHaptics() =>
+            UseDeviceServices && Application.platform == RuntimePlatform.Android ? new AndroidHaptics() : (IHapticService)new NullHaptics();    }
 }

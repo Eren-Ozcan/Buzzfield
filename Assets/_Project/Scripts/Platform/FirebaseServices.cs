@@ -84,6 +84,17 @@ namespace Buzzfield.Platform
                 Queued.Enqueue(new KeyValuePair<string, Parameter[]>(name, list));
         }
 
+        /// <summary>
+        /// "Delete my data": drops queued events and clears the analytics data and app instance
+        /// id on the device, so nothing collected so far is linked to what comes next.
+        /// </summary>
+        public static void ResetAnalyticsData()
+        {
+            Queued.Clear();
+            if (ready)
+                FirebaseAnalytics.ResetAnalyticsData();
+        }
+
         private static void ApplyConsent()
         {
             if (!pendingConsent.HasValue)
