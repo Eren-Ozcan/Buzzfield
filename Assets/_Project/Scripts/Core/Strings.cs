@@ -79,7 +79,26 @@ namespace Buzzfield.Core
         public const string ProductHoney2x = "Double Honey";
         public const string ProductHoney2xBodyFormat = "x{0} honey forever.\nStacks with ad boosts.";
         public const string ProductStarterPack = "Starter Pack";
-        public const string ProductStarterPackBodyFormat = "+{0} honey, +{1} Royal Jelly.\nOne time only.";
+        public const string ProductStarterPackBodyFormat = "+{0} Dewdrops and {1} of honey.\nOne time only.";
+        public const string ProductDewPackFormat = "{0} Dewdrops";
+        public const string ProductDewPackBody = "For honey boosts\nand time skips.";
+        public const string ShopTabDewdrops = "Dewdrops";
+        public const string ShopTabBoosts = "Boosts";
+        public const string BoostsLocked = "Complete your first garden\nto unlock boosts.";
+        public const string TimeSkipFormat = "Time Skip {0}";
+        public const string TimeSkipBodyFormat = "{0} of honey right now:\n+{1}";
+        public const string HoneyBoostFormat = "x{0} Honey {1}";
+        public const string HoneyBoostBody = "Runs even while you are away.\nStacks with every other boost.";
+        public const string BoostNone = "No boost running.";
+        /// <summary>The running Dewdrops boost; {1} is a duration format with its own placeholders.</summary>
+        public const string BoostRunningFormat = "x{0} honey: {1} left";
+        public const string BoostQueuedFormat = "Next in line: x{0} for {1}";
+        public const string BoostQueuedMoreFormat = "Next in line: x{0} for {1} (+{2} more)";
+        public const string BoostChipFormat = "x{0} {1}";
+        public const string ConfirmSpend = "Tap again";
+        public const string NotEnoughDew = "Not enough Dewdrops.";
+        public const string BoostBoughtFormat = "x{0} honey for {1}!";
+        public const string TimeSkipDoneFormat = "+{0} honey!";
         public const string Owned = "Owned";
         public const string StoreBusy = "...";
         public const string StoreUnavailable = "Unavailable";

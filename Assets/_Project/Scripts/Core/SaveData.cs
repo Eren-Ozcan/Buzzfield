@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Buzzfield.Core
 {
@@ -103,6 +104,9 @@ namespace Buzzfield.Core
         /// <summary>Bought Queen ability levels; abilities not listed are at level 0.</summary>
         public AbilityLevel[] abilities;
         public double rewardedBoostEndUtc;
+        /// <summary>Honey boosts bought with Dewdrops, strongest first, as they were at <see cref="dewBoostAnchorUtc"/>.</summary>
+        public DewBoostEntry[] dewBoosts;
+        public double dewBoostAnchorUtc;
         public double lastFullScreenAdUtc;
         public Entitlements entitlements = new Entitlements();
         public LifetimeStats stats = new LifetimeStats();
@@ -131,8 +135,10 @@ namespace Buzzfield.Core
             slotActive = slotActive ?? Array.Empty<bool>();
             slotNectar = slotNectar ?? Array.Empty<double>();
             abilities = abilities ?? Array.Empty<AbilityLevel>();
+            dewBoosts = dewBoosts ?? Array.Empty<DewBoostEntry>();
             stats = stats ?? new LifetimeStats();
             entitlements = entitlements ?? new Entitlements();
+            entitlements.grantedOrders = entitlements.grantedOrders ?? new List<string>();
             settings = settings ?? new PlayerSettings();
             if (goalIndex < 0)
                 goalIndex = 0;

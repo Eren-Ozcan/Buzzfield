@@ -12,9 +12,9 @@ namespace Buzzfield.Core
         /// <summary>
         /// 1: first release layout (Phase 4). 2: store entitlements. 3: Queen abilities by id. 4: shaken
         /// flower count. 5: player settings, goal index and the first-return gift. 6: Dewdrops and the
-        /// endless goals' starting count.
+        /// endless goals' starting count. 7: Dewdrop honey boosts and the granted store orders.
         /// </summary>
-        public const int CurrentVersion = 6;
+        public const int CurrentVersion = 7;
 
         /// <summary>
         /// Upgrades a loaded save in place; returns true when anything changed.
@@ -57,6 +57,9 @@ namespace Buzzfield.Core
 
             // Version 6 adds Dewdrops and goalBase. Nobody had Dewdrops before, and no save could
             // be past the authored goal chain yet, so JsonUtility's zeros are right.
+
+            // Version 7 adds the Dewdrop boost line and the granted store order ids. Nobody could
+            // buy either before it; Normalize has already filled the empty array and list.
 
             data.saveVersion = CurrentVersion;
             return true;
