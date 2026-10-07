@@ -8,6 +8,8 @@ using Buzzfield.UI;
 using Buzzfield.Upgrades;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace Buzzfield.Editor
 {
@@ -25,8 +27,10 @@ namespace Buzzfield.Editor
     ///   garden 3 ~19 min, and each loop after that ~16-17 min as the Queen grows.
     /// - The bot shakes every flower the moment it has pollen again: 2.5 s of bee income per
     ///   10 s sweep (+25% honey) with 40% of that nectar going to bloom.
+    /// - The bot claims every goal (30-150 s of income each): the first eight land within ~4 min,
+    ///   and the timings above hold with them (garden 1 move at 8:51, garden 2 16:30, garden 3 19 min).
     /// </summary>
-    public static class DefaultDataCreator
+    public static partial class DefaultDataCreator
     {
         const string Data = EditorAssets.DataRoot;
 
@@ -43,8 +47,14 @@ namespace Buzzfield.Editor
             var ground = CreateGroundPrefab(materials);
             var gardens = CreateGardens(flowers, hive, ground);
             CreateDecor(materials, gardens);
+            CreateScenery(materials, gardens);
+            CreatePostProfile();
             CreateBloom(materials);
             CreatePollen(materials);
+            CreateVisitors(materials);
+            CreateDew(materials);
+            CreateGoals();
+            CreateSound();
 
             CreateEconomy(gardens);
             CreateUpgrades();
@@ -58,8 +68,9 @@ namespace Buzzfield.Editor
 
         struct Materials
         {
-            public Material Ground, GroundSurface, Hive, HiveDoor, Stem, Wing, MergeFlash, BloomParticle;
-            public Material Worker, Forager, Golden;
+            public Material Ground, GroundSurface, Stem, MergeFlash, BloomParticle;
+            /// <summary>Bees and hive: one Simple Lit material on the palette texture.</summary>
+            public Material PaletteMaterial;
             public Material Daisy, Lavender, Orchid;
             public Material Grass, Bush, Stone, Wood;
         }
@@ -73,16 +84,11 @@ namespace Buzzfield.Editor
             Ground = EditorAssets.LoadOrCreateMaterial("Ground", new Color(0.55f, 0.6f, 0.5f)),
             // White: the runtime tile texture carries the colour.
             GroundSurface = EditorAssets.LoadOrCreateMaterial("GroundSurface", Color.white),
-            Hive = EditorAssets.LoadOrCreateMaterial("Hive", new Color(0.93f, 0.68f, 0.2f)),
-            HiveDoor = EditorAssets.LoadOrCreateMaterial("HiveDoor", new Color(0.25f, 0.15f, 0.05f)),
             Stem = EditorAssets.LoadOrCreateMaterial("FlowerStem", new Color(0.3f, 0.6f, 0.25f)),
-            Wing = EditorAssets.LoadOrCreateMaterial("BeeWing", new Color(0.92f, 0.96f, 1f)),
             MergeFlash = EditorAssets.LoadOrCreateMaterial("MergeFlash", new Color(1f, 0.97f, 0.75f), "Universal Render Pipeline/Unlit"),
             // White: each burst tints its particles through the start colour.
             BloomParticle = EditorAssets.LoadOrCreateMaterial("BloomParticle", Color.white, "Universal Render Pipeline/Particles/Unlit"),
-            Worker = EditorAssets.LoadOrCreateMaterial("BeeWorker", new Color(1f, 0.82f, 0.1f)),
-            Forager = EditorAssets.LoadOrCreateMaterial("BeeForager", new Color(1f, 0.55f, 0.1f)),
-            Golden = EditorAssets.LoadOrCreateMaterial("BeeGolden", new Color(1f, 0.9f, 0.45f)),
+            PaletteMaterial = Palette.Material(),
             Daisy = EditorAssets.LoadOrCreateMaterial("FlowerDaisy", DaisyColor),
             Lavender = EditorAssets.LoadOrCreateMaterial("FlowerLavender", LavenderColor),
             Orchid = EditorAssets.LoadOrCreateMaterial("FlowerOrchid", OrchidColor),
@@ -97,11 +103,11 @@ namespace Buzzfield.Editor
 
         static void CreateBees(Materials m)
         {
-            BeeTier worker = CreateTier("Worker", m.Worker, m.Wing, speed: 2.5f, capacity: 2f, collect: 1f, scale: 0.35f, evolveCost: 0);
+            BeeTier worker = CreateTier("Worker", m.PaletteMaterial, Palette.Worker, Palette.Wing, pollenBaskets: false, speed: 2.5f, capacity: 2f, collect: 1f, scale: 0.35f, evolveCost: 0);
             // Forager: 3x capacity and faster, so one Forager beats the three Workers it costs (~+30%).
-            BeeTier forager = CreateTier("Forager", m.Forager, m.Wing, speed: 3.5f, capacity: 6f, collect: 0.8f, scale: 0.42f, evolveCost: 100);
+            BeeTier forager = CreateTier("Forager", m.PaletteMaterial, Palette.Forager, Palette.Wing, pollenBaskets: true, speed: 3.5f, capacity: 6f, collect: 0.8f, scale: 0.42f, evolveCost: 100);
             // Golden: pays off on Lavender and Orchid loads; out of reach in garden 1, whose 2K move comes first.
-            BeeTier golden = CreateTier("Golden", m.Golden, m.Wing, speed: 5f, capacity: 16f, collect: 0.6f, scale: 0.5f, evolveCost: 2500);
+            BeeTier golden = CreateTier("Golden", m.PaletteMaterial, Palette.Golden, Palette.GoldenWing, pollenBaskets: false, speed: 5f, capacity: 16f, collect: 0.6f, scale: 0.5f, evolveCost: 2500);
 
             GameObject flash = EditorAssets.LoadOrCreatePrefab("MergeFlash", () =>
             {
@@ -141,21 +147,24 @@ namespace Buzzfield.Editor
             EditorAssets.SetIfMissing(settings, "depositSparklePrefab", sparkle);
         }
 
-        static BeeTier CreateTier(string name, Material body, Material wing, float speed, float capacity, float collect, float scale, double evolveCost)
+        static BeeTier CreateTier(string name, Material palette, int body, int wing, bool pollenBaskets, float speed, float capacity, float collect, float scale, double evolveCost)
         {
             GameObject prefab = EditorAssets.LoadOrCreatePrefab($"Bee_{name}", () =>
             {
                 var root = new GameObject($"Bee_{name}");
-                // Body first: BeeManager treats the first renderer as the body for material overrides.
-                EditorAssets.Primitive(PrimitiveType.Sphere, "Body", root.transform, Vector3.zero, new Vector3(0.8f, 0.8f, 1.1f), body);
-                EditorAssets.Primitive(PrimitiveType.Sphere, "WingL", root.transform, new Vector3(-0.35f, 0.35f, 0f), new Vector3(0.55f, 0.08f, 0.35f), wing);
-                EditorAssets.Primitive(PrimitiveType.Sphere, "WingR", root.transform, new Vector3(0.35f, 0.35f, 0f), new Vector3(0.55f, 0.08f, 0.35f), wing);
+                Mesh mesh = EditorAssets.SaveMesh(CharacterModels.Bee($"Bee_{name}", body, wing, pollenBaskets));
+                // One renderer: BeeManager treats the first renderer as the body for material overrides.
+                // No shadow: 150 bees in the shadow pass cost too much on a phone.
+                EditorAssets.MeshObject("Body", root.transform, mesh, palette, castShadows: false);
                 return root;
             });
 
-            return EditorAssets.LoadOrCreate<BeeTier>($"{Data}/Bees/Tier_{name}.asset", t => EditorAssets.Set(t,
+            BeeTier tier = EditorAssets.LoadOrCreate<BeeTier>($"{Data}/Bees/Tier_{name}.asset", t => EditorAssets.Set(t,
                 ("speed", speed), ("capacity", capacity), ("collectDuration", collect),
                 ("scale", scale), ("prefab", prefab), ("evolveCost", evolveCost)));
+            // The modelled bees replaced the sphere placeholders after the first data; filled on older data too.
+            EditorAssets.SetIfMissing(tier, "prefab", prefab);
+            return tier;
         }
 
         // ---- Flowers ----
@@ -252,7 +261,7 @@ namespace Buzzfield.Editor
             }
         }
 
-        /// <summary>Five flat flower discs on thin stems over a rosette of leaves. Returns the top height.</summary>
+        /// <summary>Five flat daisies (a centre and ten petals) on thin stems over a rosette of leaves. Returns the top height.</summary>
         static float DaisyPatch(LowPolyBuilder greens, LowPolyBuilder heads)
         {
             const int count = 5;
@@ -265,7 +274,7 @@ namespace Buzzfield.Editor
                 Vector3 tip = direction * radius + Vector3.up * height;
                 greens.Stalk(direction * (radius * 0.5f), tip, 0.025f, 4);
                 Quaternion tilt = Quaternion.AngleAxis(14f, Vector3.Cross(Vector3.up, direction));
-                heads.Blob(tip + Vector3.up * 0.03f, new Vector3(0.17f, 0.06f, 0.17f), tilt, 0.08f);
+                heads.FlowerHead(tip + Vector3.up * 0.03f, tilt, 10, new Vector3(0.045f, 0.015f, 0.1f), 0.1f, 10f, new Vector3(0.06f, 0.04f, 0.06f));
                 top = Mathf.Max(top, height + 0.09f);
             }
             Leaves(greens, 5, 0.38f, 0.12f, 0.13f, 10f);
@@ -293,7 +302,7 @@ namespace Buzzfield.Editor
             return top;
         }
 
-        /// <summary>Three arching stems, each with a wide bloom and a bud, over broad leaves. Returns the top height.</summary>
+        /// <summary>Three arching stems, each with a cupped five-petal bloom and a bud, over broad leaves. Returns the top height.</summary>
         static float OrchidPatch(LowPolyBuilder greens, LowPolyBuilder heads)
         {
             const int count = 3;
@@ -309,7 +318,7 @@ namespace Buzzfield.Editor
                 greens.Stalk(foot, bend, 0.03f, 5);
                 greens.Stalk(bend, tip, 0.026f, 5);
                 Quaternion tilt = Quaternion.AngleAxis(25f, Vector3.Cross(Vector3.up, direction));
-                heads.Blob(tip + direction * 0.05f + Vector3.up * 0.04f, new Vector3(0.2f, 0.13f, 0.2f), tilt, 0.12f);
+                heads.FlowerHead(tip + direction * 0.05f + Vector3.up * 0.04f, tilt, 5, new Vector3(0.07f, 0.02f, 0.12f), 0.1f, 25f, Vector3.one * 0.05f);
                 heads.Blob(bend + direction * 0.1f + Vector3.up * 0.1f, new Vector3(0.08f, 0.07f, 0.08f), tilt, 0.1f);
                 top = Mathf.Max(top, height + 0.17f);
             }
@@ -322,13 +331,12 @@ namespace Buzzfield.Editor
             GameObject prefab = EditorAssets.LoadOrCreatePrefab("Hive", () =>
             {
                 var root = new GameObject("Hive");
-                EditorAssets.Primitive(PrimitiveType.Cylinder, "Body", root.transform, new Vector3(0f, 0.7f, 0f), new Vector3(1.3f, 0.7f, 1.3f), m.Hive);
-                EditorAssets.Primitive(PrimitiveType.Sphere, "Roof", root.transform, new Vector3(0f, 1.4f, 0f), new Vector3(1.35f, 0.6f, 1.35f), m.Hive);
                 // The door faces the camera (-Z), so deposits read clearly.
-                EditorAssets.Primitive(PrimitiveType.Cube, "Door", root.transform, new Vector3(0f, 0.55f, -0.62f), new Vector3(0.4f, 0.3f, 0.1f), m.HiveDoor);
+                Mesh mesh = EditorAssets.SaveMesh(CharacterModels.Hive(out Vector3 entrancePoint));
+                EditorAssets.MeshObject("Body", root.transform, mesh, m.PaletteMaterial);
                 var entrance = new GameObject("Entrance").transform;
                 entrance.SetParent(root.transform, false);
-                entrance.localPosition = new Vector3(0f, 0.6f, -0.8f);
+                entrance.localPosition = entrancePoint;
 
                 var view = root.AddComponent<HiveView>();
                 EditorAssets.Set(view, ("entrance", entrance));
@@ -353,6 +361,54 @@ namespace Buzzfield.Editor
                 return root;
             });
             return prefab.GetComponent<GroundView>();
+        }
+
+        // ---- Scenery and post-processing ----
+
+        /// <summary>The land around the gardens: one mesh on the palette material, tinted by SceneryView.</summary>
+        static void CreateScenery(Materials m, List<GardenConfig> gardens)
+        {
+            GameObject prefab = EditorAssets.LoadOrCreatePrefab("Scenery", () =>
+            {
+                var root = new GameObject("Scenery");
+                Mesh mesh = EditorAssets.SaveMesh(SceneryModels.Scenery(seed: 7));
+                // Its shadows are baked into the mesh: a real-time pass over this much land is too slow on a phone.
+                GameObject land = EditorAssets.MeshObject("Land", root.transform, mesh, m.PaletteMaterial, castShadows: false);
+                var view = root.AddComponent<SceneryView>();
+                EditorAssets.Set(view, ("tinted", new Object[] { land.GetComponent<Renderer>() }));
+                return root;
+            });
+            var scenery = prefab.GetComponent<SceneryView>();
+            foreach (GardenConfig garden in gardens)
+                EditorAssets.SetIfMissing(garden, "scenery", scenery);
+        }
+
+        /// <summary>Warm, slightly richer colours and a soft vignette; cheap enough for phones.</summary>
+        static void CreatePostProfile()
+        {
+            string path = $"{Data}/Settings/GardenPost.asset";
+            if (AssetDatabase.LoadAssetAtPath<VolumeProfile>(path) != null)
+                return;
+            var profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            AssetDatabase.CreateAsset(profile, path);
+            var colour = profile.Add<ColorAdjustments>(true);
+            colour.postExposure.Override(0.05f);
+            colour.contrast.Override(8f);
+            colour.saturation.Override(6f);
+            var white = profile.Add<WhiteBalance>(true);
+            white.temperature.Override(5f);
+            var vignette = profile.Add<Vignette>(true);
+            vignette.intensity.Override(0.22f);
+            vignette.smoothness.Override(0.45f);
+            vignette.color.Override(new Color(0.22f, 0.13f, 0.05f));
+            // Volume components live inside the profile asset.
+            foreach (VolumeComponent component in profile.components)
+            {
+                component.hideFlags = HideFlags.HideInInspector | HideFlags.HideInHierarchy;
+                AssetDatabase.AddObjectToAsset(component, profile);
+            }
+            EditorUtility.SetDirty(profile);
+            Debug.Log($"Created {path}");
         }
 
         // ---- Garden decor ----
@@ -539,6 +595,7 @@ namespace Buzzfield.Editor
             PollenSettings settings = EditorAssets.LoadOrCreate<PollenSettings>($"{Data}/Flowers/PollenSettings.asset", _ => { });
             EditorAssets.SetIfMissing(settings, "puffPrefab", puff);
             EditorAssets.SetIfMissing(settings, "motePrefab", mote);
+            EditorAssets.SetIfMissing(settings, "trailPrefab", CreateSwipeTrail(m));
         }
 
         /// <summary>One-shot particle prefab: no play on awake, world space, particles shrink out.</summary>
@@ -624,6 +681,8 @@ namespace Buzzfield.Editor
             });
             // Phase 3 replaced the plain ground prefab with the tiled one; filled on older data too.
             EditorAssets.SetIfMissing(garden, "groundView", ground);
+            // So did the modelled hive with the primitive one.
+            EditorAssets.SetIfMissing(garden, "hivePrefab", hive);
             return garden;
         }
 
