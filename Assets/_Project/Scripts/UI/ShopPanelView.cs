@@ -1,19 +1,28 @@
 using System;
 using Buzzfield.Ads;
 using Buzzfield.Core;
+using Buzzfield.Economy;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Buzzfield.UI
 {
+    public enum ShopTab
+    {
+        Dewdrops,
+        Boosts,
+    }
+
     /// <summary>
-    /// Shop button in the top bar and the shop panel behind it: one row per product, a
-    /// restore button, a status line for the last purchase or restore, and a Privacy button
-    /// that reopens the ad consent choices where the law asks for one (EEA, UK). Store events only
-    /// mark it dirty; the rows are refreshed at most once per frame while the panel is open.
-    /// A badge on the shop button pops in once the store is ready with something to buy, and
-    /// goes away for the rest of the session when the shop is opened.
+    /// Shop button in the top bar and the shop panel behind it, in two tabs (docs/DEWDROPS.md 9):
+    /// Dewdrops (one row per store product, a restore button) and Boosts (<see cref="DewBoostsTabView"/>).
+    /// The Dewdrops balance sits in the header, a status line reports the last purchase or
+    /// restore, and a Privacy button reopens the ad consent choices where the law asks for one
+    /// (EEA, UK). Store events only mark it dirty; the rows are refreshed at most once per frame
+    /// while the panel is open. A badge on the shop button pops in once the store is ready with
+    /// something to buy and the player has played a few minutes, and goes away for the rest of
+    /// the session when the shop is opened.
     /// </summary>
     public sealed class ShopPanelView : MonoBehaviour
     {
@@ -31,6 +40,17 @@ namespace Buzzfield.UI
         [SerializeField] private TMP_Text statusText;
         [SerializeField] private Button restoreButton;
         [SerializeField] private Button privacyButton;
+        [SerializeField] private TMP_Text dewBalanceText;
+
+        [Header("Tabs")]
+        [SerializeField] private Button dewTabButton;
+        [SerializeField] private Image dewTabImage;
+        [SerializeField] private Button boostsTabButton;
+        [SerializeField] private Image boostsTabImage;
+        [SerializeField] private GameObject dewTab;
+        [SerializeField] private DewBoostsTabView boostsTab;
+        [SerializeField] private Color tabOnColor = new Color(0.3f, 0.75f, 0.6f);
+        [SerializeField] private Color tabOffColor = new Color(0.79f, 0.73f, 0.63f);
 
         private StoreManager store;
         private Tweener tweener;
@@ -40,23 +60,37 @@ namespace Buzzfield.UI
         private bool openedThisSession;
         private Func<bool> privacyRequired;
         private Action showPrivacy;
+        private Func<bool> badgeAllowed;
+        private DewManager dew;
+        private NumberLabel dewLabel;
+        private bool dewDirty;
 
         public bool IsOpen => panel.activeSelf;
 
+        public ShopTab Tab { get; private set; }
+
+        public DewBoostsTabView BoostsTab => boostsTab;
+
         /// <param name="privacyOptionsRequired">True where the Privacy button must be offered.</param>
         /// <param name="showPrivacyOptions">Reopens the consent choices.</param>
-        public void Init(StoreManager storeManager, Tweener tweenRunner, UiFeedbackSettings feedbackSettings,
-            Func<bool> privacyOptionsRequired, Action showPrivacyOptions)
+        /// <param name="badgeShowable">True once the badge may point at the shop (not in the first minutes).</param>
+        public void Init(StoreManager storeManager, DewManager dewManager, Tweener tweenRunner, UiFeedbackSettings feedbackSettings,
+            Func<bool> privacyOptionsRequired, Action showPrivacyOptions, Func<bool> badgeShowable)
         {
             Unsubscribe();
             store = storeManager;
+            dew = dewManager;
             tweener = tweenRunner;
             feedback = feedbackSettings;
             privacyRequired = privacyOptionsRequired ?? (() => false);
             showPrivacy = showPrivacyOptions;
+            badgeAllowed = badgeShowable ?? (() => true);
             store.OnChanged += MarkDirty;
             store.OnPurchaseFinished += HandlePurchaseFinished;
             store.OnRestoreFinished += HandleRestoreFinished;
+            dew.OnChanged += MarkDewDirty;
+            dewLabel ??= new NumberLabel(dewBalanceText);
+            dewDirty = true;
 
             AddListener(openButton, Open);
             if (dewButton != null)
@@ -64,37 +98,93 @@ namespace Buzzfield.UI
             AddListener(closeButton, Close);
             AddListener(restoreButton, Restore);
             AddListener(privacyButton, ShowPrivacy);
+            AddListener(dewTabButton, ShowDewTab);
+            AddListener(boostsTabButton, ShowBoostsTab);
 
             StoreCatalog catalog = store.Catalog;
             for (int i = 0; i < items.Length; i++)
             {
                 ShopItemView item = items[i];
-                item.Init(Title(item.ProductId), Body(item.ProductId, catalog), Buy);
+                item.Init(Title(item.ProductId, catalog), Body(item.ProductId, catalog), Buy);
             }
             panel.SetActive(false);
             newBadge.SetActive(false);
             MarkDirty();
         }
 
-        public void Open()
+        /// <summary>Opens the shop on the Dewdrops tab.</summary>
+        public void Open() => Open(ShopTab.Dewdrops);
+
+        /// <summary>Opens the shop on the Boosts tab (the boost chip).</summary>
+        public void OpenBoosts() => Open(ShopTab.Boosts);
+
+        public void Open(ShopTab tab)
         {
             openedThisSession = true;
             newBadge.SetActive(false);
             panel.SetActive(true);
             statusText.text = store.IsReady ? string.Empty : Strings.StoreConnecting;
+            ShowTab(tab);
+            dewDirty = true;
             Refresh();
         }
 
-        public void Close() => panel.SetActive(false);
+        public void Close()
+        {
+            boostsTab.CancelConfirm();
+            panel.SetActive(false);
+        }
+
+        public void ShowTab(ShopTab tab)
+        {
+            Tab = tab;
+            bool boosts = tab == ShopTab.Boosts;
+            dewTab.SetActive(!boosts);
+            boostsTab.gameObject.SetActive(boosts);
+            dewTabImage.color = boosts ? tabOffColor : tabOnColor;
+            boostsTabImage.color = boosts ? tabOnColor : tabOffColor;
+            if (boosts)
+                boostsTab.OnShown();
+            else
+                boostsTab.CancelConfirm();
+            dirty = true;
+        }
+
+        private void ShowDewTab()
+        {
+            if (Tab != ShopTab.Dewdrops && statusText.text != Strings.StoreConnecting)
+                statusText.text = string.Empty;
+            ShowTab(ShopTab.Dewdrops);
+        }
+
+        private void ShowBoostsTab()
+        {
+            if (Tab != ShopTab.Boosts && statusText.text != Strings.StoreConnecting)
+                statusText.text = string.Empty;
+            ShowTab(ShopTab.Boosts);
+        }
+
+        /// <summary>The shop's status line; the Boosts tab writes its results here.</summary>
+        public void SetStatus(string text) => statusText.text = text;
 
         private void LateUpdate()
         {
             if (store == null)
                 return;
-            if (badgeDirty)
+            // The badge also waits for play time, which no event announces.
+            if (badgeDirty || (!openedThisSession && !newBadge.activeSelf))
                 RefreshBadge();
-            if (dirty && panel.activeSelf)
+            if (!panel.activeSelf)
+                return;
+            if (dewDirty)
+            {
+                dewDirty = false;
+                dewLabel.ShowAbbreviated(BigNumber.FromDouble(dew.Balance));
+            }
+            if (dirty)
                 Refresh();
+            if (Tab == ShopTab.Boosts)
+                boostsTab.Refresh(Time.unscaledDeltaTime);
         }
 
         private void OnDestroy()
@@ -105,6 +195,8 @@ namespace Buzzfield.UI
             RemoveListener(closeButton, Close);
             RemoveListener(restoreButton, Restore);
             RemoveListener(privacyButton, ShowPrivacy);
+            RemoveListener(dewTabButton, ShowDewTab);
+            RemoveListener(boostsTabButton, ShowBoostsTab);
         }
 
         private void Refresh()
@@ -159,10 +251,12 @@ namespace Buzzfield.UI
             badgeDirty = true;
         }
 
+        private void MarkDewDirty() => dewDirty = true;
+
         private void RefreshBadge()
         {
             badgeDirty = false;
-            bool show = !openedThisSession && store.IsReady && AnyBuyable();
+            bool show = !openedThisSession && store.IsReady && badgeAllowed() && AnyBuyable();
             if (show == newBadge.activeSelf)
                 return;
             newBadge.SetActive(show);
@@ -180,14 +274,17 @@ namespace Buzzfield.UI
             return false;
         }
 
-        private static string Title(string productId)
+        private static string Title(string productId, StoreCatalog catalog)
         {
             switch (productId)
             {
                 case ProductIds.RemoveAds: return Strings.ProductRemoveAds;
                 case ProductIds.PermanentHoney2x: return Strings.ProductHoney2x;
                 case ProductIds.StarterPack: return Strings.ProductStarterPack;
-                default: return productId;
+                default:
+                    return catalog.TryGet(productId, out StoreProduct product) && product.dewGrant > 0
+                        ? string.Format(Strings.ProductDewPackFormat, product.dewGrant)
+                        : productId;
             }
         }
 
@@ -201,10 +298,11 @@ namespace Buzzfield.UI
                     return string.Format(Strings.ProductHoney2xBodyFormat, catalog.PermanentHoneyMultiplier.ToString("0.#"));
                 case ProductIds.StarterPack:
                     catalog.TryGet(productId, out StoreProduct pack);
-                    return string.Format(Strings.ProductStarterPackBodyFormat,
-                        NumberFormat.Abbreviate(BigNumber.FromDouble(pack.honeyGrant)), pack.jellyGrant);
+                    return string.Format(Strings.ProductStarterPackBodyFormat, pack.dewGrant, TimeFormat.Duration(pack.honeySecondsGrant));
                 default:
-                    return string.Empty;
+                    return catalog.TryGet(productId, out StoreProduct product) && product.dewGrant > 0
+                        ? Strings.ProductDewPackBody
+                        : string.Empty;
             }
         }
 
@@ -227,6 +325,8 @@ namespace Buzzfield.UI
             store.OnChanged -= MarkDirty;
             store.OnPurchaseFinished -= HandlePurchaseFinished;
             store.OnRestoreFinished -= HandleRestoreFinished;
+            if (dew != null)
+                dew.OnChanged -= MarkDewDirty;
         }
     }
 }
