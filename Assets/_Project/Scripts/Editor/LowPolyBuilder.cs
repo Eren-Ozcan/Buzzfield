@@ -4,8 +4,9 @@ using UnityEngine;
 namespace Buzzfield.Editor
 {
     /// <summary>
-    /// Builds the flat-shaded low-poly placeholder meshes (flower patches, garden decor) out of
-    /// a few shapes. Every face gets its own vertices, so the lighting shows the facets.
+    /// Builds the flat-shaded low-poly meshes (bees, hive, flower patches, garden decor) out of a
+    /// few shapes. Every face gets its own vertices, so the lighting shows the facets. Faces carry
+    /// the UV of the current <see cref="Swatch"/>, for meshes drawn with the palette material.
     /// </summary>
     internal sealed class LowPolyBuilder
     {
@@ -29,7 +30,21 @@ namespace Buzzfield.Editor
         readonly List<Vector3> vertices = new List<Vector3>();
         readonly List<Vector3> normals = new List<Vector3>();
         readonly List<int> triangles = new List<int>();
+        readonly List<Vector2> uvs = new List<Vector2>();
         readonly System.Random random;
+        Vector2 swatchUv = Palette.Uv(0);
+        int swatch;
+
+        /// <summary>Palette colour of every face added from now on (<see cref="Palette"/>).</summary>
+        public int Swatch
+        {
+            get => swatch;
+            set
+            {
+                swatch = value;
+                swatchUv = Palette.Uv(value);
+            }
+        }
 
         /// <param name="seed">Seeds the jitter of <see cref="Blob"/>, so a rebuild gives the same mesh.</param>
         public LowPolyBuilder(int seed = 1)
@@ -55,6 +70,98 @@ namespace Buzzfield.Editor
                 Vector3 b = corners[IcoFaces[f + 1]];
                 Vector3 c = corners[IcoFaces[f + 2]];
                 Face(a, b, c, (a + b + c) / 3f - center);
+            }
+        }
+
+        /// <summary>
+        /// Ellipsoid from an icosahedron split <paramref name="subdivisions"/> times (1 = 80 faces,
+        /// 2 = 320). <paramref name="swatchFor"/> picks each face's colour from its direction on the
+        /// unit sphere before scaling, so stripes and patches follow the shape.
+        /// </summary>
+        public void Ellipsoid(Vector3 center, Vector3 radii, Quaternion rotation, int subdivisions, System.Func<Vector3, int> swatchFor)
+        {
+            var faces = new List<(Vector3, Vector3, Vector3)>();
+            for (int f = 0; f < IcoFaces.Length; f += 3)
+                faces.Add((IcoVertices[IcoFaces[f]].normalized, IcoVertices[IcoFaces[f + 1]].normalized, IcoVertices[IcoFaces[f + 2]].normalized));
+            for (int level = 0; level < subdivisions; level++)
+            {
+                var split = new List<(Vector3, Vector3, Vector3)>(faces.Count * 4);
+                foreach ((Vector3 a, Vector3 b, Vector3 c) in faces)
+                {
+                    Vector3 ab = (a + b).normalized;
+                    Vector3 bc = (b + c).normalized;
+                    Vector3 ca = (c + a).normalized;
+                    split.Add((a, ab, ca));
+                    split.Add((ab, b, bc));
+                    split.Add((ca, bc, c));
+                    split.Add((ab, bc, ca));
+                }
+                faces = split;
+            }
+            int kept = Swatch;
+            foreach ((Vector3 a, Vector3 b, Vector3 c) in faces)
+            {
+                Swatch = swatchFor((a + b + c).normalized);
+                Vector3 pa = center + rotation * Vector3.Scale(a, radii);
+                Vector3 pb = center + rotation * Vector3.Scale(b, radii);
+                Vector3 pc = center + rotation * Vector3.Scale(c, radii);
+                Face(pa, pb, pc, (pa + pb + pc) / 3f - center);
+            }
+            Swatch = kept;
+        }
+
+        /// <summary>
+        /// Surface of revolution around the Y axis through <paramref name="center"/>: each profile
+        /// point is (radius, height), bottom to top. <paramref name="swatchForBand"/> colours band i,
+        /// the one between profile points i and i + 1. A radius of 0 closes the shape there.
+        /// <paramref name="rotation"/> turns the whole shape (the axis becomes rotation * up).
+        /// </summary>
+        public void Lathe(Vector3 center, IReadOnlyList<Vector2> profile, int sides, System.Func<int, int> swatchForBand,
+            Quaternion? rotation = null)
+        {
+            Quaternion turn = rotation ?? Quaternion.identity;
+            int kept = Swatch;
+            for (int band = 0; band < profile.Count - 1; band++)
+            {
+                Swatch = swatchForBand(band);
+                Vector2 low = profile[band];
+                Vector2 high = profile[band + 1];
+                for (int i = 0; i < sides; i++)
+                {
+                    float a0 = i * Mathf.PI * 2f / sides;
+                    float a1 = (i + 1) * Mathf.PI * 2f / sides;
+                    var d0 = new Vector3(Mathf.Cos(a0), 0f, Mathf.Sin(a0));
+                    var d1 = new Vector3(Mathf.Cos(a1), 0f, Mathf.Sin(a1));
+                    Vector3 radial = (d0 + d1).normalized;
+                    // Outward in the profile plane: (dy, -dr) as (radial, up).
+                    Vector3 outward = turn * (radial * (high.y - low.y) + Vector3.up * (low.x - high.x));
+                    Vector3 p00 = center + turn * (d0 * low.x + Vector3.up * low.y);
+                    Vector3 p10 = center + turn * (d1 * low.x + Vector3.up * low.y);
+                    Vector3 p11 = center + turn * (d1 * high.x + Vector3.up * high.y);
+                    Vector3 p01 = center + turn * (d0 * high.x + Vector3.up * high.y);
+                    Face(p00, p10, p11, outward);
+                    Face(p00, p11, p01, outward);
+                }
+            }
+            Swatch = kept;
+        }
+
+        /// <summary>
+        /// A flower head: a small centre and <paramref name="petals"/> flattened petals around it,
+        /// in the XZ plane of <paramref name="orientation"/> (its local up is the flower's face).
+        /// <paramref name="petalRadii"/> is (width, thickness, length); <paramref name="cupDegrees"/>
+        /// lifts the petal tips into a cup.
+        /// </summary>
+        public void FlowerHead(Vector3 center, Quaternion orientation, int petals, Vector3 petalRadii, float ringRadius,
+            float cupDegrees, Vector3 centerRadii)
+        {
+            Blob(center, centerRadii, orientation);
+            for (int i = 0; i < petals; i++)
+            {
+                float angle = i * 360f / petals;
+                Quaternion along = orientation * Quaternion.Euler(0f, angle, 0f);
+                Vector3 direction = along * Vector3.forward;
+                Blob(center + direction * ringRadius, petalRadii, along * Quaternion.Euler(-cupDegrees, 0f, 0f));
             }
         }
 
@@ -108,6 +215,9 @@ namespace Buzzfield.Editor
             DoubleFace(baseCenter - across, tip, baseCenter + across);
         }
 
+        /// <summary>One triangle facing <paramref name="outward"/> (terrain and other hand-built surfaces).</summary>
+        public void Triangle(Vector3 a, Vector3 b, Vector3 c, Vector3 outward) => Face(a, b, c, outward);
+
         /// <summary>Random value in [min, max) from this builder's seeded generator.</summary>
         public float Range(float min, float max) => min + (float)random.NextDouble() * (max - min);
 
@@ -124,6 +234,7 @@ namespace Buzzfield.Editor
             }
             mesh.SetVertices(vertices);
             mesh.SetNormals(normals);
+            mesh.SetUVs(0, uvs);
             mesh.SetTriangles(triangles, 0);
             mesh.RecalculateBounds();
             return mesh;
@@ -147,6 +258,9 @@ namespace Buzzfield.Editor
         void Face(Vector3 a, Vector3 b, Vector3 c, Vector3 outward)
         {
             Vector3 normal = Vector3.Cross(b - a, c - a);
+            // Closed ends of a lathe or prism collapse to a point: no triangle there.
+            if (normal.sqrMagnitude < 1e-12f)
+                return;
             if (Vector3.Dot(normal, outward) < 0f)
             {
                 (b, c) = (c, b);
@@ -171,6 +285,9 @@ namespace Buzzfield.Editor
             normals.Add(normal);
             normals.Add(normal);
             normals.Add(normal);
+            uvs.Add(swatchUv);
+            uvs.Add(swatchUv);
+            uvs.Add(swatchUv);
             triangles.Add(start);
             triangles.Add(start + 1);
             triangles.Add(start + 2);

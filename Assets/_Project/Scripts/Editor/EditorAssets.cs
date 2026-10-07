@@ -83,15 +83,15 @@ namespace Buzzfield.Editor
             return existing;
         }
 
-        /// <summary>Child object drawing <paramref name="mesh"/> with <paramref name="material"/>, without shadows.</summary>
-        public static GameObject MeshObject(string name, Transform parent, Mesh mesh, Material material)
+        /// <summary>Child object drawing <paramref name="mesh"/> with <paramref name="material"/>; it casts shadows unless told not to.</summary>
+        public static GameObject MeshObject(string name, Transform parent, Mesh mesh, Material material, bool castShadows = true)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             var renderer = go.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = material;
-            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.shadowCastingMode = castShadows ? UnityEngine.Rendering.ShadowCastingMode.On : UnityEngine.Rendering.ShadowCastingMode.Off;
             return go;
         }
 
@@ -120,7 +120,7 @@ namespace Buzzfield.Editor
             AssetDatabase.CreateFolder(parent, Path.GetFileName(folder));
         }
 
-        /// <summary>Writes serialized fields by name; values are float, int, double, bool, string, Color, Vector2, Vector2Int, AnimationCurve, enums or Objects.</summary>
+        /// <summary>Writes serialized fields by name; values are float, int, long, double, bool, string, Color, Vector2, Vector2Int, AnimationCurve, enums or Objects.</summary>
         public static void Set(Object target, params (string field, object value)[] values)
         {
             var so = new SerializedObject(target);
@@ -184,6 +184,7 @@ namespace Buzzfield.Editor
                 case float f: property.floatValue = f; break;
                 case double d: property.doubleValue = d; break;
                 case int i: property.intValue = i; break;
+                case long l: property.longValue = l; break;
                 case bool b: property.boolValue = b; break;
                 case string s: property.stringValue = s; break;
                 case Color c: property.colorValue = c; break;
