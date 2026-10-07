@@ -19,6 +19,8 @@ namespace Buzzfield.UI
     {
         [Header("Top bar")]
         [SerializeField] private Button openButton;
+        [Tooltip("Also opens the shop: the Dewdrops counter in the top bar.")]
+        [SerializeField] private Button dewButton;
         [Tooltip("Shown on the shop button until the shop is opened this session.")]
         [SerializeField] private GameObject newBadge;
 
@@ -57,6 +59,8 @@ namespace Buzzfield.UI
             store.OnRestoreFinished += HandleRestoreFinished;
 
             AddListener(openButton, Open);
+            if (dewButton != null)
+                AddListener(dewButton, Open);
             AddListener(closeButton, Close);
             AddListener(restoreButton, Restore);
             AddListener(privacyButton, ShowPrivacy);
@@ -97,6 +101,7 @@ namespace Buzzfield.UI
         {
             Unsubscribe();
             RemoveListener(openButton, Open);
+            RemoveListener(dewButton, Open);
             RemoveListener(closeButton, Close);
             RemoveListener(restoreButton, Restore);
             RemoveListener(privacyButton, ShowPrivacy);

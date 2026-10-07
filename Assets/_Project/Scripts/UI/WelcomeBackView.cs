@@ -9,7 +9,8 @@ namespace Buzzfield.UI
     /// <summary>
     /// "Welcome back" panel: time away and the honey earned meanwhile. The honey is already
     /// credited when the panel opens, so closing the app with it open loses nothing.
-    /// Each opening offers one rewarded ad that multiplies the offline honey.
+    /// Each opening offers one rewarded ad that multiplies the offline honey. The first return
+    /// also shows a one-time gift from the bees, credited with the offline honey.
     /// </summary>
     public sealed class WelcomeBackView : MonoBehaviour
     {
@@ -20,6 +21,9 @@ namespace Buzzfield.UI
         [SerializeField] private Button collectButton;
         [SerializeField] private Button adButton;
         [SerializeField] private TMP_Text adLabel;
+        [Tooltip("Row for the one-time gift; hidden when there is none.")]
+        [SerializeField] private GameObject giftRow;
+        [SerializeField] private TMP_Text giftText;
 
         private Func<bool> canWatchAd;
         private Func<bool> watchAd;
@@ -31,9 +35,18 @@ namespace Buzzfield.UI
         /// <summary>The ad offer is on screen and not used yet.</summary>
         public bool IsAdOffered => adOffered;
 
+        /// <summary>The gift row shows on the open panel.</summary>
+        public bool IsGiftShown => giftRow != null && giftRow.activeSelf;
+
+        /// <summary>The Collect button, where the honey flies from.</summary>
+        public RectTransform CollectButton => (RectTransform)collectButton.transform;
+
+        /// <summary>The player pressed Collect (the panel then closes).</summary>
+        public event Action OnCollected;
+
         private void Awake()
         {
-            collectButton.onClick.AddListener(Close);
+            collectButton.onClick.AddListener(Collect);
             adButton.onClick.AddListener(HandleAdClick);
             panel.SetActive(false);
         }
@@ -41,7 +54,7 @@ namespace Buzzfield.UI
         private void OnDestroy()
         {
             if (collectButton != null)
-                collectButton.onClick.RemoveListener(Close);
+                collectButton.onClick.RemoveListener(Collect);
             if (adButton != null)
                 adButton.onClick.RemoveListener(HandleAdClick);
         }
@@ -54,8 +67,16 @@ namespace Buzzfield.UI
             adLabel.text = string.Format(Strings.OfflineAdOfferFormat, adMultiplier.ToString("0.#"));
         }
 
-        public void Show(double awaySeconds, BigNumber honey, bool capReached, double capSeconds)
+        /// <param name="gift">The one-time gift from the bees; zero hides its row.</param>
+        public void Show(double awaySeconds, BigNumber honey, bool capReached, double capSeconds, BigNumber gift = default)
         {
+            if (giftRow != null)
+            {
+                bool hasGift = !gift.IsZero;
+                giftRow.SetActive(hasGift);
+                if (hasGift)
+                    giftText.text = string.Format(Strings.WelcomeGiftFormat, NumberFormat.Abbreviate(gift));
+            }
             awayText.text = string.Format(Strings.AwayFormat, TimeFormat.Duration(awaySeconds));
             ShowHoney(honey);
             capText.gameObject.SetActive(capReached);
@@ -79,6 +100,12 @@ namespace Buzzfield.UI
         }
 
         public void Close() => panel.SetActive(false);
+
+        private void Collect()
+        {
+            OnCollected?.Invoke();
+            Close();
+        }
 
         private void Update()
         {

@@ -6,8 +6,9 @@ using UnityEngine;
 namespace Buzzfield.UI
 {
     /// <summary>
-    /// Top bar readout: honey balance, measured honey per second and garden bloom, written without
-    /// allocating (<see cref="NumberLabel"/>, TextMeshPro SetText). The balance text
+    /// Top bar readout: honey balance, measured honey per second, the Dewdrops balance (shown from
+    /// the first Dewdrop) and garden bloom, written without allocating (<see cref="NumberLabel"/>,
+    /// TextMeshPro SetText). The balance text
     /// is rebuilt at most once per frame after OnHoneyChanged; the rate is re-read on a
     /// slow timer because it also decays while nothing is deposited. The balance pops when it
     /// grows, at most once per <see cref="UiFeedbackSettings.HoneyPopInterval"/>.
@@ -19,6 +20,9 @@ namespace Buzzfield.UI
         [SerializeField] private TMP_Text bloomText;
         [Tooltip("Stretched from the left; its right anchor follows the bloom fraction.")]
         [SerializeField] private RectTransform bloomFill;
+        [Tooltip("Dewdrops pill; hidden until the first Dewdrop.")]
+        [SerializeField] private GameObject dewPill;
+        [SerializeField] private TMP_Text dewText;
 
         private EconomyManager economy;
         private NumberLabel honeyLabel;
@@ -32,6 +36,10 @@ namespace Buzzfield.UI
         private BigNumber shownRate = BigNumber.Zero;
         private bool honeyDirty;
         private int shownBloomPercent = -1;
+        private DewManager dew;
+        private NumberLabel dewLabel;
+        private long shownDew = -1;
+        private bool dewDirty;
 
         public void Init(EconomyManager economyManager, EconomySettings settings, Tweener tweenRunner, UiFeedbackSettings feedbackSettings)
         {
@@ -50,8 +58,24 @@ namespace Buzzfield.UI
             ShowRate(BigNumber.Zero);
         }
 
+        /// <summary>Shows the Dewdrops balance from now on; the pill appears with the first Dewdrop.</summary>
+        public void InitDew(DewManager dewManager)
+        {
+            if (dew != null)
+                dew.OnChanged -= MarkDewDirty;
+            dew = dewManager;
+            dewLabel ??= new NumberLabel(dewText);
+            dew.OnChanged += MarkDewDirty;
+            dewDirty = true;
+        }
+
+        /// <summary>The Dewdrops pill is on screen.</summary>
+        public bool IsDewShown => dewPill.activeSelf;
+
         private void Update()
         {
+            if (dewDirty && dew != null)
+                RefreshDew();
             if (economy == null)
                 return;
             popCooldown -= Time.unscaledDeltaTime;
@@ -95,6 +119,25 @@ namespace Buzzfield.UI
 
         private void MarkHoneyDirty(BigNumber _) => honeyDirty = true;
 
+        private void MarkDewDirty() => dewDirty = true;
+
+        private void RefreshDew()
+        {
+            dewDirty = false;
+            bool show = dew.TotalEarned > 0;
+            if (dewPill.activeSelf != show)
+            {
+                dewPill.SetActive(show);
+                if (show)
+                    tweener.PopIn(dewPill.transform, feedback.BadgePop, feedback.BadgePopDuration);
+            }
+            long balance = dew.Balance;
+            if (balance == shownDew)
+                return;
+            shownDew = balance;
+            dewLabel.ShowAbbreviated(BigNumber.FromDouble(balance));
+        }
+
         private void ShowRate(BigNumber rate)
         {
             shownRate = rate;
@@ -105,6 +148,8 @@ namespace Buzzfield.UI
         {
             if (economy != null)
                 economy.OnHoneyChanged -= MarkHoneyDirty;
+            if (dew != null)
+                dew.OnChanged -= MarkDewDirty;
         }
     }
 }

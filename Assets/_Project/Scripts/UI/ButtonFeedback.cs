@@ -16,13 +16,16 @@ namespace Buzzfield.UI
 
         private Tweener tweener;
         private UiFeedbackSettings settings;
+        private IUiCues cues;
         private bool pressed;
         private bool interactableAtPress;
 
-        public void Init(Tweener tweenRunner, UiFeedbackSettings feedbackSettings)
+        /// <param name="uiCues">Sound and vibration for presses; optional.</param>
+        public void Init(Tweener tweenRunner, UiFeedbackSettings feedbackSettings, IUiCues uiCues = null)
         {
             tweener = tweenRunner;
             settings = feedbackSettings;
+            cues = uiCues;
         }
 
         public void OnPointerDown(PointerEventData eventData)
@@ -31,6 +34,7 @@ namespace Buzzfield.UI
             interactableAtPress = button.IsInteractable();
             if (tweener == null || !interactableAtPress)
                 return;
+            cues?.Tap();
             pressed = true;
             tweener.Hold(transform, settings.PressScale, settings.PressDuration);
         }
@@ -53,7 +57,11 @@ namespace Buzzfield.UI
         public void Confirm() => tweener?.Pop(transform, settings.PurchasePop, settings.PurchasePopDuration);
 
         /// <summary>The action was refused: a short wiggle.</summary>
-        public void Reject() => tweener?.Wiggle(transform, settings.ShakeDegrees, settings.ShakeCycles, settings.ShakeDuration);
+        public void Reject()
+        {
+            cues?.Refused();
+            tweener?.Wiggle(transform, settings.ShakeDegrees, settings.ShakeCycles, settings.ShakeDuration);
+        }
 
         private void OnDisable()
         {

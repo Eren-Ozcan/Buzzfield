@@ -22,10 +22,17 @@ namespace Buzzfield.UI
         /// <summary>Screen positions where the stroke started and ended.</summary>
         public event Action<Vector2, Vector2> OnStroke;
 
+        /// <summary>A finger touched the world, at this screen position; raised before its first stroke.</summary>
+        public event Action<Vector2> OnPress;
+
+        /// <summary>The finger that was swiping lifted.</summary>
+        public event Action OnRelease;
+
         public void OnPointerDown(PointerEventData eventData)
         {
             pointerId = eventData.pointerId;
             last = eventData.position;
+            OnPress?.Invoke(last);
             OnStroke?.Invoke(last, last);
         }
 
@@ -43,10 +50,17 @@ namespace Buzzfield.UI
 
         public void OnPointerUp(PointerEventData eventData)
         {
-            if (eventData.pointerId == pointerId)
-                pointerId = NoPointer;
+            if (eventData.pointerId != pointerId)
+                return;
+            pointerId = NoPointer;
+            OnRelease?.Invoke();
         }
 
-        private void OnDisable() => pointerId = NoPointer;
+        private void OnDisable()
+        {
+            if (pointerId != NoPointer)
+                OnRelease?.Invoke();
+            pointerId = NoPointer;
+        }
     }
 }

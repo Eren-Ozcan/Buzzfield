@@ -47,6 +47,18 @@ namespace Buzzfield.UI
             MarkTextsDirty();
         }
 
+        /// <summary>The card of <paramref name="card"/>, for effects around it.</summary>
+        public RectTransform CardOf(UpgradeCard card)
+        {
+            switch (card)
+            {
+                case UpgradeCard.AddBee: return (RectTransform)addBeeButton.transform;
+                case UpgradeCard.Speed: return (RectTransform)speedButton.transform;
+                case UpgradeCard.Evolve: return (RectTransform)evolveButton.transform;
+                default: return (RectTransform)honeyValueButton.transform;
+            }
+        }
+
         private void LateUpdate()
         {
             if (upgrades == null)
