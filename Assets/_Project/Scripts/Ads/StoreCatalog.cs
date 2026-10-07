@@ -17,10 +17,10 @@ namespace Buzzfield.Ads
         public string id;
         public StoreProductType type;
         public string fallbackPrice;
-        [Tooltip("Honey granted on purchase (starter pack).")]
-        public double honeyGrant;
-        [Tooltip("Royal Jelly granted on purchase (starter pack).")]
-        public int jellyGrant;
+        [Tooltip("Dewdrops granted on purchase (Dewdrop packs, starter pack).")]
+        public int dewGrant;
+        [Tooltip("Honey granted on purchase, in seconds of the current offline rate (starter pack).")]
+        public float honeySecondsGrant;
     }
 
     /// <summary>In-app products and mock store behaviour.</summary>
@@ -37,6 +37,10 @@ namespace Buzzfield.Ads
         [SerializeField] private List<StoreProduct> products = new List<StoreProduct>();
         [Tooltip("Honey multiplier of permanent_2x_honey; stacks with the rewarded boost.")]
         [SerializeField, Min(1f)] private float permanentHoneyMultiplier = 2f;
+        [Tooltip("Least honey a honeySecondsGrant pays, for a garden that earns almost nothing yet.")]
+        [SerializeField, Min(0f)] private double minimumHoneyGrant = 500;
+        [Tooltip("Play time before the shop button may show its badge: nothing points at the shop in the first minutes.")]
+        [SerializeField, Min(0f)] private float badgeAfterPlaySeconds = 300f;
 
         [Header("Mock service (editor and dev builds)")]
         [SerializeField, Min(0f)] private float mockDelaySeconds = 1f;
@@ -44,6 +48,8 @@ namespace Buzzfield.Ads
 
         public IReadOnlyList<StoreProduct> Products => products;
         public float PermanentHoneyMultiplier => permanentHoneyMultiplier;
+        public double MinimumHoneyGrant => minimumHoneyGrant;
+        public float BadgeAfterPlaySeconds => badgeAfterPlaySeconds;
         public float MockDelaySeconds => mockDelaySeconds;
         public MockResult MockPurchaseResult => mockResult;
 

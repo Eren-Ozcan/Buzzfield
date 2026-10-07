@@ -10,9 +10,9 @@ namespace Buzzfield.Platform
     /// <summary>
     /// Unity IAP 5 (<see cref="StoreController"/>) behind the game's store interface. Every
     /// order the store hands over is granted first and confirmed after, so a kill between
-    /// the two only means the store delivers it again (grants are idempotent through
-    /// <see cref="Buzzfield.Core.Entitlements"/>). Owned non-consumables the store reports
-    /// at startup are granted too, which restores them after a reinstall.
+    /// the two only means the store delivers it again; <see cref="Buzzfield.Core.Entitlements"/>
+    /// remembers the order ids it granted, so the second delivery grants nothing. Owned
+    /// non-consumables the store reports at startup are granted too, which restores them after a reinstall.
     /// </summary>
     public sealed class UnityIapStoreService : GameStore
     {
@@ -148,7 +148,7 @@ namespace Buzzfield.Platform
         private void HandlePurchasePending(PendingOrder order)
         {
             // Grant (and let the game save) before the store hears the order is done.
-            Complete(ProductIdOf(order), PurchaseStatus.Success, null);
+            Complete(ProductIdOf(order), PurchaseStatus.Success, null, order.Info?.TransactionID);
             controller.ConfirmPurchase(order);
         }
 
@@ -195,9 +195,9 @@ namespace Buzzfield.Platform
         }
 
         /// <summary>Ends the running purchase when it is this product; anything else arrived on its own.</summary>
-        private void Complete(string productId, PurchaseStatus status, string error)
+        private void Complete(string productId, PurchaseStatus status, string error, string orderId = null)
         {
-            var result = new PurchaseResult(productId, status, error);
+            var result = new PurchaseResult(productId, status, error, string.IsNullOrEmpty(orderId) ? null : orderId);
             if (productId != null && productId == purchasingId)
             {
                 Action<PurchaseResult> callback = purchaseDone;

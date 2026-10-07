@@ -15,15 +15,20 @@ namespace Buzzfield.Ads
     /// <summary>Outcome of one purchase.</summary>
     public readonly struct PurchaseResult
     {
-        public PurchaseResult(string productId, PurchaseStatus status, string error = null)
+        public PurchaseResult(string productId, PurchaseStatus status, string error = null, string orderId = null)
         {
             ProductId = productId;
             Status = status;
             Error = error;
+            OrderId = orderId;
         }
 
         public string ProductId { get; }
         public PurchaseStatus Status { get; }
+
+        /// <summary>The store's transaction id for a successful order; null when the store gives none.
+        /// The same order delivered twice carries the same id.</summary>
+        public string OrderId { get; }
 
         /// <summary>Store message for a failure; null otherwise.</summary>
         public string Error { get; }

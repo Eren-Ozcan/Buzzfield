@@ -106,7 +106,7 @@ namespace Buzzfield.Ads
             {
                 StoreCatalog.MockResult.Cancel => new PurchaseResult(id, PurchaseStatus.Cancelled),
                 StoreCatalog.MockResult.Fail => new PurchaseResult(id, PurchaseStatus.Failed, "Mock failure."),
-                _ => new PurchaseResult(id, PurchaseStatus.Success),
+                _ => new PurchaseResult(id, PurchaseStatus.Success, orderId: "mock-" + Guid.NewGuid().ToString("N")),
             };
             if (result.IsSuccess && TryFind(id, out StoreProductInfo product)
                 && product.Definition.type == StoreProductType.NonConsumable && !owned.Contains(id))

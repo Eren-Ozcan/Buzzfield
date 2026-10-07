@@ -21,7 +21,8 @@ namespace Buzzfield.Ads
     /// The game's single door to the store. Initializes the service with the catalog, keeps
     /// the <see cref="Entitlements"/> and records every successful purchase, restore or
     /// deferred purchase in them. <see cref="OnProductGranted"/> tells the game to hand out
-    /// what the product gives (honey, Royal Jelly, multipliers) and to save.
+    /// what the product gives (Dewdrops, honey, multipliers) and to save. Dewdrop packs can be
+    /// bought any number of times; an order the store delivers twice is granted once, by its id.
     /// GameManager ticks it once per frame.
     /// </summary>
     public sealed class StoreManager
@@ -137,7 +138,7 @@ namespace Buzzfield.Ads
         private void HandlePurchaseResult(PurchaseResult result)
         {
             if (result.IsSuccess)
-                Grant(result.ProductId);
+                Grant(result.ProductId, result.OrderId);
             OnChanged?.Invoke();
             OnPurchaseFinished?.Invoke(result);
         }
@@ -146,7 +147,7 @@ namespace Buzzfield.Ads
         {
             if (!result.IsSuccess)
                 return;
-            Grant(result.ProductId);
+            Grant(result.ProductId, result.OrderId);
             OnChanged?.Invoke();
         }
 
@@ -159,7 +160,7 @@ namespace Buzzfield.Ads
                 {
                     // Consumables are never restored, even if a store reports one.
                     if (catalog.TryGet(ownedIds[i], out StoreProduct product)
-                        && product.type == StoreProductType.NonConsumable && Grant(ownedIds[i]))
+                        && product.type == StoreProductType.NonConsumable && Grant(ownedIds[i], null))
                         granted++;
                 }
             }
@@ -167,11 +168,24 @@ namespace Buzzfield.Ads
             OnRestoreFinished?.Invoke(granted);
         }
 
-        /// <summary>Records the product and tells the game to hand it out; false when it was already owned.</summary>
-        private bool Grant(string productId)
+        /// <summary>
+        /// Records the product and tells the game to hand it out. False when the order was already
+        /// granted, a once-only product is already owned, or the product is unknown.
+        /// </summary>
+        private bool Grant(string productId, string orderId)
         {
-            if (!catalog.TryGet(productId, out StoreProduct product) || !Entitlements.Grant(productId))
+            if (!catalog.TryGet(productId, out StoreProduct product) || Entitlements.HasGrantedOrder(orderId))
                 return false;
+            if (Entitlements.Tracks(productId))
+            {
+                if (!Entitlements.Grant(productId))
+                    return false;
+            }
+            else if (product.type != StoreProductType.Consumable)
+            {
+                return false;
+            }
+            Entitlements.RecordOrder(orderId);
             OnProductGranted?.Invoke(product);
             return true;
         }
