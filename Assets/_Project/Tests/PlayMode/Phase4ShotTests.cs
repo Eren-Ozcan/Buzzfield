@@ -54,7 +54,7 @@ namespace Buzzfield.Tests.PlayMode
         {
             var hint = Object.FindAnyObjectByType<SwipeHintView>();
             Assert.That(hint.IsVisible, "A new player sees the swipe hint.");
-            Assert.That(hint.GetComponentInChildren<TMPro.TMP_Text>().text, Is.EqualTo(Strings.SwipeHint));
+            Assert.That(hint.transform.Find("Panel/Label").GetComponent<TMPro.TMP_Text>().text, Is.EqualTo(Strings.SwipeHint));
             yield return Shot("swipe_hint");
 
             Assert.That(game.ShakeAllFlowers(), Is.GreaterThanOrEqualTo(3));

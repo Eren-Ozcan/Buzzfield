@@ -44,12 +44,16 @@ namespace Buzzfield.Tests.PlayMode
             Assert.That(game, Is.Not.Null);
         }
 
-        /// <summary>Moves the saved clock readings by the given seconds (negative = the player left earlier) and optionally sets the saved rate.</summary>
+        /// <summary>
+        /// Moves the saved clock readings by the given seconds (negative = the player left earlier) and
+        /// optionally sets the saved rate. The first-return gift counts as given, so only offline honey is paid.
+        /// </summary>
         static void ShiftSavedClock(double seen, double device, double monotonic, double? rate = null)
         {
             SaveManager files = TestSave.Files();
             SaveData data = files.Load();
             Assert.That(data, Is.Not.Null);
+            data.welcomeGiftGiven = true;
             data.clock.lastSeenUtc += seen;
             data.clock.lastDeviceUtc += device;
             data.clock.lastMonotonicSeconds += monotonic;

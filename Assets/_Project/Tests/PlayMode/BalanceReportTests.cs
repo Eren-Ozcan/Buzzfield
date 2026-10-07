@@ -67,7 +67,7 @@ namespace Buzzfield.Tests.PlayMode
         {
             outPath = Environment.GetEnvironmentVariable("BZ_BALANCE_OUT");
             var report = new StringBuilder();
-            report.AppendLine("Buzzfield balance run (bot, no ads, no purchases)");
+            report.AppendLine("Buzzfield balance run (bot claims goals; no ads, no purchases, no butterflies)");
             report.AppendLine("time      event");
             Flush(report);
 
@@ -120,6 +120,12 @@ namespace Buzzfield.Tests.PlayMode
                     continue;
                 decisionTimer = DecisionSeconds;
 
+                int goal = game.Goals.Index;
+                BigNumber goalReward = game.ClaimableGoalReward;
+                int goalDew = game.GoalDewReward;
+                if (game.TryClaimGoal())
+                    Log(report, now, $"  goal {goal + 1} claimed (+{NumberFormat.Abbreviate(goalReward)} honey, +{goalDew} Dewdrops)");
+
                 bool canMove = game.Prestige.CanMove(game.Bloom.Fraction, game.Economy.Honey);
                 if (canMove && (game.Bloom.IsComplete || now - lastBloomChange > StallSeconds))
                 {
@@ -129,7 +135,8 @@ namespace Buzzfield.Tests.PlayMode
                     Assert.That(game.TryMoveQueen());
                     moves++;
                     Log(report, now, $"garden {game.Prestige.GardenIndex}: MOVE after {Clock(now - gardenStart)} at {percent}% bloom, " +
-                        $"{bees} bees, +{NumberFormat.Abbreviate(jelly)} jelly, Queen Lv {game.Queen.Level} (x{game.Queen.HoneyMultiplier.ToString("0.##", CultureInfo.InvariantCulture)})");
+                        $"{bees} bees, +{NumberFormat.Abbreviate(jelly)} jelly, Queen Lv {game.Queen.Level} (x{game.Queen.HoneyMultiplier.ToString("0.##", CultureInfo.InvariantCulture)}), " +
+                        $"{game.Dew.TotalEarned} Dewdrops earned so far");
                     SpendJelly(report, now);
                     gardenStart = now;
                     lastBloomChange = now;
@@ -166,9 +173,11 @@ namespace Buzzfield.Tests.PlayMode
                 }
             }
 
+            double hours = (Time.timeAsDouble - start) / 3600.0;
             Log(report, Time.timeAsDouble - start, $"done: {game.Stats.gardensCompleted} gardens completed, " +
                 $"{NumberFormat.Abbreviate(game.Economy.LifetimeHoneyEarned)} lifetime honey, " +
-                $"{NumberFormat.Abbreviate(game.Prestige.LifetimeJelly)} lifetime jelly");
+                $"{NumberFormat.Abbreviate(game.Prestige.LifetimeJelly)} lifetime jelly, " +
+                $"{game.Dew.TotalEarned} Dewdrops ({(game.Dew.TotalEarned / hours).ToString("0", CultureInfo.InvariantCulture)} per active hour, goals and gardens only)");
 
             Debug.Log(report.ToString());
         }

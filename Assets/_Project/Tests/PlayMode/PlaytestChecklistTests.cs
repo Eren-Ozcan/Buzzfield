@@ -113,16 +113,36 @@ namespace Buzzfield.Tests.PlayMode
             GameObject forager = Hidden<GameObject>(evolved, "Instance");
             Assert.That(forager.transform.localScale.x, Is.GreaterThan(beeSettings.Tiers[0].Scale));
 
-            bool orange = false;
-            foreach (Renderer renderer in forager.GetComponentsInChildren<Renderer>())
-            {
-                Color c = renderer.sharedMaterial.GetColor("_BaseColor");
-                orange |= c.r > 0.9f && c.g > 0.4f && c.g < 0.7f && c.b < 0.3f;
-            }
-            Assert.That(orange, "Forager has no orange body.");
+            Color c = BodyColour(forager);
+            Assert.That(c.r > 0.9f && c.g > 0.4f && c.g < 0.7f && c.b < 0.3f, $"Forager body is {c}, not orange.");
 
             yield return null;
             Assert.That(TextOf("evolveButton", "detailText"), Does.Contain("F1"));
+        }
+
+        /// <summary>
+        /// A bee's body colour: bees are one mesh coloured through the palette texture, and the
+        /// body takes the most faces, so its colour is the one at the most common UV.
+        /// </summary>
+        static Color BodyColour(GameObject bee)
+        {
+            var renderer = bee.GetComponentInChildren<MeshRenderer>();
+            Mesh mesh = renderer.GetComponent<MeshFilter>().sharedMesh;
+            var counts = new System.Collections.Generic.Dictionary<Vector2, int>();
+            foreach (Vector2 uv in mesh.uv)
+                counts[uv] = counts.TryGetValue(uv, out int n) ? n + 1 : 1;
+            Vector2 body = Vector2.zero;
+            int most = -1;
+            foreach (var pair in counts)
+            {
+                if (pair.Value > most)
+                {
+                    most = pair.Value;
+                    body = pair.Key;
+                }
+            }
+            var palette = (Texture2D)renderer.sharedMaterial.GetTexture("_BaseMap");
+            return palette.GetPixelBilinear(body.x, body.y) * renderer.sharedMaterial.GetColor("_BaseColor");
         }
 
         [UnityTest]
