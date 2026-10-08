@@ -12,7 +12,8 @@ namespace Buzzfield.Game
     /// Save, load, autosave and offline earnings. Saves every <see cref="GameSettings.AutosaveIntervalSeconds"/>,
     /// when the app pauses or loses focus, after a Queen move and on quit (desktop); mobile
     /// never relies on OnApplicationQuit. Every save stamps the clock, so a killed app still
-    /// pays offline earnings from its last save.
+    /// pays offline earnings from its last save. Dewdrops honey boosts that ran while the player
+    /// was away multiply the offline honey for the time they covered.
     /// </summary>
     public sealed partial class GameManager
     {
@@ -56,6 +57,8 @@ namespace Buzzfield.Game
             public BigNumber Rate;
             public double DeviceNow;
             public double MonotonicNow;
+            /// <summary>The boost line as it was when the player left; the live one runs on meanwhile.</summary>
+            public DewBoostQueue Boosts;
         }
 
         private void InitSave()
@@ -78,7 +81,7 @@ namespace Buzzfield.Game
             if (gameSettings.FetchTrustedTime)
                 StartCoroutine(clock.FetchTrustedTime());
             if (stamp.HasValue)
-                EvaluateReturn(stamp.Value, loadedRate, GameClock.DeviceUtc, GameClock.MonotonicSeconds);
+                EvaluateReturn(stamp.Value, loadedRate, boosts.DewBoosts, GameClock.DeviceUtc, GameClock.MonotonicSeconds);
             SaveNow();
         }
 
@@ -162,7 +165,8 @@ namespace Buzzfield.Game
                 return;
             paused = false;
             pendingReturn = null;
-            EvaluateReturn(lastStamp, lastRate, GameClock.DeviceUtc, GameClock.MonotonicSeconds);
+            // Before this frame's tick: the boost line still stands where the player left it.
+            EvaluateReturn(lastStamp, lastRate, boosts.DewBoosts, GameClock.DeviceUtc, GameClock.MonotonicSeconds);
             pausedByOverlay = false;
             SaveNow();
         }
@@ -175,12 +179,13 @@ namespace Buzzfield.Game
 
         private void OnApplicationQuit() => SaveNow();
 
-        private void EvaluateReturn(ClockStamp stamp, BigNumber rate, double deviceNow, double monotonicNow)
+        /// <param name="boostsAtLeave">The Dewdrops boost line as it stood when the player left.</param>
+        private void EvaluateReturn(ClockStamp stamp, BigNumber rate, DewBoostQueue boostsAtLeave, double deviceNow, double monotonicNow)
         {
             double capSeconds = OfflineCapHours * 3600.0;
             OfflineClockInput input = clock.ReturnInput(stamp, deviceNow, monotonicNow);
-            OfflineResult result = OfflineEarnings.Evaluate(input, capSeconds, rate,
-                offlineSettings.Efficiency, offlineSettings.ClockToleranceSeconds);
+            OfflineResult result = WithDewBoosts(OfflineEarnings.Evaluate(input, capSeconds, rate,
+                offlineSettings.Efficiency, offlineSettings.ClockToleranceSeconds), boostsAtLeave);
             LastOffline = result;
 
             switch (result.Status)
@@ -189,7 +194,13 @@ namespace Buzzfield.Game
                     ApplyOffline(result, capSeconds);
                     break;
                 case OfflineStatus.PendingTrustedTime:
-                    pendingReturn = new PendingReturn { Stamp = stamp, Rate = rate, DeviceNow = deviceNow, MonotonicNow = monotonicNow };
+                    // A copy: the live line keeps running until trusted time arrives.
+                    var snapshot = new DewBoostQueue();
+                    snapshot.Restore(boostsAtLeave.Capture(), boostsAtLeave.AnchorUtc);
+                    pendingReturn = new PendingReturn
+                    {
+                        Stamp = stamp, Rate = rate, DeviceNow = deviceNow, MonotonicNow = monotonicNow, Boosts = snapshot,
+                    };
                     break;
                 default:
                     // The next save stamps the clock again, which resets the bad timestamp.
@@ -204,8 +215,24 @@ namespace Buzzfield.Game
                 return;
             PendingReturn pending = pendingReturn.Value;
             pendingReturn = null;
-            EvaluateReturn(pending.Stamp, pending.Rate, pending.DeviceNow, pending.MonotonicNow);
+            EvaluateReturn(pending.Stamp, pending.Rate, pending.Boosts, pending.DeviceNow, pending.MonotonicNow);
             SaveNow();
+        }
+
+        /// <summary>
+        /// Scales the offline honey by the Dewdrops boosts that ran over the credited time: each
+        /// boosted second pays its multiplier. The rewarded ad boost is too short to matter and stays out.
+        /// </summary>
+        private static OfflineResult WithDewBoosts(OfflineResult result, DewBoostQueue boostsAtLeave)
+        {
+            if (result.CreditedSeconds <= 0 || result.Amount.IsZero || boostsAtLeave == null)
+                return result;
+            double extra = boostsAtLeave.ExtraSeconds(result.CreditedSeconds);
+            if (extra <= 0)
+                return result;
+            double scale = (result.CreditedSeconds + extra) / result.CreditedSeconds;
+            return new OfflineResult(result.Status, result.ElapsedSeconds, result.CreditedSeconds,
+                result.Amount * BigNumber.FromDouble(scale), result.CapReached);
         }
 
         private void ApplyOffline(OfflineResult result, double capSeconds)
@@ -262,6 +289,8 @@ namespace Buzzfield.Game
             data.movesMade = prestige.MovesMade;
             data.abilities = queen.Capture();
             data.rewardedBoostEndUtc = boosts.RewardedHoneyEndUtc;
+            data.dewBoosts = boosts.DewBoosts.Capture();
+            data.dewBoostAnchorUtc = boosts.DewBoosts.AnchorUtc;
             data.lastFullScreenAdUtc = ads.LastFullScreenAdUtc;
             data.entitlements.CopyFrom(store.Entitlements);
             data.stats = stats;
@@ -289,6 +318,8 @@ namespace Buzzfield.Game
             ads.Restore(data.lastFullScreenAdUtc);
             RestoreStore(data.entitlements);
             boosts.RestoreRewardedHoney(data.rewardedBoostEndUtc, GameClock.DeviceUtc);
+            // As it stood at the save: the return pays for the boosted time away, then the first tick uses it up.
+            boosts.RestoreDewBoosts(data.dewBoosts, data.dewBoostAnchorUtc);
 
             LoadGarden(data);
             int spawned = 0;

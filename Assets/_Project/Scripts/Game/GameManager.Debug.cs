@@ -15,6 +15,10 @@ namespace Buzzfield.Game
         /// <summary>Adds honey outside the run total, like a store grant.</summary>
         public void DebugGrantHoney(BigNumber amount) => economy.Grant(amount);
 
+        /// <summary>Adds Dewdrops; the crystals fly from the goal pill (the editor window has its own Screen size).</summary>
+        public void DebugGrantDew(long amount) =>
+            EarnDew(amount, "debug", RectTransformUtility.WorldToScreenPoint(null, goalView.Pill.position));
+
         /// <summary>Blooms the active, unbloomed flower nearest the hive; false when none is left.</summary>
         public bool DebugBloomNext()
         {
