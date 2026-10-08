@@ -13,20 +13,48 @@ MonoBehaviour:
   m_Name: StoreCatalog
   m_EditorClassIdentifier: Buzzfield.Ads::Buzzfield.Ads.StoreCatalog
   products:
-  - id: remove_ads
-    type: 1
-    fallbackPrice: $2.99
-    honeyGrant: 0
-    jellyGrant: 0
-  - id: permanent_2x_honey
-    type: 1
-    fallbackPrice: $4.99
-    honeyGrant: 0
-    jellyGrant: 0
   - id: starter_pack
     type: 0
     fallbackPrice: $0.99
-    honeyGrant: 5000
-    jellyGrant: 5
+    dewGrant: 250
+    honeySecondsGrant: 7200
+  - id: dew_80
+    type: 0
+    fallbackPrice: $0.99
+    dewGrant: 80
+    honeySecondsGrant: 0
+  - id: dew_500
+    type: 0
+    fallbackPrice: $4.99
+    dewGrant: 500
+    honeySecondsGrant: 0
+  - id: dew_1200
+    type: 0
+    fallbackPrice: $9.99
+    dewGrant: 1200
+    honeySecondsGrant: 0
+  - id: dew_2600
+    type: 0
+    fallbackPrice: $19.99
+    dewGrant: 2600
+    honeySecondsGrant: 0
+  - id: dew_7000
+    type: 0
+    fallbackPrice: $49.99
+    dewGrant: 7000
+    honeySecondsGrant: 0
+  - id: remove_ads
+    type: 1
+    fallbackPrice: $2.99
+    dewGrant: 0
+    honeySecondsGrant: 0
+  - id: permanent_2x_honey
+    type: 1
+    fallbackPrice: $4.99
+    dewGrant: 0
+    honeySecondsGrant: 0
+  permanentHoneyMultiplier: 2
+  minimumHoneyGrant: 500
+  badgeAfterPlaySeconds: 300
   mockDelaySeconds: 1
   mockResult: 0

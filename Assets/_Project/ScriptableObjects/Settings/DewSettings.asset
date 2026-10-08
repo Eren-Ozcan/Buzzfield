@@ -13,3 +13,33 @@ MonoBehaviour:
   m_Name: DewSettings
   m_EditorClassIdentifier: Buzzfield.Economy::Buzzfield.Economy.DewSettings
   gardenCompleteReward: 10
+  offers:
+  - id: time_skip_1h
+    kind: 0
+    seconds: 3600
+    multiplier: 1
+    cost: 30
+  - id: time_skip_4h
+    kind: 0
+    seconds: 14400
+    multiplier: 1
+    cost: 100
+  - id: time_skip_8h
+    kind: 0
+    seconds: 28800
+    multiplier: 1
+    cost: 180
+  - id: honey_2x_1h
+    kind: 1
+    seconds: 3600
+    multiplier: 2
+    cost: 40
+  - id: honey_3x_30m
+    kind: 1
+    seconds: 1800
+    multiplier: 3
+    cost: 50
+  boostsUnlockGardens: 1
+  confirmAbove: 50
+  timeSkipMinimumHoney: 500
+  confirmSeconds: 3
