@@ -48,6 +48,34 @@ namespace Buzzfield.Tests.EditMode
         }
 
         [Test]
+        public void OrderMemory_KeepsTheLatestOrders()
+        {
+            var owned = new Entitlements();
+            for (int i = 0; i < Entitlements.OrderMemory + 5; i++)
+                owned.RecordOrder("order" + i);
+            Assert.That(owned.grantedOrders.Count, Is.EqualTo(Entitlements.OrderMemory));
+            Assert.That(owned.HasGrantedOrder("order0"), Is.False, "The oldest are forgotten.");
+            Assert.That(owned.HasGrantedOrder("order" + (Entitlements.OrderMemory + 4)));
+            owned.RecordOrder(null);
+            owned.RecordOrder(string.Empty);
+            Assert.That(owned.HasGrantedOrder(null), Is.False);
+        }
+
+        [Test]
+        public void CopyFrom_CopiesOrders_AndIgnoresItself()
+        {
+            var source = new Entitlements();
+            source.RecordOrder("GPA.1");
+            var target = new Entitlements();
+            target.RecordOrder("GPA.9");
+            target.CopyFrom(source);
+            Assert.That(target.HasGrantedOrder("GPA.1"));
+            Assert.That(target.HasGrantedOrder("GPA.9"), Is.False);
+            target.CopyFrom(target);
+            Assert.That(target.HasGrantedOrder("GPA.1"));
+        }
+
+        [Test]
         public void JsonRoundTrip_KeepsEntitlements()
         {
             var data = new SaveData();
@@ -63,6 +91,7 @@ namespace Buzzfield.Tests.EditMode
     public class StoreManagerTests
     {
         private const string AccountKey = "Buzzfield.Tests.StoreManager.Owned";
+        private const string DewPack = "dew_500";
         private StoreCatalog catalog;
         private MockStoreService service;
         private StoreManager store;
@@ -75,10 +104,11 @@ namespace Buzzfield.Tests.EditMode
             catalog = ScriptableObject.CreateInstance<StoreCatalog>();
             var so = new SerializedObject(catalog);
             SerializedProperty list = so.FindProperty("products");
-            list.arraySize = 3;
+            list.arraySize = 4;
             SetProduct(list.GetArrayElementAtIndex(0), ProductIds.RemoveAds, StoreProductType.NonConsumable, 0);
             SetProduct(list.GetArrayElementAtIndex(1), ProductIds.PermanentHoney2x, StoreProductType.NonConsumable, 0);
-            SetProduct(list.GetArrayElementAtIndex(2), ProductIds.StarterPack, StoreProductType.Consumable, 5000);
+            SetProduct(list.GetArrayElementAtIndex(2), ProductIds.StarterPack, StoreProductType.Consumable, 250);
+            SetProduct(list.GetArrayElementAtIndex(3), DewPack, StoreProductType.Consumable, 500);
             so.FindProperty("mockDelaySeconds").floatValue = 1f;
             so.ApplyModifiedPropertiesWithoutUndo();
 
@@ -96,12 +126,12 @@ namespace Buzzfield.Tests.EditMode
             Object.DestroyImmediate(catalog);
         }
 
-        private static void SetProduct(SerializedProperty product, string id, StoreProductType type, double honey)
+        private static void SetProduct(SerializedProperty product, string id, StoreProductType type, int dewdrops)
         {
             product.FindPropertyRelative("id").stringValue = id;
             product.FindPropertyRelative("type").enumValueIndex = (int)type;
             product.FindPropertyRelative("fallbackPrice").stringValue = "$0.99";
-            product.FindPropertyRelative("honeyGrant").doubleValue = honey;
+            product.FindPropertyRelative("dewGrant").intValue = dewdrops;
         }
 
         private void SetResult(StoreCatalog.MockResult result)
@@ -228,6 +258,81 @@ namespace Buzzfield.Tests.EditMode
             Assert.That(store.GetState(ProductIds.RemoveAds), Is.EqualTo(ShopItemState.Owned));
             Assert.That(store.GetState(ProductIds.StarterPack), Is.EqualTo(ShopItemState.Hidden));
             Assert.That(granted, Is.Empty);
+        }
+        [Test]
+        public void DewPack_CanBeBoughtAgainAndAgain()
+        {
+            store.Start();
+            Buy(DewPack);
+            Buy(DewPack);
+            Assert.That(granted, Is.EqualTo(new[] { DewPack, DewPack }));
+            Assert.That(store.GetState(DewPack), Is.EqualTo(ShopItemState.Buyable));
+            Assert.That(store.Entitlements.grantedOrders.Count, Is.EqualTo(2), "Each mock order has its own id.");
+        }
+
+        [Test]
+        public void SameOrderDeliveredTwice_IsGrantedOnce()
+        {
+            var fake = new FakeStoreService();
+            var manager = new StoreManager(fake, catalog);
+            var grants = new List<string>();
+            manager.OnProductGranted += p => grants.Add(p.id);
+
+            fake.Deliver(new PurchaseResult(DewPack, PurchaseStatus.Success, orderId: "GPA.1"));
+            fake.Deliver(new PurchaseResult(DewPack, PurchaseStatus.Success, orderId: "GPA.1"));
+            fake.Deliver(new PurchaseResult(DewPack, PurchaseStatus.Success, orderId: "GPA.2"));
+
+            Assert.That(grants, Is.EqualTo(new[] { DewPack, DewPack }));
+            manager.Dispose();
+        }
+
+        [Test]
+        public void GrantedOrders_SurviveASaveAndStillBlockARedelivery()
+        {
+            var fake = new FakeStoreService();
+            var manager = new StoreManager(fake, catalog);
+            fake.Deliver(new PurchaseResult(DewPack, PurchaseStatus.Success, orderId: "GPA.7"));
+            var data = new SaveData();
+            data.entitlements.CopyFrom(manager.Entitlements);
+            SaveData read = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(data));
+            manager.Dispose();
+
+            // The app was killed before the store heard the order was done: it comes again.
+            var again = new FakeStoreService();
+            var restarted = new StoreManager(again, catalog);
+            restarted.Restore(read.entitlements);
+            int grants = 0;
+            restarted.OnProductGranted += _ => grants++;
+            again.Deliver(new PurchaseResult(DewPack, PurchaseStatus.Success, orderId: "GPA.7"));
+            Assert.That(grants, Is.Zero);
+            restarted.Dispose();
+        }
+
+        [Test]
+        public void OrderWithoutId_IsGranted()
+        {
+            var fake = new FakeStoreService();
+            var manager = new StoreManager(fake, catalog);
+            int grants = 0;
+            manager.OnProductGranted += _ => grants++;
+            fake.Deliver(new PurchaseResult(DewPack, PurchaseStatus.Success));
+            fake.Deliver(new PurchaseResult(DewPack, PurchaseStatus.Success));
+            Assert.That(grants, Is.EqualTo(2));
+            manager.Dispose();
+        }
+
+        /// <summary>A store that only hands over orders on its own, like redeliveries after a restart.</summary>
+        private sealed class FakeStoreService : IStoreService
+        {
+            public bool IsInitialized => true;
+            public bool IsPurchasing => false;
+            public event System.Action<PurchaseResult> DeferredPurchaseCompleted;
+            public void Initialize(IReadOnlyList<StoreProduct> catalog, System.Action<bool> onDone) => onDone?.Invoke(true);
+            public IReadOnlyList<StoreProductInfo> GetProducts() => System.Array.Empty<StoreProductInfo>();
+            public void Purchase(string productId, System.Action<PurchaseResult> onComplete) =>
+                onComplete?.Invoke(new PurchaseResult(productId, PurchaseStatus.Failed));
+            public void RestorePurchases(System.Action<IReadOnlyList<string>> onDone) => onDone?.Invoke(System.Array.Empty<string>());
+            public void Deliver(PurchaseResult result) => DeferredPurchaseCompleted?.Invoke(result);
         }
     }
 }

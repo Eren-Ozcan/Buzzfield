@@ -322,6 +322,45 @@ namespace Buzzfield.Tests.EditMode
         }
 
         [Test]
+        public void Migration_VersionSix_StartsWithoutBoostsOrOrders()
+        {
+            SaveData data = JsonUtility.FromJson<SaveData>("{\"saveVersion\":6,\"dewdrops\":90,\"entitlements\":{\"removeAds\":true}}");
+            Assert.That(SaveMigration.Upgrade(data, 6));
+            Assert.That(data.saveVersion, Is.EqualTo(SaveMigration.CurrentVersion));
+            Assert.That(data.dewBoosts, Is.Empty);
+            Assert.That(data.entitlements.grantedOrders, Is.Empty);
+            Assert.That(data.entitlements.removeAds, "Version 6 purchases are kept.");
+            Assert.That(data.dewdrops, Is.EqualTo(90));
+        }
+
+        [Test]
+        public void DewBoostsAndOrders_RoundTripThroughJsonUtility()
+        {
+            var data = new SaveData
+            {
+                dewBoosts = new[] { new DewBoostEntry(3f, 600), new DewBoostEntry(2f, 3600) },
+                dewBoostAnchorUtc = 1_700_000_000,
+            };
+            data.entitlements.RecordOrder("GPA.1");
+            SaveData read = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(data));
+            Assert.That(read.dewBoosts.Length, Is.EqualTo(2));
+            Assert.That(read.dewBoosts[0].multiplier, Is.EqualTo(3f));
+            Assert.That(read.dewBoosts[1].secondsLeft, Is.EqualTo(3600));
+            Assert.That(read.dewBoostAnchorUtc, Is.EqualTo(1_700_000_000));
+            Assert.That(read.entitlements.HasGrantedOrder("GPA.1"));
+        }
+
+        [Test]
+        public void Normalize_FillsMissingBoostsAndOrders()
+        {
+            var data = new SaveData { dewBoosts = null };
+            data.entitlements.grantedOrders = null;
+            data.Normalize();
+            Assert.That(data.dewBoosts, Is.Not.Null);
+            Assert.That(data.entitlements.grantedOrders, Is.Not.Null);
+        }
+
+        [Test]
         public void Normalize_KeepsDewdropsSane()
         {
             var data = new SaveData { dewdrops = -5, dewEarned = 2, goalBase = -1 };
