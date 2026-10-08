@@ -84,7 +84,7 @@ namespace Buzzfield.Editor
             var flowerManager = systems.AddComponent<FlowerManager>();
             var beeManager = systems.AddComponent<BeeManager>();
             LoadTheme();
-            CanvasViews ui = CreateCanvas(queenSettings.Abilities.Count);
+            CanvasViews ui = CreateCanvas(queenSettings.Abilities.Count, storeCatalog, dewSettings);
             new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
 
             var game = systems.AddComponent<GameManager>();
@@ -102,7 +102,7 @@ namespace Buzzfield.Editor
                 ("soundLibrary", soundLibrary), ("uiEffects", ui.Effects),
                 ("goalSettings", goalSettings), ("goalView", ui.Goal),
                 ("visitorSettings", visitorSettings), ("giftOffer", ui.GiftOffer),
-                ("settingsPanel", ui.Settings), ("dewSettings", dewSettings),
+                ("settingsPanel", ui.Settings), ("dewSettings", dewSettings), ("dewBoostChip", ui.DewBoostChip),
                 ("cameraFitter", fitter), ("worldRoot", world));
 
             EditorAssets.EnsureFolder(System.IO.Path.GetDirectoryName(EditorAssets.ScenePath));
@@ -182,6 +182,7 @@ namespace Buzzfield.Editor
             public GoalView Goal;
             public UiEffectsView Effects;
             public GiftOfferView GiftOffer;
+            public DewBoostChipView DewBoostChip;
         }
 
         // ---- Interface theme (colours in UiTheme, art from UiAssets) ----
@@ -212,7 +213,9 @@ namespace Buzzfield.Editor
         }
 
         /// <param name="abilityCount">Queen ability rows to build, one per ability in QueenSettings.</param>
-        static CanvasViews CreateCanvas(int abilityCount)
+        /// <param name="catalog">The shop builds one row per product.</param>
+        /// <param name="dewSettings">The Boosts tab builds one row per offer.</param>
+        static CanvasViews CreateCanvas(int abilityCount, StoreCatalog catalog, DewSettings dewSettings)
         {
             var canvasObject = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasObject.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
@@ -260,11 +263,12 @@ namespace Buzzfield.Editor
             SwipeHintView swipeHint = CreateSwipeHint(root);
             RewardedBoostView rewardedBoost = CreateRewardedBoost(root);
             GiftOfferView giftOffer = CreateGiftOffer(root);
+            DewBoostChipView dewBoostChip = CreateDewBoostChip(root);
             // Over the HUD and the bottom bar, under the panels.
             UiEffectsView effects = CreateEffects(root, honeyPill, (RectTransform)dewPill.transform);
             // Modals last so they draw over the HUD and the bottom bar; the quit dialog on top.
             QueenPanelView queenPanel = CreateQueenPanel(root, queenButton, readyBadge, abilityCount);
-            ShopPanelView shopPanel = CreateShopPanel(root, shopButton, shopBadge, dewButton);
+            ShopPanelView shopPanel = CreateShopPanel(root, shopButton, shopBadge, dewButton, catalog, dewSettings);
             SettingsPanelView settings = CreateSettingsPanel(root, settingsButton);
             WelcomeBackView welcomeBack = CreateWelcomeBack(root);
             BackButtonHandler backButton = CreateQuitDialog(root, queenPanel, welcomeBack, shopPanel, settings);
@@ -274,7 +278,7 @@ namespace Buzzfield.Editor
                 Hud = hud, BottomBar = bottomBar, GardenComplete = gardenComplete, QueenPanel = queenPanel,
                 WelcomeBack = welcomeBack, RewardedBoost = rewardedBoost, ShopPanel = shopPanel,
                 SwipeCatcher = swipeCatcher, SwipeHint = swipeHint, BackButton = backButton,
-                Settings = settings, Goal = goal, Effects = effects, GiftOffer = giftOffer,
+                Settings = settings, Goal = goal, Effects = effects, GiftOffer = giftOffer, DewBoostChip = dewBoostChip,
             };
         }
 
@@ -562,90 +566,6 @@ namespace Buzzfield.Editor
                 EditorAssets.Set(feedback, ("button", button));
             }
             return feedback;
-        }
-
-        const float ShopRowHeight = 240f;
-        const float ShopRowSpacing = 24f;
-
-        /// <summary>
-        /// Modal shop: product rows in a vertical list (a hidden row leaves no gap), status line,
-        /// restore and close, and a small Privacy button in the corner that only shows where the
-        /// ad consent choices must be reachable.
-        /// </summary>
-        static ShopPanelView CreateShopPanel(Transform root, Button openButton, GameObject newBadge, Button dewButton)
-        {
-            RectTransform panel = CreateModal("ShopPanel", root, new Vector2(900f, 1320f), UiTheme.Shop, out RectTransform window);
-            CreateTitle(window, Strings.ShopTitle);
-
-            RectTransform list = CreateRect("Items", window);
-            list.anchorMin = new Vector2(0f, 1f);
-            list.anchorMax = new Vector2(1f, 1f);
-            list.pivot = new Vector2(0.5f, 1f);
-            list.sizeDelta = new Vector2(-60f, 3 * ShopRowHeight + 2 * ShopRowSpacing);
-            list.anchoredPosition = new Vector2(0f, -176f);
-            var layout = list.gameObject.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = ShopRowSpacing;
-            layout.childControlWidth = true;
-            layout.childControlHeight = false;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
-
-            var items = new[]
-            {
-                CreateShopItem(list, ProductIds.RemoveAds),
-                CreateShopItem(list, ProductIds.PermanentHoney2x),
-                CreateShopItem(list, ProductIds.StarterPack),
-            };
-
-            TMP_Text status = CreateText("StatusText", window, new Vector2(0f, -966f), 70f, 40f, FontStyles.Italic, UiTheme.TextSoft);
-            status.text = string.Empty;
-            (Button restore, _, TMP_Text restoreLabel) = CreateButton("RestoreButton", window, new Vector2(0f, -1040f), new Vector2(520f, 120f), UiTheme.Ad, UiTheme.TextLight);
-            restoreLabel.text = Strings.RestorePurchases;
-            (Button close, _, TMP_Text closeLabel) = CreateButton("CloseButton", window, new Vector2(0f, -1180f), new Vector2(360f, 120f), UiTheme.Neutral);
-            closeLabel.text = Strings.Close;
-            (Button privacy, _, TMP_Text privacyLabel) = CreateButton("PrivacyButton", window, new Vector2(-330f, -36f), new Vector2(180f, 80f), UiTheme.Neutral);
-            privacyLabel.text = Strings.PrivacyButton;
-            privacy.gameObject.SetActive(false);
-
-            // On the always-active root, like the other panel views, so it can open the hidden panel.
-            var view = root.gameObject.AddComponent<ShopPanelView>();
-            EditorAssets.Set(view, ("openButton", openButton), ("dewButton", dewButton), ("newBadge", newBadge), ("panel", panel.gameObject), ("closeButton", close),
-                ("items", items), ("statusText", status), ("restoreButton", restore), ("privacyButton", privacy));
-            panel.gameObject.SetActive(false);
-            return view;
-        }
-
-        /// <summary>Product row: name and description on the left, buy button with the price on the right.</summary>
-        static ShopItemView CreateShopItem(Transform list, string productId)
-        {
-            RectTransform row = CreateRect(productId, list);
-            row.sizeDelta = new Vector2(0f, ShopRowHeight);
-            AddImage(row, roundSprite, UiTheme.CreamShade, false);
-
-            const float buttonWidth = 260f;
-            TMP_Text title = CreateText("Title", row, new Vector2(0f, -24f), 70f, 48f, FontStyles.Normal, UiTheme.TextDark);
-            TMP_Text body = CreateText("Body", row, new Vector2(0f, -100f), 120f, 32f, FontStyles.Normal, UiTheme.TextSoft);
-            foreach (TMP_Text text in new[] { title, body })
-            {
-                var rect = (RectTransform)text.transform;
-                // Left column, clear of the buy button on the right.
-                rect.offsetMin = new Vector2(30f, rect.offsetMin.y);
-                rect.offsetMax = new Vector2(-(buttonWidth + 60f), rect.offsetMax.y);
-                text.alignment = TextAlignmentOptions.TopLeft;
-                AutoSize(text, 22f);
-            }
-
-            (Button buy, Image buyImage, TMP_Text price) = CreateButton("BuyButton", row, Vector2.zero, new Vector2(buttonWidth, 140f), UiTheme.Primary);
-            var buyRect = (RectTransform)buy.transform;
-            buyRect.anchorMin = buyRect.anchorMax = new Vector2(1f, 0.5f);
-            buyRect.pivot = new Vector2(1f, 0.5f);
-            buyRect.anchoredPosition = new Vector2(-30f, 0f);
-
-            var view = row.gameObject.AddComponent<ShopItemView>();
-            EditorAssets.Set(view, ("productId", productId), ("titleText", title), ("bodyText", body),
-                ("buyButton", buy), ("buyImage", buyImage), ("priceText", price),
-                ("buyColor", UiTheme.Primary), ("ownedColor", UiTheme.Good), ("disabledColor", UiTheme.Disabled));
-            return view;
         }
 
         const float AbilityRowHeight = 138f;

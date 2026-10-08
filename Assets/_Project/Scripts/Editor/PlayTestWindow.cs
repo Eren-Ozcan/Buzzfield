@@ -100,6 +100,16 @@ namespace Buzzfield.Editor
                     game.DebugGrantHoney(game.Economy.Honey.IsZero ? BigNumber.FromDouble(100) : game.Economy.Honey * BigNumber.FromDouble(9));
             }
 
+            EditorGUILayout.LabelField("Dewdrops", EditorStyles.boldLabel);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("+100"))
+                    game.DebugGrantDew(100);
+                if (GUILayout.Button("+1000"))
+                    game.DebugGrantDew(1000);
+                GUILayout.Label($"{game.Dew.Balance}", GUILayout.Width(110f));
+            }
+
             EditorGUILayout.LabelField("Garden", EditorStyles.boldLabel);
             using (new EditorGUILayout.HorizontalScope())
             {

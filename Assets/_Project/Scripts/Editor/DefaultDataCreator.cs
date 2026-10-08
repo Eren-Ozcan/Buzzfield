@@ -792,10 +792,15 @@ namespace Buzzfield.Editor
         static void CreateMonetization()
         {
             EditorAssets.LoadOrCreate<AdSettings>($"{Data}/Settings/AdSettings.asset", _ => { });
+            // Shop order: the one-time starter pack, the Dewdrop packs, then the permanent products (docs/DEWDROPS.md 5).
             EditorAssets.LoadOrCreate<StoreCatalog>($"{Data}/Settings/StoreCatalog.asset", s => EditorAssets.SetList(s, "products",
+                new (string, object)[] { ("id", "starter_pack"), ("type", StoreProductType.Consumable), ("fallbackPrice", "$0.99"), ("dewGrant", 250), ("honeySecondsGrant", 7200f) },
+                DewPack(80, "$0.99"), DewPack(500, "$4.99"), DewPack(1200, "$9.99"), DewPack(2600, "$19.99"), DewPack(7000, "$49.99"),
                 new (string, object)[] { ("id", "remove_ads"), ("type", StoreProductType.NonConsumable), ("fallbackPrice", "$2.99") },
-                new (string, object)[] { ("id", "permanent_2x_honey"), ("type", StoreProductType.NonConsumable), ("fallbackPrice", "$4.99") },
-                new (string, object)[] { ("id", "starter_pack"), ("type", StoreProductType.Consumable), ("fallbackPrice", "$0.99"), ("honeyGrant", 5000.0), ("jellyGrant", 5) }));
+                new (string, object)[] { ("id", "permanent_2x_honey"), ("type", StoreProductType.NonConsumable), ("fallbackPrice", "$4.99") }));
         }
+
+        static (string, object)[] DewPack(int dewdrops, string price) =>
+            new (string, object)[] { ("id", $"dew_{dewdrops}"), ("type", StoreProductType.Consumable), ("fallbackPrice", price), ("dewGrant", dewdrops) };
     }
 }
