@@ -43,3 +43,7 @@ MonoBehaviour:
   confirmAbove: 50
   timeSkipMinimumHoney: 500
   confirmSeconds: 3
+  dailyRewards: 0a0000000a0000000f0000000f000000140000001400000032000000
+  dayStartHour: 4
+  dailyUnlockDay: 1
+  dailyAutoOpenSeconds: 20

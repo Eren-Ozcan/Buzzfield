@@ -31,3 +31,10 @@ MonoBehaviour:
   minimumReward: 25
   adMultiplier: 2
   offerSeconds: 8
+  pouchPrefab: {fileID: 1886023558445846731, guid: 97d8c075db34ae542b9eb224367e8142, type: 3}
+  pouchOffset: {x: 0, y: -0.05, z: -0.04}
+  pouchEvery: 4
+  pouchesPerDay: 4
+  pouchMinDew: 1
+  pouchMaxDew: 6
+  pouchOfferSeconds: 10
