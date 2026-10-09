@@ -351,6 +351,52 @@ namespace Buzzfield.Tests.EditMode
         }
 
         [Test]
+        public void Migration_VersionSeven_StartsTheStreakAndPouchFresh()
+        {
+            SaveData data = JsonUtility.FromJson<SaveData>("{\"saveVersion\":7,\"dewdrops\":40,\"goalIndex\":9}");
+            Assert.That(SaveMigration.Upgrade(data, 7));
+            Assert.That(data.saveVersion, Is.EqualTo(SaveMigration.CurrentVersion));
+            Assert.That(data.daily.firstDay, Is.Zero, "The first day is noted once the new build knows the date.");
+            Assert.That(data.daily.lastClaimDay, Is.Zero);
+            Assert.That(data.daily.streak, Is.Zero);
+            Assert.That(data.pouch.today, Is.Zero);
+            Assert.That(data.pouch.since, Is.Zero);
+            Assert.That(data.dewdrops, Is.EqualTo(40), "Version 7 progress is kept.");
+            Assert.That(data.goalIndex, Is.EqualTo(9));
+        }
+
+        [Test]
+        public void StreakAndPouch_RoundTripThroughJsonUtility()
+        {
+            var data = new SaveData
+            {
+                daily = new DailyStreak { firstDay = 20_360, lastClaimDay = 20_363, streak = 4 },
+                pouch = new DewPouch { day = 20_363, today = 2, since = 3 },
+            };
+            SaveData read = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(data));
+            Assert.That(read.daily.firstDay, Is.EqualTo(20_360));
+            Assert.That(read.daily.lastClaimDay, Is.EqualTo(20_363));
+            Assert.That(read.daily.streak, Is.EqualTo(4));
+            Assert.That(read.pouch.day, Is.EqualTo(20_363));
+            Assert.That(read.pouch.today, Is.EqualTo(2));
+            Assert.That(read.pouch.since, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void Normalize_KeepsStreakAndPouchCountsSane()
+        {
+            var data = new SaveData
+            {
+                daily = new DailyStreak { streak = -2 },
+                pouch = new DewPouch { today = -1, since = -7 },
+            };
+            data.Normalize();
+            Assert.That(data.daily.streak, Is.Zero);
+            Assert.That(data.pouch.today, Is.Zero);
+            Assert.That(data.pouch.since, Is.Zero);
+        }
+
+        [Test]
         public void Normalize_FillsMissingBoostsAndOrders()
         {
             var data = new SaveData { dewBoosts = null };
