@@ -58,7 +58,20 @@ namespace Buzzfield.Game
         public void DebugRefillPollen() => pollen.Refill();
 
         /// <summary>Sends the butterfly across the garden now, whatever the play time; false when one is flying.</summary>
-        public bool DebugLaunchButterfly() => visitors.LaunchNow(garden.Bounds);
+        /// <param name="withPouch">Null lets the pouch count decide; true or false sends that butterfly.</param>
+        public bool DebugLaunchButterfly(bool? withPouch = null) => visitors.LaunchNow(garden.Bounds, withPouch);
+
+        /// <summary>Takes the device clock as trusted time, for an editor without the time server.</summary>
+        public void DebugTrustDeviceClock() => clock.DebugTrustDeviceClock();
+
+        /// <summary>Moves the date <paramref name="days"/> ahead for the streak and the pouch (until the game restarts).</summary>
+        public void DebugShiftDays(long days)
+        {
+            dayShift += days;
+            NoteToday();
+            if (TryGetToday(out long today) && DailyClaimable(today))
+                ArmDailyAutoOpen();
+        }
 
         /// <summary>Shows the swipe hint again, as for a new player.</summary>
         public void DebugResetSwipeHint()

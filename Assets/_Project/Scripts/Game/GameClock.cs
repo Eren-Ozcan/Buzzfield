@@ -81,6 +81,15 @@ namespace Buzzfield.Game
             };
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>Takes the device clock as trusted time (play test tools, and tests that may run offline).</summary>
+        public void DebugTrustDeviceClock()
+        {
+            trustedOffset = DeviceUtc - MonotonicSeconds;
+            TrustedTimeArrived?.Invoke();
+        }
+#endif
+
         /// <summary>Retries until one response with a Date header arrives.</summary>
         public IEnumerator FetchTrustedTime()
         {

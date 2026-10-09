@@ -10,8 +10,11 @@ namespace Buzzfield.Game
     /// <summary>
     /// The butterfly: it crosses the garden now and then (never for a new player, behind a panel,
     /// an ad or the Garden Complete celebration). A tap or swipe through it pays a gift of honey
-    /// at once; then a short "double it" offer plays a rewarded ad on the player's tap. The
-    /// offer is the only limit on that ad: one per butterfly, gone after a few seconds.
+    /// at once; then a short "double it" offer plays a rewarded ad on the player's tap. Once the
+    /// daily streak is open, every few butterflies one carries a Dewdrops pouch instead of honey
+    /// (a few a day, only while a rewarded ad is ready): caught, it offers to open the pouch with
+    /// a rewarded ad, or the player leaves it. The offer is the only limit on these ads: one per
+    /// butterfly, gone after a few seconds (docs/DEWDROPS.md section 8).
     /// </summary>
     public sealed partial class GameManager
     {
@@ -24,12 +27,16 @@ namespace Buzzfield.Game
         /// <summary>Honey the open "double it" offer adds; zero when there is no offer.</summary>
         private BigNumber giftAdExtra;
 
+        private DewPouch pouch;
+        private System.Random pouchRandom;
+
         public VisitorManager Visitors => visitors;
 
         /// <summary>Needs the camera (pollen), economy and ads.</summary>
         private void InitVisitors()
         {
-            visitors = new VisitorManager(visitorSettings, worldRoot, System.Environment.TickCount);
+            visitors = new VisitorManager(visitorSettings, worldRoot, System.Environment.TickCount, NextButterflyCarriesPouch);
+            pouchRandom = new System.Random(System.Environment.TickCount ^ 0x5EED);
             visitors.OnAppeared += HandleVisitorAppeared;
             visitors.OnCaught += HandleVisitorCaught;
             giftOffer.Init(CanWatchGiftAd, TryWatchGiftAd);
@@ -53,15 +60,32 @@ namespace Buzzfield.Game
         public BigNumber VisitorGift() =>
             RewardMath.IncomeSeconds(TheoreticalHoneyPerSecond(), visitorSettings.RewardSeconds, visitorSettings.MinimumReward);
 
-        private bool CanWatchGiftAd() => giftOffer.IsShowing && !giftAdExtra.IsZero && ads.CanShowRewarded();
+        private bool CanWatchGiftAd() => giftOffer.IsShowing && (giftOffer.IsPouch || !giftAdExtra.IsZero) && ads.CanShowRewarded();
 
-        /// <summary>Plays the rewarded ad that doubles the last butterfly gift. False when there is no offer or no ad.</summary>
-        public bool TryWatchGiftAd() => CanWatchGiftAd() && ads.TryShowRewarded(HandleGiftAdDone);
+        /// <summary>
+        /// Plays the rewarded ad of the open butterfly offer: it doubles the last gift, or opens the
+        /// pouch. False when there is no offer or no ad.
+        /// </summary>
+        public bool TryWatchGiftAd() =>
+            CanWatchGiftAd() && ads.TryShowRewarded(giftOffer.IsPouch ? (System.Action<bool>)HandlePouchAdDone : HandleGiftAdDone);
+
+        /// <summary>Asked as each butterfly sets off: every few carry the pouch, once the streak is open and an ad is ready.</summary>
+        private bool NextButterflyCarriesPouch()
+        {
+            bool known = TryGetToday(out long today);
+            bool allowed = known && DailyUnlocked(today) && ads.CanShowRewarded();
+            return pouch.NextCarries(known ? today : 0, allowed, visitorSettings.PouchEvery, visitorSettings.PouchesPerDay);
+        }
 
         private void HandleVisitorAppeared() => sound.Play(Sfx.ButterflyAppear);
 
-        private void HandleVisitorCaught(Vector3 position)
+        private void HandleVisitorCaught(Vector3 position, bool hasPouch)
         {
+            if (hasPouch)
+            {
+                CatchPouch();
+                return;
+            }
             BigNumber gift = VisitorGift();
             economy.Grant(gift);
             Vector2 screen = ScreenPoint(position);
@@ -69,13 +93,37 @@ namespace Buzzfield.Game
             uiEffects.FlyHoney(screen, 5);
             sound.Play(Sfx.ButterflyCatch);
             Pulse(true);
-            FirebaseServices.Log("visitor_catch", ("play_minutes", (long)(stats.playSeconds / 60)));
+            FirebaseServices.Log("visitor_catch", ("play_minutes", (long)(stats.playSeconds / 60)), ("pouch", 0L));
 
             giftAdExtra = gift * BigNumber.FromDouble(visitorSettings.AdMultiplier - 1);
             if (!giftAdExtra.IsZero && ads.CanShowRewarded())
                 giftOffer.Show(giftAdExtra, visitorSettings.OfferSeconds);
             else
                 giftAdExtra = BigNumber.Zero;
+        }
+
+        /// <summary>The pouch only opens with an ad: no honey, just the offer (when an ad is still ready).</summary>
+        private void CatchPouch()
+        {
+            giftAdExtra = BigNumber.Zero;
+            sound.Play(Sfx.ButterflyCatch);
+            Pulse(true);
+            FirebaseServices.Log("visitor_catch", ("play_minutes", (long)(stats.playSeconds / 60)), ("pouch", 1L));
+            if (ads.CanShowRewarded())
+                giftOffer.ShowPouch(visitorSettings.PouchOfferSeconds);
+        }
+
+        private void HandlePouchAdDone(bool rewarded)
+        {
+            if (rewarded)
+            {
+                int amount = DewPouch.Roll(pouchRandom.NextDouble(), visitorSettings.PouchMinDew, visitorSettings.PouchMaxDew);
+                EarnDew(amount, "butterfly_pouch", RectTransformUtility.WorldToScreenPoint(null, giftOffer.Button.position));
+                sound.Play(Sfx.Reward);
+                FirebaseServices.Log("ad_rewarded", ("placement", "butterfly_pouch"));
+            }
+            giftOffer.Finish();
+            SaveNow();
         }
 
         private void HandleGiftAdDone(bool rewarded)

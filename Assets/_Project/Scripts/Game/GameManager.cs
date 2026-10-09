@@ -20,7 +20,8 @@ namespace Buzzfield.Game
     /// GameManager.Ads.cs, the store in GameManager.Store.cs, Queen bonuses in GameManager.Queen.cs,
     /// the pollen shake in GameManager.Pollen.cs, sound and touch feedback in GameManager.Feel.cs,
     /// the goal chain in GameManager.Goals.cs, the butterfly in GameManager.Visitors.cs, the
-    /// settings panel in GameManager.Settings.cs and Dewdrops in GameManager.Dew.cs.
+    /// settings panel in GameManager.Settings.cs, Dewdrops in GameManager.Dew.cs and the daily
+    /// login streak in GameManager.Daily.cs.
     /// </summary>
     public sealed partial class GameManager : MonoBehaviour
     {
@@ -114,10 +115,11 @@ namespace Buzzfield.Game
             InitFeel();
             InitDew();
             InitGoals();
+            InitSave();
+            InitDaily();
             InitVisitors();
             InitSettings();
 
-            InitSave();
             SaveData data = saveManager.Load();
             if (data != null)
             {
@@ -154,6 +156,7 @@ namespace Buzzfield.Game
             store.Tick(Time.unscaledDeltaTime);
             TickAutosave(Time.unscaledDeltaTime);
             TickGoals(Time.unscaledDeltaTime);
+            TickDaily(Time.unscaledDeltaTime);
             TickFeel(Time.unscaledDeltaTime);
             tweener.Tick(Time.unscaledDeltaTime);
         }

@@ -82,6 +82,8 @@ namespace Buzzfield.Game
                 StartCoroutine(clock.FetchTrustedTime());
             if (stamp.HasValue)
                 EvaluateReturn(stamp.Value, loadedRate, boosts.DewBoosts, GameClock.DeviceUtc, GameClock.MonotonicSeconds);
+            ArmDailyAutoOpen();
+            NoteToday();
             SaveNow();
         }
 
@@ -167,6 +169,10 @@ namespace Buzzfield.Game
             pendingReturn = null;
             // Before this frame's tick: the boost line still stands where the player left it.
             EvaluateReturn(lastStamp, lastRate, boosts.DewBoosts, GameClock.DeviceUtc, GameClock.MonotonicSeconds);
+            // Back from an ad or the payment sheet is not a new session.
+            if (!pausedByOverlay)
+                ArmDailyAutoOpen();
+            NoteToday();
             pausedByOverlay = false;
             SaveNow();
         }
@@ -211,6 +217,9 @@ namespace Buzzfield.Game
 
         private void HandleTrustedTimeArrived()
         {
+            // The first day noted here goes out with the next save; noting it again later only
+            // moves the streak's opening.
+            NoteToday();
             if (!pendingReturn.HasValue)
                 return;
             PendingReturn pending = pendingReturn.Value;
@@ -299,6 +308,8 @@ namespace Buzzfield.Game
             data.dewdrops = dew.Balance;
             data.dewEarned = dew.TotalEarned;
             data.welcomeGiftGiven = welcomeGiftGiven;
+            data.daily = daily;
+            data.pouch = pouch;
             data.settings = playerSettings;
             data.offlineRate = BigNumberData.From(TheoreticalHoneyPerSecond());
             data.clock = clock.Stamp();
@@ -313,6 +324,8 @@ namespace Buzzfield.Game
             goals.Restore(data.goalIndex, data.goalBase);
             dew.Restore(data.dewdrops, data.dewEarned);
             welcomeGiftGiven = data.welcomeGiftGiven;
+            daily = data.daily;
+            pouch = data.pouch;
             RestoreSettings(data.settings);
             queen.Restore(data.abilities);
             ads.Restore(data.lastFullScreenAdUtc);
