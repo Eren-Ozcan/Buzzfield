@@ -120,6 +120,10 @@ namespace Buzzfield.Core
         public long dewEarned;
         /// <summary>The one-time gift on the first Welcome back has been given.</summary>
         public bool welcomeGiftGiven;
+        /// <summary>The daily login streak.</summary>
+        public DailyStreak daily;
+        /// <summary>The butterfly's Dewdrops pouches: how many went out today and how long since the last.</summary>
+        public DewPouch pouch;
         public PlayerSettings settings = new PlayerSettings();
 
         // Offline earnings
@@ -148,6 +152,12 @@ namespace Buzzfield.Core
                 dewdrops = 0;
             if (dewEarned < dewdrops)
                 dewEarned = dewdrops;
+            if (daily.streak < 0)
+                daily.streak = 0;
+            if (pouch.today < 0)
+                pouch.today = 0;
+            if (pouch.since < 0)
+                pouch.since = 0;
         }
     }
 }

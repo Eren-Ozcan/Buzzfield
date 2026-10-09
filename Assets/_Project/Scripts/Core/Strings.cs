@@ -145,6 +145,16 @@ namespace Buzzfield.Core
         public const string GoalCompleteGardens = "Complete {0} gardens";
 
         public const string GiftDoubleFormat = "Watch ad\n+{0} more";
+        public const string PouchOffer = "Watch ad\nOpen the pouch";
+
+        public const string DailyTitle = "Daily Dewdrops";
+        public const string DailyDayFormat = "Day {0}";
+        public const string DailyClaimFormat = "Claim +{0}";
+        public const string DailyClaimed = "Claimed";
+        public const string DailyHint = "Come back every day for more.\nA missed day starts over.";
+        public const string DailyComeBack = "See you tomorrow!";
+        public const string DailyMissed = "You missed a day:\nthe streak starts over.";
+        public const string DailyWaitingForTime = "Waiting for the time server...";
 
         public const string Dewdrops = "Dewdrops";
         /// <summary>Dewdrops a reward pays, next to the crystal icon.</summary>

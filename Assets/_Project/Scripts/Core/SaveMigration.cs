@@ -12,9 +12,10 @@ namespace Buzzfield.Core
         /// <summary>
         /// 1: first release layout (Phase 4). 2: store entitlements. 3: Queen abilities by id. 4: shaken
         /// flower count. 5: player settings, goal index and the first-return gift. 6: Dewdrops and the
-        /// endless goals' starting count. 7: Dewdrop honey boosts and the granted store orders.
+        /// endless goals' starting count. 7: Dewdrop honey boosts and the granted store orders. 8: the
+        /// daily login streak and the butterfly's Dewdrops pouch.
         /// </summary>
-        public const int CurrentVersion = 7;
+        public const int CurrentVersion = 8;
 
         /// <summary>
         /// Upgrades a loaded save in place; returns true when anything changed.
@@ -60,6 +61,10 @@ namespace Buzzfield.Core
 
             // Version 7 adds the Dewdrop boost line and the granted store order ids. Nobody could
             // buy either before it; Normalize has already filled the empty array and list.
+
+            // Version 8 adds the daily streak and the pouch tally. JsonUtility's zeros are a player
+            // who has not claimed yet and whose first day is still to be noted, so the streak opens
+            // on the day after the first one the new build sees.
 
             data.saveVersion = CurrentVersion;
             return true;
