@@ -4,7 +4,8 @@ namespace Buzzfield.Flowers
 {
     /// <summary>
     /// The butterfly that now and then crosses the garden: a tap or a swipe through it gives a
-    /// gift of honey, which a rewarded ad can double. Missed, it is gone. It never comes to a
+    /// gift of honey, which a rewarded ad can double. Every few butterflies one carries a pouch of
+    /// Dewdrops instead, which only a rewarded ad opens. Missed, it is gone. It never comes to a
     /// new player, behind a panel or during the Garden Complete celebration.
     /// </summary>
     [CreateAssetMenu(menuName = "Buzzfield/Visitor Settings", fileName = "VisitorSettings")]
@@ -47,6 +48,21 @@ namespace Buzzfield.Flowers
         [Tooltip("Seconds the \"double it\" offer stays on screen after a catch.")]
         [SerializeField, Min(1f)] private float offerSeconds = 8f;
 
+        [Header("Dewdrops pouch")]
+        [Tooltip("Hangs under a butterfly that carries a pouch.")]
+        [SerializeField] private GameObject pouchPrefab;
+        [Tooltip("Where the pouch hangs, in the butterfly's own space (before its scale).")]
+        [SerializeField] private Vector3 pouchOffset = new Vector3(0f, -0.05f, -0.04f);
+        [Tooltip("Every this many butterflies one carries a pouch instead of honey.")]
+        [SerializeField, Min(1)] private int pouchEvery = 4;
+        [Tooltip("Most pouches a day (the day turns at DewSettings.dayStartHour).")]
+        [SerializeField, Min(0)] private int pouchesPerDay = 4;
+        [Tooltip("Dewdrops in an opened pouch, from min to max, each as likely.")]
+        [SerializeField, Min(0)] private int pouchMinDew = 1;
+        [SerializeField, Min(0)] private int pouchMaxDew = 6;
+        [Tooltip("Seconds the \"open the pouch\" offer stays on screen after a catch.")]
+        [SerializeField, Min(1f)] private float pouchOfferSeconds = 10f;
+
         public ButterflyView Prefab => prefab;
         public ParticleSystem CatchBurstPrefab => catchBurstPrefab;
         public float FirstAfterPlaySeconds => firstAfterPlaySeconds;
@@ -66,5 +82,12 @@ namespace Buzzfield.Flowers
         public float MinimumReward => minimumReward;
         public float AdMultiplier => adMultiplier;
         public float OfferSeconds => offerSeconds;
+        public GameObject PouchPrefab => pouchPrefab;
+        public Vector3 PouchOffset => pouchOffset;
+        public int PouchEvery => pouchEvery;
+        public int PouchesPerDay => pouchesPerDay;
+        public int PouchMinDew => pouchMinDew;
+        public int PouchMaxDew => pouchMaxDew;
+        public float PouchOfferSeconds => pouchOfferSeconds;
     }
 }

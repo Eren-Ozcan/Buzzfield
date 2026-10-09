@@ -6,14 +6,17 @@ namespace Buzzfield.Flowers
 {
     /// <summary>
     /// Sends the butterfly across the garden now and then and checks the player's strokes
-    /// against it. One butterfly at a time, created once and hidden between visits. Plain class:
-    /// GameManager calls <see cref="Tick"/> and feeds it the strokes.
+    /// against it. One butterfly at a time, created once and hidden between visits; when it sets
+    /// off, the game decides whether it carries the Dewdrops pouch. Plain class: GameManager calls
+    /// <see cref="Tick"/> and feeds it the strokes.
     /// </summary>
     public sealed class VisitorManager
     {
         private readonly VisitorSettings settings;
         private readonly ButterflyView butterfly;
         private readonly ParticlePool bursts;
+        private readonly GameObject pouch;
+        private readonly Func<bool> carriesPouch;
         private readonly System.Random random;
 
         private VisitorTimer timer;
@@ -24,9 +27,11 @@ namespace Buzzfield.Flowers
         private float phase;
 
         /// <param name="parent">Outlives every garden: the butterfly and its sparkles live here.</param>
-        public VisitorManager(VisitorSettings settings, Transform parent, int seed)
+        /// <param name="nextCarriesPouch">Asked once as each butterfly sets off: true when it carries the pouch.</param>
+        public VisitorManager(VisitorSettings settings, Transform parent, int seed, Func<bool> nextCarriesPouch = null)
         {
             this.settings = settings;
+            carriesPouch = nextCarriesPouch;
             random = new System.Random(seed);
             if (settings.Prefab != null)
             {
@@ -34,6 +39,13 @@ namespace Buzzfield.Flowers
                 butterfly.name = settings.Prefab.name;
                 butterfly.transform.localScale = Vector3.one * settings.Scale;
                 butterfly.gameObject.SetActive(false);
+                if (settings.PouchPrefab != null)
+                {
+                    pouch = UnityEngine.Object.Instantiate(settings.PouchPrefab, butterfly.transform);
+                    pouch.name = settings.PouchPrefab.name;
+                    pouch.transform.localPosition = settings.PouchOffset;
+                    pouch.SetActive(false);
+                }
             }
             if (settings.CatchBurstPrefab != null)
                 bursts = new ParticlePool(settings.CatchBurstPrefab, parent, 1);
@@ -43,6 +55,9 @@ namespace Buzzfield.Flowers
         /// <summary>The butterfly is crossing the garden now.</summary>
         public bool IsFlying { get; private set; }
 
+        /// <summary>The flying butterfly carries the Dewdrops pouch instead of honey.</summary>
+        public bool HasPouch { get; private set; }
+
         public Vector3 Position => butterfly != null ? butterfly.transform.position : Vector3.zero;
 
         /// <summary>Calm seconds until the next butterfly once the first-visit gate is open.</summary>
@@ -50,8 +65,8 @@ namespace Buzzfield.Flowers
 
         public event Action OnAppeared;
 
-        /// <summary>Raised with the world position where the butterfly was caught.</summary>
-        public event Action<Vector3> OnCaught;
+        /// <summary>Raised with the world position where the butterfly was caught and whether it carried the pouch.</summary>
+        public event Action<Vector3, bool> OnCaught;
 
         /// <summary>
         /// Counts down while <paramref name="calm"/> and once <paramref name="playSeconds"/> passed
@@ -73,11 +88,12 @@ namespace Buzzfield.Flowers
         }
 
         /// <summary>Sends the butterfly now (play test tools); false when it is already flying.</summary>
-        public bool LaunchNow(Bounds garden)
+        /// <param name="withPouch">Null asks the game as usual; true or false decides here.</param>
+        public bool LaunchNow(Bounds garden, bool? withPouch = null)
         {
             if (butterfly == null || IsFlying)
                 return false;
-            Launch(garden);
+            Launch(garden, withPouch);
             return true;
         }
 
@@ -99,8 +115,9 @@ namespace Buzzfield.Flowers
                 return false;
 
             bursts?.Play(position);
+            bool hadPouch = HasPouch;
             Land();
-            OnCaught?.Invoke(position);
+            OnCaught?.Invoke(position, hadPouch);
             return true;
         }
 
@@ -111,8 +128,11 @@ namespace Buzzfield.Flowers
                 Land();
         }
 
-        private void Launch(Bounds garden)
+        private void Launch(Bounds garden, bool? withPouch = null)
         {
+            HasPouch = withPouch ?? (carriesPouch != null && carriesPouch());
+            if (pouch != null)
+                pouch.SetActive(HasPouch);
             bool leftToRight = random.NextDouble() < 0.5;
             float left = garden.min.x - settings.EdgeMargin;
             float right = garden.max.x + settings.EdgeMargin;
@@ -164,6 +184,7 @@ namespace Buzzfield.Flowers
         private void Land()
         {
             IsFlying = false;
+            HasPouch = false;
             butterfly.gameObject.SetActive(false);
             RestartTimer();
         }
