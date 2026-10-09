@@ -9,7 +9,7 @@ string lives in `Buzzfield.Core.Strings`.
 - `Assets/_Project/Scripts/` — one assembly per folder:
   - `Core/` (`Buzzfield.Core`, `noEngineReferences: true`): `BigNumber`, `NumberFormat`,
     `RollingRate`, `HoneyFormula`, `BloomMath`, `ForagingMath`, `PrestigeMath`, `QueenMath`, `IncomeMath`, `OfflineEarnings`,
-    `PollenMath`, `TimeFormat`, `TweenMath`, `AdPacing`, `TcfConsent`, `Entitlements`, `SoundRules`, `Haptics`,
+    `PollenMath`, `TimeFormat`, `TweenMath`, `AdPacing`, `TcfConsent`, `Entitlements`, `DewBoostQueue`, `SoundRules`, `Haptics`,
     `Goals`, `RewardMath`, `VisitorTimer`, `SaveData` + `SaveMigration` + `SaveEnvelope` + `SaveFileStore`, `Strings`.
     Pure logic only, EditMode-tested.
   - `Core/Runtime/` (`Buzzfield.Core.Runtime`): Unity helpers shared by systems
@@ -37,11 +37,21 @@ string lives in `Buzzfield.Core.Strings`.
     started (`goalBase`), so they only use lifetime counts. `GoalManager` (Economy) walks it; index
     and baseline are saved and survive the Queen move.
   - Dewdrops, the premium currency (`GameManager.Dew.cs`, `DewManager` in Economy): every Dewdrop
-    goes through `EarnDew`/`TrySpendDew`, which log `dew_earn`/`dew_spend`. Sources so far: goals
-    and finished gardens (`DewSettings`). The counter (crystal icon rendered from `Dewdrop.prefab`)
-    sits right of the honey pill from the first Dewdrop and opens the shop. Royal Jelly stays the
-    prestige currency and is never sold. The economy plan is private: `docs/DEWDROPS.md`
-    (excluded like `docs/BUILD_PROMPT.md`; never stage it).
+    goes through `EarnDew`/`TrySpendDew`, which log `dew_earn`/`dew_spend`; `TrySpendDew` does not
+    save, so the caller hands out what was bought and then saves. Sources: goals, finished gardens
+    (`DewSettings`) and the Dewdrop packs (`StoreCatalog`: `dewGrant`; the starter pack also pays
+    `honeySecondsGrant` seconds of the offline rate). The counter (crystal icon rendered from
+    `Dewdrop.prefab`) sits right of the honey pill from the first Dewdrop and opens the shop.
+    The shop has two tabs: Dewdrops (store products, restore) and Boosts (`DewBoostsTabView`, offers
+    in `DewSettings.offers`, open after the first garden): time skips pay the offline rate in full
+    outside the run total, honey boosts join the `DewBoostQueue` in `BoostManager` (strongest runs,
+    weaker ones wait with their time, wall clock, also while closed; offline honey pays the
+    multiplier for the boosted part). Spends above `confirmAbove` need a second tap. A running boost
+    shows on `DewBoostChipView` under the gear. Packs are consumables bought again and again; an
+    order the store delivers twice is granted once (`Entitlements.grantedOrders`). The shop badge
+    waits `StoreCatalog.badgeAfterPlaySeconds` of play. Royal Jelly stays the prestige currency and
+    is never sold. The economy plan is private: `docs/DEWDROPS.md` (excluded like
+    `docs/BUILD_PROMPT.md`; never stage it).
   - Butterfly (`GameManager.Visitors.cs`): `VisitorManager` (Flowers) flies `Butterfly.prefab`
     across the garden every few minutes of calm play, never in the first `firstAfterPlaySeconds`;
     a tap or swipe through it pays a gift and `GiftOfferView` offers a rewarded "double it" for a
