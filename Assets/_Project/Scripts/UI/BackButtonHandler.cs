@@ -14,6 +14,7 @@ namespace Buzzfield.UI
         [SerializeField] private WelcomeBackView welcomeBack;
         [SerializeField] private ShopPanelView shopPanel;
         [SerializeField] private SettingsPanelView settingsPanel;
+        [SerializeField] private DailyPanelView dailyPanel;
 
         [Header("Quit dialog")]
         [SerializeField] private GameObject quitDialog;
@@ -23,7 +24,8 @@ namespace Buzzfield.UI
         public bool IsQuitDialogOpen => quitDialog.activeSelf;
 
         /// <summary>True while any modal panel is on screen.</summary>
-        public bool IsModalOpen => quitDialog.activeSelf || queenPanel.IsOpen || welcomeBack.IsOpen || shopPanel.IsOpen || settingsPanel.IsOpen;
+        public bool IsModalOpen => quitDialog.activeSelf || queenPanel.IsOpen || welcomeBack.IsOpen || shopPanel.IsOpen
+            || settingsPanel.IsOpen || dailyPanel.IsOpen;
 
         private void Awake()
         {
@@ -59,6 +61,8 @@ namespace Buzzfield.UI
                 queenPanel.Close();
             else if (shopPanel.IsOpen)
                 shopPanel.Close();
+            else if (dailyPanel.IsOpen)
+                dailyPanel.Close();
             else if (settingsPanel.IsConfirmingDelete)
                 settingsPanel.CancelDelete();
             else if (settingsPanel.IsOpen)
