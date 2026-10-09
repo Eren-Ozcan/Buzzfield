@@ -5,9 +5,9 @@ using UnityEngine;
 namespace Buzzfield.Editor
 {
     /// <summary>
-    /// Menu "Buzzfield > Render Model Sheet": renders the three bee tiers up close and the hive with
-    /// the flower patches, in the game's light, to PNG files, for a look at the art without
-    /// playing. Writes to BZ_SHOT_DIR when set, else Temp/ModelSheet.
+    /// Menu "Buzzfield > Render Model Sheet": renders the three bee tiers up close, the hive with
+    /// the flower patches, and the butterfly with its Dewdrops pouch, in the game's light, to PNG
+    /// files, for a look at the art without playing. Writes to BZ_SHOT_DIR when set, else Temp/ModelSheet.
     /// Batchmode: -executeMethod Buzzfield.Editor.ModelSheet.RenderToFiles -quit
     /// </summary>
     public static class ModelSheet
@@ -38,6 +38,11 @@ namespace Buzzfield.Editor
                 ("FlowerPatch_Daisy", new Vector3(-0.2f, 0f, 0f), 30f, 1f),
                 ("FlowerPatch_Lavender", new Vector3(1.4f, 0f, 0f), 60f, 1f),
                 ("FlowerPatch_Orchid", new Vector3(3f, 0f, 0f), 10f, 1f));
+            // The butterfly with the Dewdrops pouch hanging where the game puts it, and the Dewdrop crystal.
+            RenderSheet(Path.Combine(directory, "models_visitors.png"), 1200, 600, new Vector3(0f, 1.3f, -3f), 0.5f,
+                ("Butterfly", new Vector3(-0.5f, 0.75f, 0f), 200f, 1f),
+                ("DewPouch", new Vector3(-0.5f, 0.7f, 0f), 200f, 1f),
+                ("Dewdrop", new Vector3(1f, 0.1f, 0f), 20f, 0.8f));
             Debug.Log($"Model sheets written to {Path.GetFullPath(directory)}");
             return directory;
         }

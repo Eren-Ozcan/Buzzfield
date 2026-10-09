@@ -76,9 +76,18 @@ namespace Buzzfield.Editor
                 shape.radius = 0.2f;
             });
 
+            // Hangs under the butterfly that carries Dewdrops; the butterfly's scale applies to it too.
+            GameObject pouch = EditorAssets.LoadOrCreatePrefab("DewPouch", () =>
+            {
+                var root = new GameObject("DewPouch");
+                EditorAssets.MeshObject("Sack", root.transform, EditorAssets.SaveMesh(CharacterModels.DewPouch()), m.PaletteMaterial);
+                return root;
+            });
+
             VisitorSettings settings = EditorAssets.LoadOrCreate<VisitorSettings>($"{Data}/Flowers/VisitorSettings.asset", _ => { });
             EditorAssets.SetIfMissing(settings, "prefab", butterfly.GetComponent<ButterflyView>());
             EditorAssets.SetIfMissing(settings, "catchBurstPrefab", burst);
+            EditorAssets.SetIfMissing(settings, "pouchPrefab", pouch);
         }
 
         // ---- Goals ----

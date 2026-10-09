@@ -179,6 +179,48 @@ namespace Buzzfield.Editor
             return b.ToMesh("Dewdrop");
         }
 
+        /// <summary>
+        /// The butterfly's Dewdrops pouch: a round burlap sack tied at the neck, a small crystal
+        /// peeking out of it, hanging on a short thread. The origin is the top of the thread (where
+        /// it meets the butterfly); the sack hangs below, about 0.55 units in all.
+        /// </summary>
+        public static Mesh DewPouch()
+        {
+            var b = new LowPolyBuilder(seed: 73);
+            const float top = -0.14f;
+            var sack = new List<Vector2>
+            {
+                new Vector2(0f, top - 0.3f),
+                new Vector2(0.1f, top - 0.29f),
+                new Vector2(0.16f, top - 0.24f),
+                new Vector2(0.18f, top - 0.16f),
+                new Vector2(0.15f, top - 0.08f),
+                new Vector2(0.08f, top - 0.03f),
+                new Vector2(0.06f, top - 0.01f),
+                new Vector2(0.1f, top + 0.03f),
+                new Vector2(0.07f, top + 0.05f),
+                new Vector2(0f, top + 0.04f),
+            };
+            // The neck (bands 5 and 6) is the tie.
+            b.Lathe(Vector3.zero, sack, 7, band => band == 5 || band == 6 ? Palette.Wood : Palette.Dirt);
+
+            // Stuffed in the opening and leaning out, big enough to read from the game camera; the thread is tied beside it.
+            var crystal = new List<Vector2>
+            {
+                new Vector2(0f, 0f),
+                new Vector2(0.08f, 0.03f),
+                new Vector2(0.1f, 0.09f),
+                new Vector2(0.06f, 0.16f),
+                new Vector2(0f, 0.22f),
+            };
+            b.Lathe(new Vector3(0.025f, top - 0.08f, 0f), crystal, 6, band => band == 2 ? Palette.DewLight : Palette.Dew,
+                Quaternion.Euler(0f, 0f, -20f));
+
+            b.Swatch = Palette.Stripe;
+            b.Stalk(new Vector3(-0.06f, top + 0.04f, 0f), Vector3.zero, 0.009f, 4);
+            return b.ToMesh("DewPouch", 1.3f);
+        }
+
         const float BodyRadius = 0.41f;
         const float BodyHalfLength = 0.5f;
         const int BodySegments = 14;

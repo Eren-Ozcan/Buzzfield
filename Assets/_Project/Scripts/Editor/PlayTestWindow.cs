@@ -138,7 +138,21 @@ namespace Buzzfield.Editor
             {
                 if (GUILayout.Button("Send the butterfly"))
                     game.DebugLaunchButterfly();
+                if (GUILayout.Button("With a pouch"))
+                    game.DebugLaunchButterfly(true);
                 GUILayout.Label(game.Goals.HasGoal ? $"Goal {game.Goals.Index + 1}/{game.Goals.Count}" : "Goals done", GUILayout.Width(110f));
+            }
+
+            EditorGUILayout.LabelField("Daily streak", EditorStyles.boldLabel);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button(new GUIContent("Trust device clock", "Use the device clock as trusted time when the time server cannot be reached.")))
+                    game.DebugTrustDeviceClock();
+                if (GUILayout.Button(new GUIContent("Next day", "Moves the date a day ahead until play mode ends. Days saved meanwhile stay ahead of the real date.")))
+                    game.DebugShiftDays(1);
+                if (GUILayout.Button("Open panel"))
+                    game.OpenDaily();
+                GUILayout.Label(game.TryGetToday(out long _) ? $"Streak {game.Daily.streak}" : "No date yet", GUILayout.Width(110f));
             }
 
             EditorGUILayout.LabelField("Game speed", EditorStyles.boldLabel);

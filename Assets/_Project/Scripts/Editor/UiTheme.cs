@@ -35,6 +35,8 @@ namespace Buzzfield.Editor
         /// <summary>Dewdrops, the premium currency: clear of honey yellow and jelly purple.</summary>
         public static readonly Color Dew = Hex(0x2FB5C8);
         public static readonly Color DewPale = Hex(0xDDF7F9);
+        /// <summary>Something already done, like a claimed day of the streak.</summary>
+        public static readonly Color GoodPale = Hex(0xE2F1D3);
 
         // Bloom bar
         public static readonly Color BarTrack = new Color(0.25f, 0.15f, 0.06f, 0.72f);
@@ -71,12 +73,13 @@ namespace Buzzfield.Editor
         public const string IconUp = "\uE5D8";
         public const string IconJelly = "\uEB4C";
         public const string IconPrivacy = "\uF0DC";
+        public const string IconCalendar = "\uEBCC";
 
         /// <summary>Every glyph above, for building the icon font atlas.</summary>
         public const string AllIcons = IconShop + IconCrown + IconSpeed + IconHoney + IconClose + IconAd + IconTouch
             + IconCheck + IconLock + IconAdd + IconEvolve + IconFlower + IconHive + IconBee + IconSettings + IconStar
             + IconTrophy + IconSound + IconSoundOff + IconMusic + IconMusicOff + IconInfo + IconRestore + IconGift
-            + IconTimer + IconSparkle + IconUp + IconJelly + IconPrivacy;
+            + IconTimer + IconSparkle + IconUp + IconJelly + IconPrivacy + IconCalendar;
 
         static Color Hex(int rgb) => new Color32((byte)(rgb >> 16), (byte)(rgb >> 8), (byte)rgb, 255);
     }

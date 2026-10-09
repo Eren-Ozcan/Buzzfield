@@ -103,6 +103,7 @@ namespace Buzzfield.Editor
                 ("goalSettings", goalSettings), ("goalView", ui.Goal),
                 ("visitorSettings", visitorSettings), ("giftOffer", ui.GiftOffer),
                 ("settingsPanel", ui.Settings), ("dewSettings", dewSettings), ("dewBoostChip", ui.DewBoostChip),
+                ("dailyPanel", ui.Daily),
                 ("cameraFitter", fitter), ("worldRoot", world));
 
             EditorAssets.EnsureFolder(System.IO.Path.GetDirectoryName(EditorAssets.ScenePath));
@@ -183,6 +184,7 @@ namespace Buzzfield.Editor
             public UiEffectsView Effects;
             public GiftOfferView GiftOffer;
             public DewBoostChipView DewBoostChip;
+            public DailyPanelView Daily;
         }
 
         // ---- Interface theme (colours in UiTheme, art from UiAssets) ----
@@ -264,14 +266,16 @@ namespace Buzzfield.Editor
             RewardedBoostView rewardedBoost = CreateRewardedBoost(root);
             GiftOfferView giftOffer = CreateGiftOffer(root);
             DewBoostChipView dewBoostChip = CreateDewBoostChip(root);
+            (GameObject dailyBadge, Button dailyBadgeButton) = CreateDailyBadge(root);
             // Over the HUD and the bottom bar, under the panels.
             UiEffectsView effects = CreateEffects(root, honeyPill, (RectTransform)dewPill.transform);
             // Modals last so they draw over the HUD and the bottom bar; the quit dialog on top.
             QueenPanelView queenPanel = CreateQueenPanel(root, queenButton, readyBadge, abilityCount);
             ShopPanelView shopPanel = CreateShopPanel(root, shopButton, shopBadge, dewButton, catalog, dewSettings);
             SettingsPanelView settings = CreateSettingsPanel(root, settingsButton);
+            DailyPanelView daily = CreateDailyPanel(root, dailyBadge, dailyBadgeButton);
             WelcomeBackView welcomeBack = CreateWelcomeBack(root);
-            BackButtonHandler backButton = CreateQuitDialog(root, queenPanel, welcomeBack, shopPanel, settings);
+            BackButtonHandler backButton = CreateQuitDialog(root, queenPanel, welcomeBack, shopPanel, settings, daily);
             return new CanvasViews
             {
                 ButtonFeedbacks = AddButtonFeedback(canvasObject.transform),
@@ -279,6 +283,7 @@ namespace Buzzfield.Editor
                 WelcomeBack = welcomeBack, RewardedBoost = rewardedBoost, ShopPanel = shopPanel,
                 SwipeCatcher = swipeCatcher, SwipeHint = swipeHint, BackButton = backButton,
                 Settings = settings, Goal = goal, Effects = effects, GiftOffer = giftOffer, DewBoostChip = dewBoostChip,
+                Daily = daily,
             };
         }
 
@@ -529,7 +534,8 @@ namespace Buzzfield.Editor
             return view;
         }
 
-        static BackButtonHandler CreateQuitDialog(Transform root, QueenPanelView queenPanel, WelcomeBackView welcomeBack, ShopPanelView shopPanel, SettingsPanelView settingsPanel)
+        static BackButtonHandler CreateQuitDialog(Transform root, QueenPanelView queenPanel, WelcomeBackView welcomeBack, ShopPanelView shopPanel,
+            SettingsPanelView settingsPanel, DailyPanelView dailyPanel)
         {
             RectTransform dialog = CreateModal("QuitDialog", root, new Vector2(820f, 500f), UiTheme.Primary, out RectTransform window);
             CreateTitle(window, Strings.QuitTitle);
@@ -542,6 +548,7 @@ namespace Buzzfield.Editor
 
             var handler = root.gameObject.AddComponent<BackButtonHandler>();
             EditorAssets.Set(handler, ("queenPanel", queenPanel), ("welcomeBack", welcomeBack), ("shopPanel", shopPanel), ("settingsPanel", settingsPanel),
+                ("dailyPanel", dailyPanel),
                 ("quitDialog", dialog.gameObject), ("quitButton", quit), ("cancelButton", cancel));
             dialog.gameObject.SetActive(false);
             return handler;

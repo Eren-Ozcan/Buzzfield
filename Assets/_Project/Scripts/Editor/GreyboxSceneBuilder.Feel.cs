@@ -8,8 +8,8 @@ namespace Buzzfield.Editor
 {
     /// <summary>
     /// The scene builder's part for the game's feel: the settings gear and panel, the goal pill,
-    /// the "double it" gift offer, the swipe hint's hand and the effects layer (rising numbers,
-    /// flying honey, sparkles).
+    /// the butterfly's offer ("double it" or "open the pouch"), the swipe hint's hand and the
+    /// effects layer (rising numbers, flying honey, sparkles).
     /// </summary>
     public static partial class GreyboxSceneBuilder
     {
@@ -97,7 +97,10 @@ namespace Buzzfield.Editor
             return view;
         }
 
-        /// <summary>"Watch ad, +X more" above the rewarded boost button, with a shrinking timer bar along its bottom.</summary>
+        /// <summary>
+        /// "Watch ad, +X more" (or "open the pouch") above the rewarded boost button, with a shrinking
+        /// timer bar along its bottom and a round X on its corner for leaving the pouch.
+        /// </summary>
         static GiftOfferView CreateGiftOffer(Transform root)
         {
             RectTransform holder = CreateRect("GiftOffer", root);
@@ -131,8 +134,20 @@ namespace Buzzfield.Editor
             fill.offsetMax = Vector2.zero;
             AddImage(fill, pillSprite, UiTheme.TextLight, false);
 
+            RectTransform close = CreateRect("CloseButton", holder);
+            close.anchorMin = close.anchorMax = new Vector2(1f, 1f);
+            close.sizeDelta = new Vector2(70f, 70f);
+            close.anchoredPosition = new Vector2(-6f, -2f);
+            Image closeImage = AddImage(close, circleSprite, UiTheme.Cream, true);
+            var closeButton = close.gameObject.AddComponent<Button>();
+            closeButton.targetGraphic = closeImage;
+            TMP_Text closeIcon = CreateIcon("Icon", close, UiTheme.IconClose, 46f, UiTheme.TextDark);
+            Stretch((RectTransform)closeIcon.transform);
+            close.gameObject.SetActive(false);
+
             var view = root.gameObject.AddComponent<GiftOfferView>();
-            EditorAssets.Set(view, ("root", holder.gameObject), ("button", button), ("label", label), ("timerFill", fill));
+            EditorAssets.Set(view, ("root", holder.gameObject), ("button", button), ("label", label), ("timerFill", fill),
+                ("closeButton", closeButton));
             holder.gameObject.SetActive(false);
             return view;
         }
