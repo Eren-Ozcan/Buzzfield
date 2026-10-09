@@ -10,7 +10,8 @@ string lives in `Buzzfield.Core.Strings`.
   - `Core/` (`Buzzfield.Core`, `noEngineReferences: true`): `BigNumber`, `NumberFormat`,
     `RollingRate`, `HoneyFormula`, `BloomMath`, `ForagingMath`, `PrestigeMath`, `QueenMath`, `IncomeMath`, `OfflineEarnings`,
     `PollenMath`, `TimeFormat`, `TweenMath`, `AdPacing`, `TcfConsent`, `Entitlements`, `DewBoostQueue`, `SoundRules`, `Haptics`,
-    `Goals`, `RewardMath`, `VisitorTimer`, `SaveData` + `SaveMigration` + `SaveEnvelope` + `SaveFileStore`, `Strings`.
+    `Goals`, `RewardMath`, `VisitorTimer`, `LoginStreak`, `DewPouch`, `SaveData` + `SaveMigration` + `SaveEnvelope` +
+    `SaveFileStore`, `Strings`.
     Pure logic only, EditMode-tested.
   - `Core/Runtime/` (`Buzzfield.Core.Runtime`): Unity helpers shared by systems
     (`PrefabPool`, `ParticlePool`, `Tweener`, `CameraFitter`). `Tweener` is our own small tween
@@ -39,7 +40,7 @@ string lives in `Buzzfield.Core.Strings`.
   - Dewdrops, the premium currency (`GameManager.Dew.cs`, `DewManager` in Economy): every Dewdrop
     goes through `EarnDew`/`TrySpendDew`, which log `dew_earn`/`dew_spend`; `TrySpendDew` does not
     save, so the caller hands out what was bought and then saves. Sources: goals, finished gardens
-    (`DewSettings`) and the Dewdrop packs (`StoreCatalog`: `dewGrant`; the starter pack also pays
+    (`DewSettings`), the daily streak, the butterfly's pouch and the Dewdrop packs (`StoreCatalog`: `dewGrant`; the starter pack also pays
     `honeySecondsGrant` seconds of the offline rate). The counter (crystal icon rendered from
     `Dewdrop.prefab`) sits right of the honey pill from the first Dewdrop and opens the shop.
     The shop has two tabs: Dewdrops (store products, restore) and Boosts (`DewBoostsTabView`, offers
@@ -55,8 +56,18 @@ string lives in `Buzzfield.Core.Strings`.
   - Butterfly (`GameManager.Visitors.cs`): `VisitorManager` (Flowers) flies `Butterfly.prefab`
     across the garden every few minutes of calm play, never in the first `firstAfterPlaySeconds`;
     a tap or swipe through it pays a gift and `GiftOfferView` offers a rewarded "double it" for a
-    few seconds. Tuning in `VisitorSettings`. The first Welcome back ever adds a one-time gift
-    (`GameSettings.welcomeGiftSeconds`).
+    few seconds. Tuning in `VisitorSettings`. Once the daily streak is open, every `pouchEvery`th
+    butterfly that sets off while a rewarded ad is ready carries `DewPouch.prefab` instead of honey
+    (at most `pouchesPerDay` a day; the `DewPouch` tally is saved): caught, it pays nothing until the
+    same offer, in pouch mode with an X, plays the rewarded ad that opens it (`pouchMinDew` to
+    `pouchMaxDew`). The first Welcome back ever adds a one-time gift (`GameSettings.welcomeGiftSeconds`).
+  - Daily streak (`GameManager.Daily.cs`): days come from trusted time only (`GameClock`), in the
+    local time zone, turning at `DewSettings.dayStartHour`; `LoginStreak` notes the first known day
+    and opens the streak `dailyUnlockDay` days later. `DailyPanelView` (seven tiles from
+    `DewSettings.dailyRewards`, a missed day starts over) opens by itself after a launch or a real
+    return once the date is known and nothing else is on screen, at most once a day; while today's
+    Dewdrops wait, a calendar badge under the goal pill opens it. A claim closes the panel, flies the
+    crystals and saves. Without the date the claim waits ("Waiting for the time server").
   - Garden look: each flower slot is a patch prefab (`FlowerPatch_*`), and `GardenDecor` (grass,
     bushes, stones, fence) is laid out from the garden's seed and merged per material by
     `GardenDecorView` when the garden spawns. Placeholder meshes are flat-shaded low-poly, built by
@@ -65,7 +76,8 @@ string lives in `Buzzfield.Core.Strings`.
     builds them as one mesh each, coloured through the `Palette` texture, so every bee is a single
     renderer on the shared `Palette` material. *Buzzfield > Render Model Sheet* (`ModelSheet`,
     batchmode `-executeMethod Buzzfield.Editor.ModelSheet.RenderToFiles -quit`, output in
-    `BZ_SHOT_DIR` or `Temp/ModelSheet`) renders the bees, hive and flower patches up close.
+    `BZ_SHOT_DIR` or `Temp/ModelSheet`) renders the bees, hive, flower patches and the butterfly with
+    its pouch up close.
   - Around every garden: `Scenery.prefab` (`SceneryModels`, one palette mesh: meadow flat under and
     in front of the garden, hills behind, trees, rocks, wildflowers, stepping stones), tinted from
     faded to full by `SceneryView` as the garden blooms; the camera still frames the garden only.
@@ -105,8 +117,10 @@ string lives in `Buzzfield.Core.Strings`.
     `Unity.exe -batchmode -quit -projectPath . -executeMethod Buzzfield.Editor.GreyboxSceneBuilder.Build`.
     *Buzzfield > Play Test Tools* (`PlayTestWindow`) is for trying the game by hand in the editor:
     opens Main, deletes the editor save, and in play mode adds honey, blooms or completes the
-    garden, refills pollen, sends the butterfly, sets game speed and shows the swipe hint again. Its shortcuts live in
-    `GameManager.Debug.cs`, compiled only in the editor and development builds.
+    garden, refills pollen, sends the butterfly (with or without a pouch), sets game speed and shows the
+    swipe hint again. For the daily streak it takes the device clock as trusted time and moves the
+    date a day ahead (in memory only; days saved meanwhile stay ahead of the real date). Its shortcuts
+    live in `GameManager.Debug.cs`, compiled only in the editor and development builds.
     *Buzzfield > Android > Build Dev APK* writes `Builds/Android/Buzzfield-dev.apk` (gitignored):
     `Unity.exe -batchmode -quit -buildTarget Android -projectPath . -executeMethod Buzzfield.Editor.AndroidBuild.BuildDevApk`.
     *Build Release AAB* (`BuildReleaseAab`) signs with the upload key in the gitignored
