@@ -122,17 +122,16 @@ namespace Buzzfield.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator StarterPack_GrantsHoneyAndJellyOnce_ThenHides()
+        public IEnumerator StarterPack_GrantsDewdropsAndHoneyOnce_ThenHides()
         {
             catalog.TryGet(ProductIds.StarterPack, out StoreProduct pack);
-            BigNumber honeyBefore = game.Economy.Honey;
             var shop = Object.FindAnyObjectByType<ShopPanelView>();
             shop.Open();
 
             yield return Buy(ProductIds.StarterPack);
 
-            Assert.That((game.Economy.Honey - honeyBefore).ToDouble(), Is.EqualTo(pack.honeyGrant).Within(1e-6));
-            Assert.That(game.Prestige.RoyalJelly.ToDouble(), Is.EqualTo(pack.jellyGrant));
+            Assert.That(game.Dew.Balance, Is.EqualTo(pack.dewGrant));
+            Assert.That(game.Prestige.RoyalJelly.IsZero, "Royal Jelly is never sold.");
             Assert.That(game.Economy.RunHoneyEarned.IsZero, "Bought honey does not feed the Royal Jelly formula.");
             Assert.That(game.Store.GetState(ProductIds.StarterPack), Is.EqualTo(ShopItemState.Hidden));
             Assert.That(GameObject.Find(ProductIds.StarterPack), Is.Null, "The used offer's row is hidden.");
@@ -141,7 +140,7 @@ namespace Buzzfield.Tests.PlayMode
 
             yield return LoadMain();
             Assert.That(game.Store.Entitlements.starterPackBought);
-            Assert.That(game.Prestige.RoyalJelly.ToDouble(), Is.EqualTo(pack.jellyGrant));
+            Assert.That(game.Dew.Balance, Is.EqualTo(pack.dewGrant));
         }
 
         [UnityTest]
