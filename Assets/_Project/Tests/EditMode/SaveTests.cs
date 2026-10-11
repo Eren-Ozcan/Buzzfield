@@ -366,6 +366,39 @@ namespace Buzzfield.Tests.EditMode
         }
 
         [Test]
+        public void Migration_VersionEight_StartsWithoutRareBees()
+        {
+            SaveData data = JsonUtility.FromJson<SaveData>("{\"saveVersion\":8,\"dewdrops\":75,\"movesMade\":2}");
+            Assert.That(SaveMigration.Upgrade(data, 8));
+            Assert.That(data.saveVersion, Is.EqualTo(SaveMigration.CurrentVersion));
+            Assert.That(data.rareBees, Is.Not.Null.And.Empty, "Nobody had a rare bee before version 9.");
+            Assert.That(data.dewdrops, Is.EqualTo(75), "Version 8 progress is kept.");
+            Assert.That(data.movesMade, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void RareBees_RoundTripThroughJsonUtility()
+        {
+            var data = new SaveData
+            {
+                rareBees = new[] { new AbilityLevel { id = "Bumblebee", level = 4 }, new AbilityLevel { id = "CarpenterBee", level = 1 } },
+            };
+            SaveData read = JsonUtility.FromJson<SaveData>(JsonUtility.ToJson(data));
+            Assert.That(read.rareBees.Length, Is.EqualTo(2));
+            Assert.That(read.rareBees[0].id, Is.EqualTo("Bumblebee"));
+            Assert.That(read.rareBees[0].level, Is.EqualTo(4));
+            Assert.That(read.rareBees[1].id, Is.EqualTo("CarpenterBee"));
+        }
+
+        [Test]
+        public void Normalize_FillsMissingRareBees()
+        {
+            var data = new SaveData { rareBees = null };
+            data.Normalize();
+            Assert.That(data.rareBees, Is.Not.Null);
+        }
+
+        [Test]
         public void StreakAndPouch_RoundTripThroughJsonUtility()
         {
             var data = new SaveData
