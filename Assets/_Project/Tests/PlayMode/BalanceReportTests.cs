@@ -24,7 +24,8 @@ namespace Buzzfield.Tests.PlayMode
     /// <remarks>
     /// The bot is an attentive active player without ads or purchases: it shakes every
     /// flower the moment it has pollen again, evolves when it can, otherwise buys the
-    /// cheapest affordable upgrade, spends Royal Jelly on the cheapest ability, and moves
+    /// cheapest affordable upgrade, spends Royal Jelly on the cheapest ability, spends Dewdrops on
+    /// the cheapest rare bee step it can afford (the free Bumblebee first), and moves
     /// the Queen once the garden is complete or no flower has grown for <see cref="StallSeconds"/> after the gate
     /// opened. From then on it saves its honey for the move.
     /// </remarks>
@@ -41,6 +42,7 @@ namespace Buzzfield.Tests.PlayMode
         GameManager game;
         string outPath;
         int frameRate;
+        long dewSpent;
 
         [UnitySetUp]
         public IEnumerator LoadMain()
@@ -67,7 +69,7 @@ namespace Buzzfield.Tests.PlayMode
         {
             outPath = Environment.GetEnvironmentVariable("BZ_BALANCE_OUT");
             var report = new StringBuilder();
-            report.AppendLine("Buzzfield balance run (bot claims goals; no ads, no purchases, no butterflies)");
+            report.AppendLine("Buzzfield balance run (bot claims goals and spends Dewdrops on rare bees; no ads, no purchases, no butterflies)");
             report.AppendLine("time      event");
             Flush(report);
 
@@ -119,6 +121,8 @@ namespace Buzzfield.Tests.PlayMode
                 if (decisionTimer > 0f)
                     continue;
                 decisionTimer = DecisionSeconds;
+
+                SpendDew(report, now);
 
                 int goal = game.Goals.Index;
                 BigNumber goalReward = game.ClaimableGoalReward;
@@ -177,7 +181,12 @@ namespace Buzzfield.Tests.PlayMode
             Log(report, Time.timeAsDouble - start, $"done: {game.Stats.gardensCompleted} gardens completed, " +
                 $"{NumberFormat.Abbreviate(game.Economy.LifetimeHoneyEarned)} lifetime honey, " +
                 $"{NumberFormat.Abbreviate(game.Prestige.LifetimeJelly)} lifetime jelly, " +
-                $"{game.Dew.TotalEarned} Dewdrops ({(game.Dew.TotalEarned / hours).ToString("0", CultureInfo.InvariantCulture)} per active hour, goals and gardens only)");
+                $"{game.Dew.TotalEarned} Dewdrops ({(game.Dew.TotalEarned / hours).ToString("0", CultureInfo.InvariantCulture)} per active hour, goals and gardens only), " +
+                $"{dewSpent} spent on rare bees");
+            var levels = new StringBuilder();
+            for (int i = 0; i < game.RareBees.Count; i++)
+                levels.Append(i > 0 ? ", " : string.Empty).Append(game.RareBees.Bees[i].Id).Append(" Lv ").Append(game.RareBees.Level(i));
+            Log(report, Time.timeAsDouble - start, $"rare bees: {levels}");
 
             Debug.Log(report.ToString());
         }
@@ -238,6 +247,28 @@ namespace Buzzfield.Tests.PlayMode
                 return;
             choice = id;
             best = cost;
+        }
+
+        /// <summary>Spends Dewdrops on the cheapest rare bee step (joining or a level) until nothing is affordable.</summary>
+        void SpendDew(StringBuilder report, double now)
+        {
+            while (true)
+            {
+                int choice = -1;
+                long best = long.MaxValue;
+                for (int i = 0; i < game.RareBees.Count; i++)
+                {
+                    long cost = game.RareBees.NextCost(i);
+                    if (cost < 0 || cost > game.Dew.Balance || cost >= best || !game.RareBees.IsAvailable(i, game.GardenNumber))
+                        continue;
+                    choice = i;
+                    best = cost;
+                }
+                if (choice < 0 || !game.TryAdvanceRareBee(choice))
+                    return;
+                dewSpent += best;
+                Log(report, now, $"  rare bee {game.RareBees.Bees[choice].Id} Lv {game.RareBees.Level(choice)} for {best} Dewdrops");
+            }
         }
 
         /// <summary>Spends Royal Jelly on the cheapest ability until nothing is affordable.</summary>
