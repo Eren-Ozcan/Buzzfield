@@ -32,6 +32,20 @@ namespace Buzzfield.Core
             return BigNumber.Pow(1 + perLevel, level);
         }
 
+        /// <summary>
+        /// <paramref name="cost"/> times <paramref name="factor"/> (a discount), rounded up to whole
+        /// honey so a discounted cost stays a whole number. Past 1e15 a double has no fraction left.
+        /// </summary>
+        public static BigNumber Scaled(BigNumber cost, double factor)
+        {
+            if (factor == 1)
+                return cost;
+            BigNumber scaled = cost * Math.Max(0, factor);
+            if (scaled.IsZero || scaled >= 1e15)
+                return scaled;
+            return BigNumber.FromDouble(Math.Ceiling(scaled.ToDouble() - 1e-9));
+        }
+
         /// <summary>True when a level cap exists and has been reached. 0 = no cap.</summary>
         public static bool IsMaxed(int level, int maxLevel) => maxLevel > 0 && level >= maxLevel;
     }

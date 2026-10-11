@@ -156,6 +156,34 @@ namespace Buzzfield.Core
         public const string DailyMissed = "You missed a day:\nthe streak starts over.";
         public const string DailyWaitingForTime = "Waiting for the time server...";
 
+        public const string HiveTitle = "Hive";
+        public const string HiveHint = "Rare bees fly in every garden\nand stay when the Queen moves.";
+        public const string RareBumblebee = "Bumblebee";
+        public const string RareBlueBandedBee = "Blue Banded Bee";
+        public const string RareMasonBee = "Mason Bee";
+        public const string RareOrchidBee = "Orchid Bee";
+        public const string RareLeafcutterBee = "Leafcutter Bee";
+        public const string RareCarpenterBee = "Carpenter Bee";
+        public const string RareBeeFree = "Free";
+        /// <summary>The species that joins for free, waiting for its tap; {0} is its name in lower case.</summary>
+        public const string RareBeeFreeFormat = "A {0} wants to move in!";
+        public const string RareBeeLockedFormat = "Reach Garden {0}";
+        public const string RareBeeJoinedFormat = "The {0} moved in!";
+        public const string RareBeeLevelUpFormat = "{0} reached Lv {1}!";
+        /// <summary>What the next level brings; {0} is the bonus it adds, such as "+3%".</summary>
+        public const string RareBeeNextFormat = "Next level: {0}";
+        public const string PercentUpFormat = "+{0}%";
+        public const string PercentDownFormat = "-{0}%";
+
+        /// <summary>What a rare bee's levels give, by effect; {0} is the amount.</summary>
+        public const string RareEffectCarryFormat = "+{0}% nectar carried by every bee";
+        public const string RareEffectShakeFormat = "+{0}% honey from pollen shakes";
+        public const string RareEffectOfflineFormat = "+{0}% offline earning rate";
+        /// <summary>Names the Orchid Bee's flowers (RareBee.flowers in the data).</summary>
+        public const string RareEffectFlowerFormat = "+{0}% honey from Orchids and Lavender";
+        public const string RareEffectDiscountFormat = "-{0}% Add Bee and Evolve cost";
+        public const string RareEffectJellyFormat = "+{0}% Royal Jelly from Queen moves";
+
         public const string Dewdrops = "Dewdrops";
         /// <summary>Dewdrops a reward pays, next to the crystal icon.</summary>
         public const string DewGainFormat = "+{0}";

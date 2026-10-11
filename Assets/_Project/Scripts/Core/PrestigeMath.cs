@@ -39,12 +39,19 @@ namespace Buzzfield.Core
         /// Royal Jelly for a move: floor(scale * sqrt(runHoney / jellyBase)) * (1 + bloomBonus),
         /// floored again so the currency stays a whole number.
         /// </summary>
-        public static BigNumber Jelly(BigNumber runHoney, double jellyBase, double jellyScale, double bloomBonus)
+        public static BigNumber Jelly(BigNumber runHoney, double jellyBase, double jellyScale, double bloomBonus) =>
+            Jelly(runHoney, jellyBase, jellyScale, bloomBonus, 1);
+
+        /// <summary>
+        /// Royal Jelly for a move with a permanent <paramref name="multiplier"/> on top (the Carpenter
+        /// Bee): floor(floor(scale * sqrt(runHoney / jellyBase)) * (1 + bloomBonus) * multiplier).
+        /// </summary>
+        public static BigNumber Jelly(BigNumber runHoney, double jellyBase, double jellyScale, double bloomBonus, double multiplier)
         {
             if (runHoney.IsZero || runHoney.IsNegative || jellyBase <= 0 || jellyScale <= 0)
                 return BigNumber.Zero;
             BigNumber raw = Floor(BigNumber.Pow(runHoney / jellyBase, 0.5) * jellyScale);
-            return Floor(raw * (1 + Math.Max(0, bloomBonus)));
+            return Floor(raw * ((1 + Math.Max(0, bloomBonus)) * Math.Max(0, multiplier)));
         }
 
         /// <summary>

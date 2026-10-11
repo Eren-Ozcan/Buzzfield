@@ -65,7 +65,10 @@ namespace Buzzfield.Core
         public VibrationMode vibration = VibrationMode.All;
     }
 
-    /// <summary>One Queen ability level, keyed by the ability id so the list can be reordered or grow.</summary>
+    /// <summary>
+    /// One level keyed by id, so the list can be reordered or grow: a Queen ability or a rare bee
+    /// species.
+    /// </summary>
     [Serializable]
     public struct AbilityLevel
     {
@@ -124,6 +127,8 @@ namespace Buzzfield.Core
         public DailyStreak daily;
         /// <summary>The butterfly's Dewdrops pouches: how many went out today and how long since the last.</summary>
         public DewPouch pouch;
+        /// <summary>Rare bee levels by species id; species not listed have not joined (level 0).</summary>
+        public AbilityLevel[] rareBees;
         public PlayerSettings settings = new PlayerSettings();
 
         // Offline earnings
@@ -139,6 +144,7 @@ namespace Buzzfield.Core
             slotActive = slotActive ?? Array.Empty<bool>();
             slotNectar = slotNectar ?? Array.Empty<double>();
             abilities = abilities ?? Array.Empty<AbilityLevel>();
+            rareBees = rareBees ?? Array.Empty<AbilityLevel>();
             dewBoosts = dewBoosts ?? Array.Empty<DewBoostEntry>();
             stats = stats ?? new LifetimeStats();
             entitlements = entitlements ?? new Entitlements();
