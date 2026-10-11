@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2cad76fbe8ca1a045844c0282ffa0e56, type: 3}
+  m_Name: RareBee_OrchidBee
+  m_EditorClassIdentifier: Buzzfield.Bees::Buzzfield.Bees.RareBee
+  id: OrchidBee
+  effect: 3
+  effectPerLevel: 6
+  maxLevel: 10
+  unlockGarden: 3
+  unlockCost: 320
+  flowers:
+  - {fileID: 11400000, guid: 6b1644bffbfc2e74690f6b946792bb76, type: 2}
+  - {fileID: 11400000, guid: 9bcfec9bfff82234ea29f989f78b7fe5, type: 2}
+  flight: {fileID: 11400000, guid: 7f2a1e94eb255044e919731d19697688, type: 2}
