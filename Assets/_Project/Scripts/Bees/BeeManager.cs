@@ -11,13 +11,16 @@ namespace Buzzfield.Bees
     /// calls <see cref="Tick"/> once per frame and this loops over all of them.
     /// State flow: Idle, FlyToFlower, Collecting, ReturnToHive, Depositing, Idle.
     /// Evolve takes three bees of one tier out of that flow (Merging), gathers them at one
-    /// point, flashes and replaces them with one bee of the next tier.
+    /// point, flashes and replaces them with one bee of the next tier. Rare bees fly the same
+    /// flow from a list of their own: they are not counted, never evolve and stay through the
+    /// Queen move.
     /// </summary>
     public sealed class BeeManager : MonoBehaviour
     {
         private const float ArriveDistance = 0.02f;
 
         private readonly List<Bee> bees = new List<Bee>(160);
+        private readonly List<Bee> rareBees = new List<Bee>(8);
         private readonly List<int> tierCounts = new List<int>(4);
         private readonly List<Merge> merges = new List<Merge>(4);
         private readonly Stack<Merge> freeMerges = new Stack<Merge>(4);
@@ -26,11 +29,17 @@ namespace Buzzfield.Bees
         private ParticlePool sparkles;
         private BeeSettings settings;
         private FlowerManager flowers;
+        private Transform rareRoot;
         private Vector3 hivePoint;
         private float time;
 
+        /// <summary>The tier bees; rare bees are in <see cref="RareBees"/>.</summary>
         public IReadOnlyList<Bee> Bees => bees;
+
+        /// <summary>Tier bees only: rare bees count toward neither this, the cap nor Evolve.</summary>
         public int Count => bees.Count;
+
+        public IReadOnlyList<Bee> RareBees => rareBees;
         public bool IsAtCap => bees.Count >= settings.MaxBees;
 
         /// <summary>Bees per tier, lowest first. Bees that are merging are no longer counted.</summary>
@@ -41,6 +50,9 @@ namespace Buzzfield.Bees
 
         /// <summary>Permanent flight speed factor from upgrades and the Queen.</summary>
         public float SpeedMultiplier { get; set; } = 1f;
+
+        /// <summary>Permanent factor on the nectar every bee carries per trip, rare bees too (the Bumblebee).</summary>
+        public float CapacityMultiplier { get; set; } = 1f;
 
         /// <summary>Raised when a bee unloads at the hive: nectar units and honey value per unit.</summary>
         public event Action<double, double> OnNectarDeposited;
@@ -58,6 +70,8 @@ namespace Buzzfield.Bees
 
             var root = new GameObject("BeePool").transform;
             root.SetParent(transform, false);
+            rareRoot = new GameObject("RareBees").transform;
+            rareRoot.SetParent(transform, false);
             IReadOnlyList<BeeTier> tiers = settings.Tiers;
             pools = new PrefabPool[tiers.Count];
             for (int i = 0; i < tiers.Count; i++)
@@ -125,6 +139,50 @@ namespace Buzzfield.Bees
         }
 
         /// <summary>
+        /// Adds a rare bee of <paramref name="tier"/> (its own prefab and flight stats) at the hive.
+        /// Made once when its species joins and kept for the rest of the game, so it is not pooled.
+        /// </summary>
+        public Bee SpawnRare(BeeTier tier)
+        {
+            if (tier == null || tier.Prefab == null)
+            {
+                Debug.LogError("Rare bee has no flight tier or prefab.", settings);
+                return null;
+            }
+            GameObject instance = Instantiate(tier.Prefab, hivePoint, Quaternion.identity, rareRoot);
+            instance.name = tier.Prefab.name;
+            instance.transform.localScale = Vector3.one * tier.Scale;
+            if (tier.Material != null)
+            {
+                Renderer body = instance.GetComponentInChildren<Renderer>();
+                if (body != null)
+                    body.sharedMaterial = tier.Material;
+            }
+            var bee = new Bee(Bee.RareTier, tier, instance, hivePoint, UnityEngine.Random.value * Mathf.PI * 2f);
+            rareBees.Add(bee);
+            return bee;
+        }
+
+        /// <summary>
+        /// A new garden: the rare bees drop what they were doing (the old flowers are gone, so
+        /// carried nectar is lost) and start over at the new hive. Call after <see cref="SetHive"/>.
+        /// </summary>
+        public void RehomeRareBees()
+        {
+            for (int i = 0; i < rareBees.Count; i++)
+            {
+                Bee bee = rareBees[i];
+                bee.Target = null;
+                bee.Carried = 0;
+                bee.State = BeeState.Idle;
+                bee.Timer = 0f;
+                bee.Position = hivePoint;
+                bee.HoverPoint = hivePoint;
+                ApplyTransform(bee);
+            }
+        }
+
+        /// <summary>
         /// Starts merging the three bees of <paramref name="sourceTier"/> closest to the hive
         /// into one bee of the next tier. Nectar they carry is credited at once.
         /// Returns false when the tier is the top one or has fewer than three bees.
@@ -180,6 +238,8 @@ namespace Buzzfield.Bees
             time += deltaTime;
             for (int i = 0; i < bees.Count; i++)
                 TickBee(bees[i], deltaTime);
+            for (int i = 0; i < rareBees.Count; i++)
+                TickBee(rareBees[i], deltaTime);
             for (int i = merges.Count - 1; i >= 0; i--)
                 TickMerge(merges[i], i, deltaTime);
         }
@@ -225,7 +285,7 @@ namespace Buzzfield.Bees
                     ApplyTransform(bee);
                     if (bee.Timer > 0f)
                         break;
-                    bee.Carried = flowers.Collect(bee.Target, bee.Tier.Capacity);
+                    bee.Carried = flowers.Collect(bee.Target, bee.Tier.Capacity * CapacityMultiplier);
                     bee.CarriedValue = bee.Target.Value;
                     bee.Target = null;
                     if (bee.Carried > 0)
@@ -364,7 +424,7 @@ namespace Buzzfield.Bees
 
         private bool TryTarget(Bee bee)
         {
-            Flower flower = flowers.FindTarget(bee.Position, bee.Tier.Capacity, settings.MinLoadFraction);
+            Flower flower = flowers.FindTarget(bee.Position, bee.Tier.Capacity * CapacityMultiplier, settings.MinLoadFraction);
             if (flower == null)
                 return false;
             flowers.Reserve(flower);

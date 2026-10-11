@@ -17,6 +17,9 @@ namespace Buzzfield.Bees
     /// <summary>Runtime state of one bee. Plain data; <see cref="BeeManager"/> ticks every bee in one loop.</summary>
     public sealed class Bee
     {
+        /// <summary><see cref="TierIndex"/> of a rare bee: it belongs to no tier of BeeSettings.</summary>
+        public const int RareTier = -1;
+
         internal Bee(int tierIndex, BeeTier tier, GameObject instance, Vector3 position, float bobPhase)
         {
             TierIndex = tierIndex;
@@ -30,6 +33,9 @@ namespace Buzzfield.Bees
 
         public int TierIndex { get; }
         public BeeTier Tier { get; }
+
+        /// <summary>A rare bee: not counted, never evolves and stays through the Queen move.</summary>
+        public bool IsRare => TierIndex == RareTier;
         public BeeState State { get; internal set; }
 
         /// <summary>Nectar units carried back to the hive.</summary>
