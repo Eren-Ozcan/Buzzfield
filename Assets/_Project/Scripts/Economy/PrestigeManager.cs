@@ -43,6 +43,9 @@ namespace Buzzfield.Economy
 
         public BigNumber MoveCost => BigNumber.FromDouble(CurrentGarden.MoveHoneyCost) * LoopMultiplier;
 
+        /// <summary>Permanent factor on the Royal Jelly a move gives (the Carpenter Bee).</summary>
+        public double JellyMultiplier { get; set; } = 1;
+
         /// <summary>Raised after a move has been committed: the jelly gained.</summary>
         public event Action<BigNumber> OnQueenMoved;
 
@@ -58,7 +61,7 @@ namespace Buzzfield.Economy
 
         /// <summary>Royal Jelly a move would give right now.</summary>
         public BigNumber PreviewJelly(BigNumber runHoney, float bloom) =>
-            PrestigeMath.Jelly(runHoney, settings.JellyBase, settings.JellyScale, BloomBonus(bloom));
+            PrestigeMath.Jelly(runHoney, settings.JellyBase, settings.JellyScale, BloomBonus(bloom), JellyMultiplier);
 
         /// <summary>Loads saved prestige state.</summary>
         public void Restore(BigNumber royalJelly, BigNumber lifetimeJelly, int gardenIndex, int movesMade)

@@ -54,6 +54,24 @@ namespace Buzzfield.Upgrades
 
         private float queenSpeedMultiplier = 1f;
 
+        /// <summary>
+        /// Permanent factor on the Add Bee and Evolve honey costs (the Leafcutter Bee); survives the
+        /// Queen move. Setting it redraws the bottom bar.
+        /// </summary>
+        public double CostFactor
+        {
+            get => costFactor;
+            set
+            {
+                if (costFactor == value)
+                    return;
+                costFactor = value;
+                OnUpgradesChanged?.Invoke();
+            }
+        }
+
+        private double costFactor = 1;
+
         /// <summary>Raised after any purchase or reset.</summary>
         public event Action OnUpgradesChanged;
 
@@ -62,7 +80,7 @@ namespace Buzzfield.Upgrades
 
         // ---- Add Bee ----
 
-        public BigNumber AddBeeCost => UpgradeMath.Cost(addBee.BaseCost, addBee.CostMultiplier, BeesBought);
+        public BigNumber AddBeeCost => UpgradeMath.Scaled(UpgradeMath.Cost(addBee.BaseCost, addBee.CostMultiplier, BeesBought), costFactor);
         public bool AddBeeAvailable => !bees.IsAtCap;
         public bool CanAddBee => AddBeeAvailable && economy.CanAfford(AddBeeCost);
 
@@ -122,7 +140,7 @@ namespace Buzzfield.Upgrades
             get
             {
                 int source = EvolveSourceTier;
-                return source < 0 ? BigNumber.Zero : BigNumber.FromDouble(beeSettings.Tiers[source + 1].EvolveCost);
+                return source < 0 ? BigNumber.Zero : UpgradeMath.Scaled(BigNumber.FromDouble(beeSettings.Tiers[source + 1].EvolveCost), costFactor);
             }
         }
 
