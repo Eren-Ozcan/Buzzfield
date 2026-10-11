@@ -15,6 +15,7 @@ namespace Buzzfield.Flowers
 
         private readonly List<Flower> flowers = new List<Flower>(64);
         private Transform flowerRoot;
+        private Func<FlowerType, double> valueFactor;
 
         public IReadOnlyList<Flower> Flowers => flowers;
 
@@ -44,6 +45,21 @@ namespace Buzzfield.Flowers
                 // Sprout slots stay hidden until the bloom system activates them.
                 view.gameObject.SetActive(slot.startsActive);
                 flowers.Add(new Flower(i, slot.type, view, slot.position, valueMultiplier, slot.startsActive));
+            }
+            ApplyValueFactor(valueFactor);
+        }
+
+        /// <summary>
+        /// Sets each flower's value to its base value times <paramref name="factor"/> for its type
+        /// (null = 1), now and for every garden after. Call again when the factor changes.
+        /// </summary>
+        public void ApplyValueFactor(Func<FlowerType, double> factor)
+        {
+            valueFactor = factor;
+            for (int i = 0; i < flowers.Count; i++)
+            {
+                Flower flower = flowers[i];
+                flower.Value = factor != null ? flower.BaseValue * factor(flower.Type) : flower.BaseValue;
             }
         }
 

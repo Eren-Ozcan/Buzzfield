@@ -20,7 +20,8 @@ namespace Buzzfield.Flowers
             SlotIndex = slotIndex;
             Type = type;
             View = view;
-            Value = type.NectarValue * valueMultiplier;
+            BaseValue = type.NectarValue * valueMultiplier;
+            Value = BaseValue;
             GardenPosition = gardenPosition;
             IsActive = active;
             Nectar = type.MaxNectar;
@@ -31,8 +32,14 @@ namespace Buzzfield.Flowers
         public FlowerType Type { get; }
         public FlowerView View { get; }
 
-        /// <summary>Honey per nectar unit in this garden, before player multipliers.</summary>
-        public double Value { get; }
+        /// <summary>
+        /// Honey per nectar unit in this garden, before player multipliers: <see cref="BaseValue"/>
+        /// times the bonus for its type (the Orchid Bee).
+        /// </summary>
+        public double Value { get; internal set; }
+
+        /// <summary>Honey per nectar unit from the type and the garden alone.</summary>
+        public double BaseValue { get; }
 
         public Vector3 NectarPoint { get; }
         public bool IsActive { get; internal set; }
