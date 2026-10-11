@@ -20,8 +20,8 @@ namespace Buzzfield.Game
     /// GameManager.Ads.cs, the store in GameManager.Store.cs, Queen bonuses in GameManager.Queen.cs,
     /// the pollen shake in GameManager.Pollen.cs, sound and touch feedback in GameManager.Feel.cs,
     /// the goal chain in GameManager.Goals.cs, the butterfly in GameManager.Visitors.cs, the
-    /// settings panel in GameManager.Settings.cs, Dewdrops in GameManager.Dew.cs and the daily
-    /// login streak in GameManager.Daily.cs.
+    /// settings panel in GameManager.Settings.cs, Dewdrops in GameManager.Dew.cs, the daily
+    /// login streak in GameManager.Daily.cs and the rare bees in GameManager.RareBees.cs.
     /// </summary>
     public sealed partial class GameManager : MonoBehaviour
     {
@@ -114,6 +114,7 @@ namespace Buzzfield.Game
             InitStore();
             InitFeel();
             InitDew();
+            InitRareBees();
             InitGoals();
             InitSave();
             InitDaily();
@@ -130,6 +131,7 @@ namespace Buzzfield.Game
                 LoadGarden(null);
                 SpawnStartingBees();
             }
+            SpawnRareBees();
         }
 
         private void Start()
@@ -180,14 +182,15 @@ namespace Buzzfield.Game
             DisposeFeel();
             DisposeAds();
             DisposeQueen();
+            DisposeRareBees();
             DisposeStore();
             DisposeSave();
         }
 
         /// <summary>
         /// "Move the Queen" (design doc section 3b). Resets honey, upgrades, bees and the
-        /// garden (with its pollen); keeps Royal Jelly, the Queen level and abilities, lifetime
-        /// stats and the rewarded boost, and loads the next garden. Store entitlements are not touched. Returns false when the bloom gate or the honey cost is not met.
+        /// garden (with its pollen); keeps Royal Jelly, the Queen level and abilities, the rare bees,
+        /// lifetime stats and the rewarded boost, and loads the next garden. Store entitlements are not touched. Returns false when the bloom gate or the honey cost is not met.
         /// </summary>
         public bool TryMoveQueen()
         {
@@ -228,6 +231,7 @@ namespace Buzzfield.Game
             bloom.Load(config, garden);
             if (garden.Hive != null)
                 beeManager.SetHive(garden.Hive.EntrancePoint);
+            beeManager.RehomeRareBees();
             cameraFitter.Fit(garden.Bounds);
             RefreshSwipeHintPath();
         }

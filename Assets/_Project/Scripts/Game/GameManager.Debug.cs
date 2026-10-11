@@ -73,6 +73,26 @@ namespace Buzzfield.Game
                 ArmDailyAutoOpen();
         }
 
+        /// <summary>
+        /// One more level for every rare bee species the player has reached, without Dewdrops
+        /// (a species at level 0 joins). Returns how many levels were added.
+        /// </summary>
+        public int DebugLevelRareBees()
+        {
+            int added = 0;
+            for (int i = 0; i < rareBees.Count; i++)
+            {
+                if (!rareBees.IsAvailable(i, GardenNumber) || !rareBees.AddLevel(i))
+                    continue;
+                added++;
+                if (rareBees.Level(i) == 1)
+                    beeManager.SpawnRare(rareBees.Bees[i].Flight);
+            }
+            if (added > 0)
+                SaveNow();
+            return added;
+        }
+
         /// <summary>Shows the swipe hint again, as for a new player.</summary>
         public void DebugResetSwipeHint()
         {

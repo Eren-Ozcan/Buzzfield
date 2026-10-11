@@ -129,12 +129,20 @@ namespace Buzzfield.Game
             int[] counts = TierCounts();
             IReadOnlyList<BeeTier> tiers = beeSettings.Tiers;
             double beeNectar = 0;
+            float capacity = beeManager.CapacityMultiplier;
             for (int t = 0; t < counts.Length; t++)
             {
                 if (counts[t] == 0)
                     continue;
                 BeeTier tier = tiers[t];
-                beeNectar += counts[t] * IncomeMath.BeeNectarPerSecond(tier.Capacity, tier.Speed * beeManager.SpeedMultiplier,
+                beeNectar += counts[t] * IncomeMath.BeeNectarPerSecond(tier.Capacity * capacity, tier.Speed * beeManager.SpeedMultiplier,
+                    roundTrip, tier.CollectDuration, beeSettings.DepositDuration);
+            }
+            IReadOnlyList<Bee> rare = beeManager.RareBees;
+            for (int i = 0; i < rare.Count; i++)
+            {
+                BeeTier tier = rare[i].Tier;
+                beeNectar += IncomeMath.BeeNectarPerSecond(tier.Capacity * capacity, tier.Speed * beeManager.SpeedMultiplier,
                     roundTrip, tier.CollectDuration, beeSettings.DepositDuration);
             }
             // The Queen level and the bought multiplier are permanent, so they count; timed boosts do not.
@@ -191,7 +199,7 @@ namespace Buzzfield.Game
             double capSeconds = OfflineCapHours * 3600.0;
             OfflineClockInput input = clock.ReturnInput(stamp, deviceNow, monotonicNow);
             OfflineResult result = WithDewBoosts(OfflineEarnings.Evaluate(input, capSeconds, rate,
-                offlineSettings.Efficiency, offlineSettings.ClockToleranceSeconds), boostsAtLeave);
+                OfflineEfficiency, offlineSettings.ClockToleranceSeconds), boostsAtLeave);
             LastOffline = result;
 
             switch (result.Status)
@@ -310,6 +318,7 @@ namespace Buzzfield.Game
             data.welcomeGiftGiven = welcomeGiftGiven;
             data.daily = daily;
             data.pouch = pouch;
+            data.rareBees = rareBees.Capture();
             data.settings = playerSettings;
             data.offlineRate = BigNumberData.From(TheoreticalHoneyPerSecond());
             data.clock = clock.Stamp();
@@ -328,6 +337,7 @@ namespace Buzzfield.Game
             pouch = data.pouch;
             RestoreSettings(data.settings);
             queen.Restore(data.abilities);
+            rareBees.Restore(data.rareBees);
             ads.Restore(data.lastFullScreenAdUtc);
             RestoreStore(data.entitlements);
             boosts.RestoreRewardedHoney(data.rewardedBoostEndUtc, GameClock.DeviceUtc);

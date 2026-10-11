@@ -92,7 +92,8 @@ namespace Buzzfield.Game
         private void HandleFlowerShaken(Flower flower)
         {
             double nectar = ShakeNectar();
-            BigNumber honey = economy.Harvest(nectar, flower.Value);
+            // The Blue Banded Bee adds honey only: the bloom keeps its share of the plain nectar.
+            BigNumber honey = economy.Harvest(nectar * shakeHoneyFactor, flower.Value);
             bloom.AddNectar(flower, nectar * pollenSettings.BloomShare);
             stats.flowersShaken++;
             uiEffects.FloatHoney(ScreenPoint(flower.NectarPoint), honey);

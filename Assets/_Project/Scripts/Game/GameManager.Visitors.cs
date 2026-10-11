@@ -81,6 +81,8 @@ namespace Buzzfield.Game
 
         private void HandleVisitorCaught(Vector3 position, bool hasPouch)
         {
+            // The press caught the butterfly: it does not open the hive as well.
+            hiveTapPending = false;
             if (hasPouch)
             {
                 CatchPouch();
