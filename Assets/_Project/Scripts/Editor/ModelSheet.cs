@@ -5,9 +5,9 @@ using UnityEngine;
 namespace Buzzfield.Editor
 {
     /// <summary>
-    /// Menu "Buzzfield > Render Model Sheet": renders the three bee tiers up close, the hive with
-    /// the flower patches, and the butterfly with its Dewdrops pouch, in the game's light, to PNG
-    /// files, for a look at the art without playing. Writes to BZ_SHOT_DIR when set, else Temp/ModelSheet.
+    /// Menu "Buzzfield > Render Model Sheet": renders the three bee tiers and the six rare bees up
+    /// close, the hive with the flower patches, and the butterfly with its Dewdrops pouch, in the
+    /// game's light, to PNG files, for a look at the art without playing. Writes to BZ_SHOT_DIR when set, else Temp/ModelSheet.
     /// Batchmode: -executeMethod Buzzfield.Editor.ModelSheet.RenderToFiles -quit
     /// </summary>
     public static class ModelSheet
@@ -31,6 +31,15 @@ namespace Buzzfield.Editor
                 ("Bee_Worker", new Vector3(-1.2f, 0f, 0f), 140f, 1f),
                 ("Bee_Forager", new Vector3(0f, 0f, 0f), 30f, 1f),
                 ("Bee_Golden", new Vector3(1.2f, 0f, 0f), 90f, 1f));
+            // The rare bees three-quarters from the front, with a Worker for size.
+            RenderSheet(Path.Combine(directory, "models_rare_bees.png"), 2000, 600, new Vector3(0f, 1.5f, -4.2f), 0f,
+                ("Bee_Worker", new Vector3(-3.3f, 0f, 0f), 150f, 1f),
+                ("Bee_Bumblebee", new Vector3(-2.2f, 0f, 0f), 150f, 1f),
+                ("Bee_BlueBandedBee", new Vector3(-1.1f, 0f, 0f), 150f, 1f),
+                ("Bee_MasonBee", new Vector3(0f, 0f, 0f), 150f, 1f),
+                ("Bee_OrchidBee", new Vector3(1.1f, 0f, 0f), 120f, 1f),
+                ("Bee_LeafcutterBee", new Vector3(2.2f, 0f, 0f), 150f, 1f),
+                ("Bee_CarpenterBee", new Vector3(3.3f, 0f, 0f), 150f, 1f));
             // Hive and the three patches as they stand in the garden, with a Worker beside the hive for scale.
             RenderSheet(Path.Combine(directory, "models_garden.png"), 1500, 600, new Vector3(0f, 2.2f, -6.2f), 0.6f,
                 ("Hive", new Vector3(-2.4f, 0f, 0f), 0f, 1f),

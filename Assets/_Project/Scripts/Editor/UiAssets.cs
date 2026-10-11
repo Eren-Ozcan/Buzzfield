@@ -65,6 +65,12 @@ namespace Buzzfield.Editor
         public static Sprite GoldenBeeIcon() => LoadOrCreateIcon("icon_golden_bee", "Bee_Golden", 210f, 0.82f);
         public static Sprite DewIcon() => LoadOrCreateIcon("icon_dewdrop", "Dewdrop", 20f, 1.05f);
 
+        /// <summary>The hive, door toward the viewer, for the Hive button.</summary>
+        public static Sprite HiveIcon() => LoadOrCreateIcon("icon_hive", "Hive", 18f, 0.95f);
+
+        /// <summary>Portrait of a rare bee species (prefab Bee_{id}) for its Hive panel card.</summary>
+        public static Sprite RareBeeIcon(string id) => LoadOrCreateIcon($"icon_rare_{id.ToLowerInvariant()}", $"Bee_{id}", 150f, 0.82f);
+
         static string Ascii()
         {
             var chars = new char[95];

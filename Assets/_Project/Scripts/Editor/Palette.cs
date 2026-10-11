@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -8,7 +9,8 @@ namespace Buzzfield.Editor
     /// Colours of the modelled art (bees, hive, scenery) as swatches of one small texture, so they
     /// all share one material and one draw setup: a mesh picks its colours through UVs
     /// (<see cref="LowPolyBuilder.Swatch"/>). The texture is rewritten in place (same asset, same
-    /// references) whenever a colour here no longer matches it.
+    /// references) whenever a colour or the layout here no longer matches it; a layout change
+    /// moves every swatch, so the palette meshes are rebuilt too (<see cref="FitsLayout"/>).
     /// </summary>
     internal static class Palette
     {
@@ -44,9 +46,24 @@ namespace Buzzfield.Editor
         public const int ButterflySpot = 29;
         public const int Dew = 30;
         public const int DewLight = 31;
+        public const int BumbleYellow = 32;
+        public const int BumbleBlack = 33;
+        public const int BumbleTail = 34;
+        public const int BlueBand = 35;
+        public const int BlueBandBody = 36;
+        public const int BlueBandFace = 37;
+        public const int Mason = 38;
+        public const int MasonSheen = 39;
+        public const int OrchidBee = 40;
+        public const int OrchidBeeSheen = 41;
+        public const int Leafcutter = 42;
+        public const int LeafcutterPale = 43;
+        public const int Carpenter = 44;
+        public const int CarpenterSheen = 45;
+        public const int CarpenterWing = 46;
 
         const int Columns = 8;
-        const int Rows = 4;
+        const int Rows = 8;
         const int SwatchPixels = 4;
         const string TexturePath = EditorAssets.Root + "/Textures/Palette.png";
 
@@ -84,12 +101,48 @@ namespace Buzzfield.Editor
             Hex(0xFFF0B8), // butterfly wing spots
             Hex(0x3CC8D8), // Dewdrop crystal
             Hex(0x86E3EE), // Dewdrop highlight
+            Hex(0xFFC92E), // Bumblebee yellow
+            Hex(0x2E2823), // Bumblebee black
+            Hex(0xFF7A2E), // Bumblebee tail
+            Hex(0x2FC6D9), // Blue Banded Bee bands
+            Hex(0x2C2B33), // Blue Banded Bee body
+            Hex(0xEBDCAE), // Blue Banded Bee face
+            Hex(0x3A55B8), // Mason Bee
+            Hex(0x7393EC), // Mason Bee sheen
+            Hex(0x1FAF5A), // Orchid Bee
+            Hex(0x8BEA9A), // Orchid Bee sheen
+            Hex(0xA99D86), // Leafcutter Bee
+            Hex(0xEFE6D0), // Leafcutter Bee pale bands
+            Hex(0x30223F), // Carpenter Bee
+            Hex(0x7352B3), // Carpenter Bee sheen
+            Hex(0xC9B8F2), // Carpenter Bee wings
         };
+
+        /// <summary>Swatches in use; the rest of the texture is left white.</summary>
+        static int Used => Colors.Length;
 
         /// <summary>UV at the centre of swatch <paramref name="index"/>.</summary>
         public static Vector2 Uv(int index) => new Vector2(
             (index % Columns + 0.5f) / Columns,
             (index / Columns + 0.5f) / Rows);
+
+        /// <summary>
+        /// Every UV of <paramref name="mesh"/> sits on a swatch centre of this layout. A mesh built
+        /// for an older layout (fewer rows) does not, and would show the wrong colours.
+        /// </summary>
+        public static bool FitsLayout(Mesh mesh)
+        {
+            var uvs = new List<Vector2>();
+            mesh.GetUVs(0, uvs);
+            foreach (Vector2 uv in uvs)
+            {
+                float column = uv.x * Columns - 0.5f;
+                float row = uv.y * Rows - 0.5f;
+                if (Mathf.Abs(column - Mathf.Round(column)) > 0.01f || Mathf.Abs(row - Mathf.Round(row)) > 0.01f)
+                    return false;
+            }
+            return true;
+        }
 
         /// <summary>The palette material (Simple Lit on the palette texture), created on first use.</summary>
         public static Material Material()
@@ -144,20 +197,23 @@ namespace Buzzfield.Editor
             {
                 int x0 = i % Columns * SwatchPixels;
                 int y0 = i / Columns * SwatchPixels;
+                Color colour = i < Used ? Colors[i] : Color.white;
                 for (int y = 0; y < SwatchPixels; y++)
                 for (int x = 0; x < SwatchPixels; x++)
-                    texture.SetPixel(x0 + x, y0 + y, Colors[i]);
+                    texture.SetPixel(x0 + x, y0 + y, colour);
             }
             File.WriteAllBytes(TexturePath, texture.EncodeToPNG());
             Object.DestroyImmediate(texture);
         }
 
-        /// <summary>Every swatch of the (readable) texture still has its colour from the table.</summary>
+        /// <summary>The (readable) texture has this layout and every swatch still has its colour from the table.</summary>
         static bool Matches(Texture2D texture)
         {
-            if (!texture.isReadable || texture.width != Columns * SwatchPixels || texture.height != Rows * SwatchPixels)
+            if (!texture.isReadable)
                 return true;
-            for (int i = 0; i < Columns * Rows; i++)
+            if (texture.width != Columns * SwatchPixels || texture.height != Rows * SwatchPixels)
+                return false;
+            for (int i = 0; i < Used; i++)
             {
                 Color32 have = texture.GetPixel(i % Columns * SwatchPixels + 1, i / Columns * SwatchPixels + 1);
                 Color32 want = Colors[i];
