@@ -29,6 +29,8 @@ namespace Buzzfield.Editor
     ///   10 s sweep (+25% honey) with 40% of that nectar going to bloom.
     /// - The bot claims every goal (30-150 s of income each): the first eight land within ~4 min,
     ///   and the timings above hold with them (garden 1 move at 8:51, garden 2 16:30, garden 3 19 min).
+    /// - From garden 2 the bot takes the free Bumblebee and spends its Dewdrops on rare bee levels:
+    ///   garden 2 then takes ~16 min and garden 3 ~18 min (garden 1 unchanged at 8:55).
     /// </summary>
     public static partial class DefaultDataCreator
     {
@@ -41,8 +43,10 @@ namespace Buzzfield.Editor
             ProjectSetup.Apply();
 
             Materials materials = CreateMaterials();
+            RefreshPaletteMeshes();
             CreateBees(materials);
             var flowers = CreateFlowerTypes(materials);
+            CreateRareBees(materials, flowers);
             var hive = CreateHivePrefab(materials);
             var ground = CreateGroundPrefab(materials);
             var gardens = CreateGardens(flowers, hive, ground);

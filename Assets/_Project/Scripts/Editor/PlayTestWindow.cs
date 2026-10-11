@@ -10,7 +10,8 @@ namespace Buzzfield.Editor
     /// <summary>
     /// Window "Buzzfield > Play Test Tools": shortcuts for trying the game by hand in the
     /// editor. In edit mode it opens Main and can start a new game; in play mode it adds
-    /// honey, blooms the garden, refills pollen, speeds time up and shows the swipe hint again.
+    /// honey, blooms the garden, refills pollen, levels the rare bees, speeds time up and shows the
+    /// swipe hint again.
     /// </summary>
     public sealed class PlayTestWindow : EditorWindow
     {
@@ -153,6 +154,19 @@ namespace Buzzfield.Editor
                 if (GUILayout.Button("Open panel"))
                     game.OpenDaily();
                 GUILayout.Label(game.TryGetToday(out long _) ? $"Streak {game.Daily.streak}" : "No date yet", GUILayout.Width(110f));
+            }
+
+            EditorGUILayout.LabelField("Rare bees", EditorStyles.boldLabel);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                using (new EditorGUI.DisabledScope(!game.HiveUnlocked))
+                {
+                    if (GUILayout.Button("Open Hive"))
+                        game.OpenHive();
+                    if (GUILayout.Button(new GUIContent("All +1 level", "Every species reached so far gains a level without Dewdrops (a new one joins).")))
+                        game.DebugLevelRareBees();
+                }
+                GUILayout.Label(game.HiveUnlocked ? $"{game.Bees.RareBees.Count} in the garden" : "After the first move", GUILayout.Width(110f));
             }
 
             EditorGUILayout.LabelField("Game speed", EditorStyles.boldLabel);

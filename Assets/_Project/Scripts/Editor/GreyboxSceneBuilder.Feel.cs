@@ -35,15 +35,17 @@ namespace Buzzfield.Editor
             return button;
         }
 
-        /// <summary>Goal pill under the top bar, left of the gear: an icon and one line of text; hidden when the chain is done.</summary>
-        static GoalView CreateGoal(Transform root)
+        /// <summary>
+        /// Goal pill under the top bar, left of the gear: an icon and one line of text; hidden when the
+        /// chain is done. It fills the rest of <paramref name="row"/> beside the hive button.
+        /// </summary>
+        static GoalView CreateGoal(Transform root, RectTransform row)
         {
-            RectTransform holder = CreateRect("Goal", root);
-            holder.anchorMin = new Vector2(0f, 1f);
-            holder.anchorMax = new Vector2(1f, 1f);
+            RectTransform holder = CreateRect("Goal", row);
             holder.pivot = new Vector2(0.5f, 1f);
-            holder.offsetMin = new Vector2(24f, UnderBarY - 100f);
-            holder.offsetMax = new Vector2(-(GearSize + 48f), UnderBarY);
+            var element = holder.gameObject.AddComponent<LayoutElement>();
+            element.minWidth = 0f;
+            element.flexibleWidth = 1f;
 
             RectTransform pill = CreateRect("Pill", holder);
             Stretch(pill);

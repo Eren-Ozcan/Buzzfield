@@ -65,11 +65,13 @@ namespace Buzzfield.Editor
             var goalSettings = Load<GoalSettings>("Settings/GoalSettings");
             var visitorSettings = Load<VisitorSettings>("Flowers/VisitorSettings");
             var dewSettings = Load<DewSettings>("Settings/DewSettings");
+            var rareBeeSettings = Load<RareBeeSettings>("Bees/RareBeeSettings");
             if (gameSettings == null || economySettings == null || beeSettings == null || prestigeSettings == null
                 || bloomSettings == null || pollenSettings == null || addBee == null || speed == null || honeyValue == null
                 || boostSettings == null || offlineSettings == null || adSettings == null || storeCatalog == null
                 || feedbackSettings == null || queenSettings == null || postProfile == null
-                || soundLibrary == null || goalSettings == null || visitorSettings == null || dewSettings == null)
+                || soundLibrary == null || goalSettings == null || visitorSettings == null || dewSettings == null
+                || rareBeeSettings == null)
             {
                 Debug.LogError("Default data is missing. Run Buzzfield > Create Default Data first.");
                 return;
@@ -84,7 +86,7 @@ namespace Buzzfield.Editor
             var flowerManager = systems.AddComponent<FlowerManager>();
             var beeManager = systems.AddComponent<BeeManager>();
             LoadTheme();
-            CanvasViews ui = CreateCanvas(queenSettings.Abilities.Count, storeCatalog, dewSettings);
+            CanvasViews ui = CreateCanvas(queenSettings.Abilities.Count, storeCatalog, dewSettings, rareBeeSettings);
             new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
 
             var game = systems.AddComponent<GameManager>();
@@ -103,7 +105,7 @@ namespace Buzzfield.Editor
                 ("goalSettings", goalSettings), ("goalView", ui.Goal),
                 ("visitorSettings", visitorSettings), ("giftOffer", ui.GiftOffer),
                 ("settingsPanel", ui.Settings), ("dewSettings", dewSettings), ("dewBoostChip", ui.DewBoostChip),
-                ("dailyPanel", ui.Daily),
+                ("dailyPanel", ui.Daily), ("rareBeeSettings", rareBeeSettings), ("hivePanel", ui.Hive),
                 ("cameraFitter", fitter), ("worldRoot", world));
 
             EditorAssets.EnsureFolder(System.IO.Path.GetDirectoryName(EditorAssets.ScenePath));
@@ -185,6 +187,7 @@ namespace Buzzfield.Editor
             public GiftOfferView GiftOffer;
             public DewBoostChipView DewBoostChip;
             public DailyPanelView Daily;
+            public HivePanelView Hive;
         }
 
         // ---- Interface theme (colours in UiTheme, art from UiAssets) ----
@@ -217,7 +220,8 @@ namespace Buzzfield.Editor
         /// <param name="abilityCount">Queen ability rows to build, one per ability in QueenSettings.</param>
         /// <param name="catalog">The shop builds one row per product.</param>
         /// <param name="dewSettings">The Boosts tab builds one row per offer.</param>
-        static CanvasViews CreateCanvas(int abilityCount, StoreCatalog catalog, DewSettings dewSettings)
+        /// <param name="rareBeeSettings">The Hive panel builds one card per species.</param>
+        static CanvasViews CreateCanvas(int abilityCount, StoreCatalog catalog, DewSettings dewSettings, RareBeeSettings rareBeeSettings)
         {
             var canvasObject = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasObject.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
@@ -259,7 +263,9 @@ namespace Buzzfield.Editor
             EditorAssets.Set(hud, ("honeyText", honey), ("rateText", rate), ("bloomText", bloom), ("bloomFill", bloomFill),
                 ("dewPill", dewPill), ("dewText", dewText));
             Button settingsButton = CreateSettingsButton(root);
-            GoalView goal = CreateGoal(root);
+            RectTransform underBar = CreateUnderBarRow(root);
+            (GameObject hiveButton, Button hiveOpenButton, GameObject hiveBadge) = CreateHiveButton(underBar);
+            GoalView goal = CreateGoal(root, underBar);
             GardenCompleteView gardenComplete = CreateGardenComplete(root);
             BottomBarView bottomBar = CreateBottomBar(root);
             SwipeHintView swipeHint = CreateSwipeHint(root);
@@ -274,8 +280,9 @@ namespace Buzzfield.Editor
             ShopPanelView shopPanel = CreateShopPanel(root, shopButton, shopBadge, dewButton, catalog, dewSettings);
             SettingsPanelView settings = CreateSettingsPanel(root, settingsButton);
             DailyPanelView daily = CreateDailyPanel(root, dailyBadge, dailyBadgeButton);
+            HivePanelView hive = CreateHivePanel(root, hiveButton, hiveOpenButton, hiveBadge, rareBeeSettings);
             WelcomeBackView welcomeBack = CreateWelcomeBack(root);
-            BackButtonHandler backButton = CreateQuitDialog(root, queenPanel, welcomeBack, shopPanel, settings, daily);
+            BackButtonHandler backButton = CreateQuitDialog(root, queenPanel, welcomeBack, shopPanel, settings, daily, hive);
             return new CanvasViews
             {
                 ButtonFeedbacks = AddButtonFeedback(canvasObject.transform),
@@ -283,7 +290,7 @@ namespace Buzzfield.Editor
                 WelcomeBack = welcomeBack, RewardedBoost = rewardedBoost, ShopPanel = shopPanel,
                 SwipeCatcher = swipeCatcher, SwipeHint = swipeHint, BackButton = backButton,
                 Settings = settings, Goal = goal, Effects = effects, GiftOffer = giftOffer, DewBoostChip = dewBoostChip,
-                Daily = daily,
+                Daily = daily, Hive = hive,
             };
         }
 
@@ -535,7 +542,7 @@ namespace Buzzfield.Editor
         }
 
         static BackButtonHandler CreateQuitDialog(Transform root, QueenPanelView queenPanel, WelcomeBackView welcomeBack, ShopPanelView shopPanel,
-            SettingsPanelView settingsPanel, DailyPanelView dailyPanel)
+            SettingsPanelView settingsPanel, DailyPanelView dailyPanel, HivePanelView hivePanel)
         {
             RectTransform dialog = CreateModal("QuitDialog", root, new Vector2(820f, 500f), UiTheme.Primary, out RectTransform window);
             CreateTitle(window, Strings.QuitTitle);
@@ -548,7 +555,7 @@ namespace Buzzfield.Editor
 
             var handler = root.gameObject.AddComponent<BackButtonHandler>();
             EditorAssets.Set(handler, ("queenPanel", queenPanel), ("welcomeBack", welcomeBack), ("shopPanel", shopPanel), ("settingsPanel", settingsPanel),
-                ("dailyPanel", dailyPanel),
+                ("dailyPanel", dailyPanel), ("hivePanel", hivePanel),
                 ("quitDialog", dialog.gameObject), ("quitButton", quit), ("cancelButton", cancel));
             dialog.gameObject.SetActive(false);
             return handler;
