@@ -146,6 +146,22 @@ namespace Buzzfield.Tests.PlayMode
             Assert.That(TestSave.Files().Load().daily.streak, Is.EqualTo(1), "The claim is saved at once.");
         }
 
+        /// <summary>The butterfly's offer counts down on screen; the panel waits for it instead of covering it.</summary>
+        [UnityTest]
+        public IEnumerator NewDay_PanelWaitsForTheButterflyOffer()
+        {
+            Today();
+            var offer = Object.FindAnyObjectByType<GiftOfferView>();
+            offer.Show(BigNumber.FromDouble(1000), 2f);
+            game.DebugShiftDays(1);
+            yield return new WaitForSecondsRealtime(0.5f);
+            Assert.That(offer.IsShowing, "the offer is still counting down");
+            Assert.That(panel.IsOpen, Is.False, "the panel does not cover the offer");
+
+            offer.Hide();
+            yield return WaitFor(() => panel.IsOpen, "The panel opens once the offer is gone.");
+        }
+
         [UnityTest]
         public IEnumerator ClosedWithoutClaiming_TheBadgeStays_AndOpensItAgain()
         {

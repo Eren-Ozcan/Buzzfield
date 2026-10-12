@@ -35,6 +35,12 @@ namespace Buzzfield.Ads
         /// <summary>Tests point the game's mock account here so they never touch the real one.</summary>
         public static string AccountKeyOverride { get; set; }
 
+        /// <summary>
+        /// A store-localized price (with its ISO code and amount) every product reports, for tests
+        /// of how the shop draws it; null reports the catalog's fallback prices.
+        /// </summary>
+        public static (string price, string currencyCode, decimal amount)? PriceOverride { get; set; }
+
         public bool IsInitialized { get; private set; }
         public bool IsPurchasing => purchaseLeft >= 0f;
 
@@ -53,7 +59,11 @@ namespace Buzzfield.Ads
             if (catalog != null)
             {
                 for (int i = 0; i < catalog.Count; i++)
-                    products.Add(new StoreProductInfo(catalog[i], catalog[i].fallbackPrice, true));
+                {
+                    products.Add(PriceOverride.HasValue
+                        ? new StoreProductInfo(catalog[i], PriceOverride.Value.price, true, PriceOverride.Value.currencyCode, PriceOverride.Value.amount)
+                        : new StoreProductInfo(catalog[i], catalog[i].fallbackPrice, true));
+                }
             }
             LoadAccount();
             IsInitialized = true;

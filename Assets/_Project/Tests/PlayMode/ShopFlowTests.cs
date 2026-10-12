@@ -48,7 +48,43 @@ namespace Buzzfield.Tests.PlayMode
                 MockDelayField.SetValue(catalog, savedDelay);
             MockStoreService.ClearAccount();
             MockStoreService.AccountKeyOverride = null;
+            MockStoreService.PriceOverride = null;
+            Application.logMessageReceived -= WatchGlyphs;
             yield return null;
+        }
+
+        readonly System.Collections.Generic.List<string> missingGlyphs = new System.Collections.Generic.List<string>();
+
+        void WatchGlyphs(string message, string stackTrace, LogType type)
+        {
+            if (message.Contains("was not found in the") && message.Contains("font asset"))
+                missingGlyphs.Add(message);
+        }
+
+        /// <summary>
+        /// A lira price from the store: the font has no lira sign, so the button names the
+        /// currency by its code instead of drawing a box.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator LocalizedPrice_WithASignTheFontLacks_ShowsTheCurrencyCode()
+        {
+            MockStoreService.PriceOverride = ("\u20BA29,99", "TRY", 29.99m);
+            Application.logMessageReceived += WatchGlyphs;
+            yield return LoadMain();
+            TestUi.Press("ShopButton");
+            yield return null;
+            yield return null;
+            ShopItemView[] items = Object.FindObjectsByType<ShopItemView>(FindObjectsSortMode.InstanceID);
+            int shown = 0;
+            foreach (ShopItemView item in items)
+            {
+                if (!item.isActiveAndEnabled || item.ShownState != ShopItemState.Buyable)
+                    continue;
+                Assert.That(item.PriceLabelText, Is.EqualTo("29,99 TRY"), item.ProductId);
+                shown++;
+            }
+            Assert.That(shown, Is.GreaterThan(0), "no buyable product in the shop");
+            Assert.That(missingGlyphs, Is.Empty);
         }
 
         IEnumerator LoadMain()
