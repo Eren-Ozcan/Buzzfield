@@ -6,17 +6,6 @@ namespace Buzzfield.Core
     /// </summary>
     public static class Strings
     {
-        public const string HoneyLabel = "Honey";
-        public const string PerSecondSuffix = " honey";
-
-        public const string TierWorker = "Worker";
-        public const string TierForager = "Forager";
-        public const string TierGolden = "Golden";
-
-        public const string FlowerDaisy = "Daisy";
-        public const string FlowerLavender = "Lavender";
-        public const string FlowerOrchid = "Orchid";
-
         public const string UpgradeAddBee = "Add Bee";
         public const string UpgradeSpeed = "Speed";
         public const string UpgradeEvolve = "Evolve";
@@ -184,7 +173,6 @@ namespace Buzzfield.Core
         public const string RareEffectDiscountFormat = "-{0}% Add Bee and Evolve cost";
         public const string RareEffectJellyFormat = "+{0}% Royal Jelly from Queen moves";
 
-        public const string Dewdrops = "Dewdrops";
         /// <summary>Dewdrops a reward pays, next to the crystal icon.</summary>
         public const string DewGainFormat = "+{0}";
         public const string WelcomeGiftFormat = "Your bees found a honey jar: +{0}";
