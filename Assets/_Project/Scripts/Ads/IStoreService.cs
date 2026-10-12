@@ -39,11 +39,13 @@ namespace Buzzfield.Ads
     /// <summary>A product as the store reports it: the catalog entry plus the localized price.</summary>
     public readonly struct StoreProductInfo
     {
-        public StoreProductInfo(StoreProduct definition, string priceText, bool available)
+        public StoreProductInfo(StoreProduct definition, string priceText, bool available, string currencyCode = null, decimal amount = 0m)
         {
             Definition = definition;
             PriceText = priceText;
             Available = available;
+            CurrencyCode = currencyCode;
+            Amount = amount;
         }
 
         public StoreProduct Definition { get; }
@@ -54,6 +56,12 @@ namespace Buzzfield.Ads
 
         /// <summary>The store knows the product and it can be bought.</summary>
         public bool Available { get; }
+
+        /// <summary>ISO 4217 code of the price ("TRY"), or null when the store gave none.</summary>
+        public string CurrencyCode { get; }
+
+        /// <summary>The price as a number in <see cref="CurrencyCode"/>; 0 when the store gave none.</summary>
+        public decimal Amount { get; }
     }
 
     /// <summary>

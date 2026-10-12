@@ -133,7 +133,9 @@ namespace Buzzfield.Platform
                 Product product = controller.GetProductById(catalog[i].id);
                 bool available = product != null && product.availableToPurchase;
                 string price = available ? product.metadata.localizedPriceString : null;
-                products.Add(new StoreProductInfo(catalog[i], price, available));
+                products.Add(available
+                    ? new StoreProductInfo(catalog[i], price, true, product.metadata.isoCurrencyCode, product.metadata.localizedPrice)
+                    : new StoreProductInfo(catalog[i], null, false));
             }
             IsInitialized = true;
         }

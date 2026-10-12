@@ -205,7 +205,7 @@ namespace Buzzfield.UI
             for (int i = 0; i < items.Length; i++)
             {
                 string id = items[i].ProductId;
-                items[i].Show(store.GetState(id), store.PriceText(id));
+                items[i].Show(store.GetState(id), store.PriceText(id, items[i].CanDrawPrice));
             }
             restoreButton.interactable = store.IsReady && !store.IsPurchasing;
             privacyButton.gameObject.SetActive(privacyRequired());

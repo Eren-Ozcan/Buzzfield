@@ -23,8 +23,15 @@ namespace Buzzfield.UI
         private Action<string> buy;
         private ShopItemState? shownState;
         private string shownPrice;
+        private Func<char, bool> canDrawPrice;
 
         public string ProductId => productId;
+
+        /// <summary>Whether the price label's font, or one of its fallbacks, has a character.</summary>
+        public Func<char, bool> CanDrawPrice => canDrawPrice ??= c => priceText.font.HasCharacter(c, true);
+
+        /// <summary>The text on the buy button.</summary>
+        public string PriceLabelText => priceText.text;
 
         /// <summary>The state the row shows; null before the first refresh.</summary>
         public ShopItemState? ShownState => shownState;

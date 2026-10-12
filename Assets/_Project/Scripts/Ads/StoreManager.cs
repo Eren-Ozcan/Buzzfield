@@ -95,6 +95,16 @@ namespace Buzzfield.Ads
             return catalog.TryGet(productId, out StoreProduct product) ? product.fallbackPrice : string.Empty;
         }
 
+        /// <summary>
+        /// The price as a label can draw it: a currency sign the font lacks gives way to the ISO
+        /// code (<see cref="PriceLabel"/>).
+        /// </summary>
+        public string PriceText(string productId, Func<char, bool> canDraw)
+        {
+            TryGetInfo(productId, out StoreProductInfo info);
+            return PriceLabel.Drawable(PriceText(productId), info.CurrencyCode, info.Amount, canDraw);
+        }
+
         /// <summary>Starts a purchase when the product is buyable; returns false otherwise.</summary>
         public bool TryPurchase(string productId)
         {
