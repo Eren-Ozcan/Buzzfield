@@ -10,7 +10,7 @@ string lives in `Buzzfield.Core.Strings`.
   - `Core/` (`Buzzfield.Core`, `noEngineReferences: true`): `BigNumber`, `NumberFormat`,
     `RollingRate`, `HoneyFormula`, `BloomMath`, `ForagingMath`, `PrestigeMath`, `QueenMath`, `IncomeMath`, `OfflineEarnings`,
     `PollenMath`, `TimeFormat`, `TweenMath`, `AdPacing`, `TcfConsent`, `Entitlements`, `DewBoostQueue`, `SoundRules`, `Haptics`,
-    `Goals`, `RewardMath`, `VisitorTimer`, `LoginStreak`, `DewPouch`, `SaveData` + `SaveMigration` + `SaveEnvelope` +
+    `Goals`, `RewardMath`, `VisitorTimer`, `LoginStreak`, `DewPouch`, `RareBeeMath`, `SaveData` + `SaveMigration` + `SaveEnvelope` +
     `SaveFileStore`, `Strings`.
     Pure logic only, EditMode-tested.
   - `Core/Runtime/` (`Buzzfield.Core.Runtime`): Unity helpers shared by systems
@@ -68,16 +68,31 @@ string lives in `Buzzfield.Core.Strings`.
     return once the date is known and nothing else is on screen, at most once a day; while today's
     Dewdrops wait, a calendar badge under the goal pill opens it. A claim closes the panel, flies the
     crystals and saves. Without the date the claim waits ("Waiting for the time server").
+  - Rare bees (`GameManager.RareBees.cs`; `RareBee`, `RareBeeSettings`, `RareBeeManager` in Bees): the
+    species in `RareBeeSettings.bees` join the hive for Dewdrops from the first Queen move
+    (`hiveUnlockGarden`), each once its garden is reached (`unlockGarden`, "Reach Garden 3" on a locked
+    card); one with `unlockCost` 0 (the Bumblebee) waits for a free tap. A species that joined flies as
+    one bee of its own (`RareBee.flight`, a `BeeTier` outside `BeeSettings.tiers`) in
+    `BeeManager.RareBees`: not counted, no cap, never evolves, kept through the Queen move
+    (`RehomeRareBees`). Every species climbs `levelCosts`; bonuses by `RareBeeEffect` go to
+    `BeeManager.CapacityMultiplier`, the shake honey, `OfflineEfficiency`, flower values
+    (`FlowerManager.ApplyValueFactor`), `UpgradeManager.CostFactor` and `PrestigeManager.JellyMultiplier`.
+    Levels are saved by id (`SaveData.rareBees`). `HivePanelView` opens from the round hive button left
+    of the goal pill (both in the `UnderBar` layout row) or a tap on the hive; spends above
+    `confirmAbove` take a second tap; `rare_bee` is logged. A new species is a `RareBee` asset in the
+    list (reusing an effect), a name in `Strings` and `HivePanelView.Name`, and a rebuilt scene.
   - Garden look: each flower slot is a patch prefab (`FlowerPatch_*`), and `GardenDecor` (grass,
     bushes, stones, fence) is laid out from the garden's seed and merged per material by
     `GardenDecorView` when the garden spawns. Placeholder meshes are flat-shaded low-poly, built by
     the editor `LowPolyBuilder` into `Assets/_Project/Meshes/`.
   - Bees and hive follow the Flow concept art (`pictures/buzzfield/masters/flow/`): `CharacterModels`
-    builds them as one mesh each, coloured through the `Palette` texture, so every bee is a single
-    renderer on the shared `Palette` material. *Buzzfield > Render Model Sheet* (`ModelSheet`,
+    builds them as one mesh each (the rare bees on the Worker's shape), coloured through the `Palette`
+    texture (64 swatches, 8x8), so every bee is a single renderer on the shared `Palette` material. A
+    palette layout change rebuilds the palette meshes in place on Create Default Data
+    (`RefreshPaletteMeshes`). *Buzzfield > Render Model Sheet* (`ModelSheet`,
     batchmode `-executeMethod Buzzfield.Editor.ModelSheet.RenderToFiles -quit`, output in
-    `BZ_SHOT_DIR` or `Temp/ModelSheet`) renders the bees, hive, flower patches and the butterfly with
-    its pouch up close.
+    `BZ_SHOT_DIR` or `Temp/ModelSheet`) renders the bees, the rare bees, hive, flower patches and the
+    butterfly with its pouch up close.
   - Around every garden: `Scenery.prefab` (`SceneryModels`, one palette mesh: meadow flat under and
     in front of the garden, hills behind, trees, rocks, wildflowers, stepping stones), tinted from
     faded to full by `SceneryView` as the garden blooms; the camera still frames the garden only.
@@ -117,8 +132,8 @@ string lives in `Buzzfield.Core.Strings`.
     `Unity.exe -batchmode -quit -projectPath . -executeMethod Buzzfield.Editor.GreyboxSceneBuilder.Build`.
     *Buzzfield > Play Test Tools* (`PlayTestWindow`) is for trying the game by hand in the editor:
     opens Main, deletes the editor save, and in play mode adds honey, blooms or completes the
-    garden, refills pollen, sends the butterfly (with or without a pouch), sets game speed and shows the
-    swipe hint again. For the daily streak it takes the device clock as trusted time and moves the
+    garden, refills pollen, sends the butterfly (with or without a pouch), opens the Hive and levels
+    every reached rare bee for free, sets game speed and shows the swipe hint again. For the daily streak it takes the device clock as trusted time and moves the
     date a day ahead (in memory only; days saved meanwhile stay ahead of the real date). Its shortcuts
     live in `GameManager.Debug.cs`, compiled only in the editor and development builds.
     *Buzzfield > Android > Build Dev APK* writes `Builds/Android/Buzzfield-dev.apk` (gitignored):
@@ -140,8 +155,9 @@ string lives in `Buzzfield.Core.Strings`.
   `PerformanceTests` fills the bee cap: the report test logs tick CPU, GC and draw calls (set
   `BZ_PERF_OUT` to a file to save it); the zero-allocation test runs only in a player
   (TMP allocates in the editor): `-runTests -testPlatform StandaloneWindows64 -testFilter PerformanceTests`.
-  `BalanceReportTests` is explicit: a bot plays three gardens and two loops at fixed 0.1 s steps
-  and logs milestone times (`-testFilter BalanceReportTests`, `BZ_BALANCE_OUT` for a file).
+  `BalanceReportTests` is explicit: a bot plays three gardens and two loops at fixed 0.1 s steps,
+  spends its Dewdrops on rare bees and logs milestone times and Dewdrops per active hour
+  (`-testFilter BalanceReportTests`, `BZ_BALANCE_OUT` for a file).
   Re-run it after any balance change. Tests bloom flowers through `TestBloom` (bloom follows
   collected nectar, `FlowerType.nectarToBloom`).
 - Queen abilities are data: add a `QueenAbility` asset to `QueenSettings.abilities` (reusing a
