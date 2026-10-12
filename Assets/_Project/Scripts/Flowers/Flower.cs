@@ -15,7 +15,7 @@ namespace Buzzfield.Flowers
     /// <summary>Runtime state of one flower slot. Owned and ticked by <see cref="FlowerManager"/>.</summary>
     public sealed class Flower
     {
-        internal Flower(int slotIndex, FlowerType type, FlowerView view, Vector2 gardenPosition, float valueMultiplier, bool active)
+        internal Flower(int slotIndex, FlowerType type, FlowerView view, Vector2 gardenPosition, double valueMultiplier, bool active)
         {
             SlotIndex = slotIndex;
             Type = type;

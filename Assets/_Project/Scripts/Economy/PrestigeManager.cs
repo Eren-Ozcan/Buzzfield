@@ -39,7 +39,7 @@ namespace Buzzfield.Economy
         public double LoopMultiplier => PrestigeMath.LoopMultiplier(GardenIndex, settings.Gardens.Count, settings.LoopValueBonus);
 
         /// <summary>Nectar value factor of the current garden, loop bonus included.</summary>
-        public float GardenValueMultiplier => (float)(CurrentGarden.GardenValueMultiplier * LoopMultiplier);
+        public double GardenValueMultiplier => CurrentGarden.GardenValueMultiplier * LoopMultiplier;
 
         public BigNumber MoveCost => BigNumber.FromDouble(CurrentGarden.MoveHoneyCost) * LoopMultiplier;
 

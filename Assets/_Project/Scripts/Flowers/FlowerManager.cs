@@ -23,7 +23,7 @@ namespace Buzzfield.Flowers
         public event Action<Flower, double> OnNectarCollected;
 
         /// <param name="valueMultiplier">Nectar value factor of this garden (its own multiplier plus any loop bonus).</param>
-        public void Init(GardenConfig garden, float valueMultiplier, Transform parent)
+        public void Init(GardenConfig garden, double valueMultiplier, Transform parent)
         {
             Clear();
             flowerRoot = new GameObject("Flowers").transform;
