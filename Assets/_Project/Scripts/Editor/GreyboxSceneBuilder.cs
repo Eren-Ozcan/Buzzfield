@@ -88,6 +88,8 @@ namespace Buzzfield.Editor
             LoadTheme();
             CanvasViews ui = CreateCanvas(queenSettings.Abilities.Count, storeCatalog, dewSettings, rareBeeSettings);
             new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+            EditorAssets.SetList(fitter, "topHud", ui.TopHud);
+            EditorAssets.SetList(fitter, "bottomHud", ui.BottomHud);
 
             var game = systems.AddComponent<GameManager>();
             EditorAssets.Set(game,
@@ -185,6 +187,9 @@ namespace Buzzfield.Editor
             public GoalView Goal;
             public UiEffectsView Effects;
             public GiftOfferView GiftOffer;
+            /// <summary>HUD rows the camera frames the garden below (top) and above (bottom).</summary>
+            public RectTransform[] TopHud;
+            public RectTransform[] BottomHud;
             public DewBoostChipView DewBoostChip;
             public DailyPanelView Daily;
             public HivePanelView Hive;
@@ -291,6 +296,7 @@ namespace Buzzfield.Editor
                 SwipeCatcher = swipeCatcher, SwipeHint = swipeHint, BackButton = backButton,
                 Settings = settings, Goal = goal, Effects = effects, GiftOffer = giftOffer, DewBoostChip = dewBoostChip,
                 Daily = daily, Hive = hive,
+                TopHud = new[] { topBar, underBar }, BottomHud = new[] { (RectTransform)bottomBar.transform },
             };
         }
 
