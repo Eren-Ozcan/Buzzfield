@@ -77,12 +77,11 @@ namespace Buzzfield.Game
 
         /// <summary>
         /// The pending natural break plays once nothing is on screen: no panel, no garden
-        /// celebration, no ad, no purchase in flight (studio ad policy rules 2 to 4).
+        /// celebration, no butterfly offer, no ad, no purchase in flight (studio ad policy rules 2 to 4).
         /// </summary>
         private void TickInterstitial(float unscaledDeltaTime)
         {
-            bool calm = !IsModalOpen() && !gardenComplete.IsShowing && !ads.IsShowing && !store.IsPurchasing;
-            ads.TickInterstitial(unscaledDeltaTime, calm, stats.playSeconds, prestige.MovesMade);
+            ads.TickInterstitial(unscaledDeltaTime, IsScreenFree(), stats.playSeconds, prestige.MovesMade);
         }
 
         private void HandleBoostAdDone(bool rewarded)

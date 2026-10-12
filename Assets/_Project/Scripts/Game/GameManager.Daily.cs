@@ -116,7 +116,7 @@ namespace Buzzfield.Game
                     if (dailyAutoOpenWait <= 0f)
                         dailyAutoOpenArmed = false;
                 }
-                else if (IsGardenCalm())
+                else if (IsScreenFree())
                 {
                     dailyAutoOpenArmed = false;
                     if (TryGetToday(out long today) && DailyClaimable(today) && today != dailyAutoOpenedDay)

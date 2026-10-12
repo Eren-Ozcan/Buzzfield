@@ -53,6 +53,12 @@ namespace Buzzfield.Game
         /// <summary>The butterfly may come, and keeps its time away from panels, ads and celebrations.</summary>
         private bool IsGardenCalm() => !IsModalOpen() && !gardenComplete.IsShowing && !ads.IsShowing && !store.IsPurchasing;
 
+        /// <summary>
+        /// Calm, and no butterfly offer counting down either: what may open by itself (the daily
+        /// panel, an interstitial) waits, or it would cover the offer while its time runs out.
+        /// </summary>
+        private bool IsScreenFree() => IsGardenCalm() && !giftOffer.IsShowing;
+
         private void TickVisitors(float deltaTime) =>
             visitors.Tick(deltaTime, IsGardenCalm(), stats.playSeconds, garden.Bounds);
 
