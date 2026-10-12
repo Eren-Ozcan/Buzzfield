@@ -4,6 +4,7 @@
     "references": [
         "Buzzfield.Core",
         "Buzzfield.Ads",
+        "Unity.TextMeshPro",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
