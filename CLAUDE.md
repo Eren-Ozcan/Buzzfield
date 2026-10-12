@@ -11,11 +11,15 @@ string lives in `Buzzfield.Core.Strings`.
     `RollingRate`, `HoneyFormula`, `BloomMath`, `ForagingMath`, `PrestigeMath`, `QueenMath`, `IncomeMath`, `OfflineEarnings`,
     `PollenMath`, `TimeFormat`, `TweenMath`, `AdPacing`, `TcfConsent`, `Entitlements`, `DewBoostQueue`, `SoundRules`, `Haptics`,
     `Goals`, `RewardMath`, `VisitorTimer`, `LoginStreak`, `DewPouch`, `RareBeeMath`, `SaveData` + `SaveMigration` + `SaveEnvelope` +
-    `SaveFileStore`, `Strings`.
+    `SaveFileStore`, `Strings`, `PriceLabel` (a store price the text font can draw: a currency sign
+    the static ASCII atlas lacks gives way to the ISO code, "29,99 TRY").
     Pure logic only, EditMode-tested.
   - `Core/Runtime/` (`Buzzfield.Core.Runtime`): Unity helpers shared by systems
     (`PrefabPool`, `ParticlePool`, `Tweener`, `CameraFitter`). `Tweener` is our own small tween
     runner (scale pop, press hold, wiggle), ticked by `GameManager`; effects come from `ParticlePool`.
+    `CameraFitter` frames the garden below the top HUD rows and above the bottom bar it is given
+    (`topHud`, `bottomHud`, measured on the canvas), centred between its fixed insets where there is
+    room; a new HUD row along an edge goes into those lists in the scene builder.
   - `Flowers/`, `Bees/`, `Economy/`, `Upgrades/`, `Save/`, `UI/`, `Ads/`, `Audio/` — one system each,
     ScriptableObject definitions next to the code that reads them.
   - Pollen shake (the active-play mechanic): `SwipeCatcher` (UI) sends finger strokes to
@@ -160,6 +164,12 @@ string lives in `Buzzfield.Core.Strings`.
   (`-testFilter BalanceReportTests`, `BZ_BALANCE_OUT` for a file).
   Re-run it after any balance change. Tests bloom flowers through `TestBloom` (bloom follows
   collected nectar, `FlowerType.nectarToBloom`).
+  `RobustnessTests` (save round trip of every `SaveData` field, out-of-range saves, far loops,
+  leaks over repeated Queen moves, seeded random taps) and `LayoutTests` (every panel and the
+  garden on eight screen shapes: off screen, covered, under 48 dp, spilled text, flowers under the
+  HUD) guard what feature tests do not; a new `SaveData` field needs a value in
+  `RobustnessTests.RichSave`, a new panel a state in `LayoutTests`. Test layers, the device pass
+  (`scripts/android-device-tests.sh`) and known gaps: `docs/TESTING.md`.
 - Queen abilities are data: add a `QueenAbility` asset to `QueenSettings.abilities` (reusing a
   `QueenEffect`) and rebuild the scene so the panel gets a row. Saves key ability levels by id.
 - Batchmode TMP import: `-executeMethod Buzzfield.Editor.TmpResources.ImportAndExit`
