@@ -9,6 +9,8 @@ namespace Buzzfield.UI
     /// Press feel for one button: shrinks a little while held, springs back on release and
     /// wiggles when tapped while it cannot be used (for example not enough honey). Views call
     /// <see cref="Confirm"/> or <see cref="Reject"/> when the action behind the tap succeeds or fails.
+    /// A button drawn smaller than <see cref="UiFeedbackSettings.MinTapSize"/> takes taps in a
+    /// margin around it (its graphic's raycast padding), so it looks the same but is easy to hit.
     /// </summary>
     public sealed class ButtonFeedback : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerClickHandler
     {
@@ -26,6 +28,25 @@ namespace Buzzfield.UI
             tweener = tweenRunner;
             settings = feedbackSettings;
             cues = uiCues;
+            FitTouchArea();
+        }
+
+        // Layout rows and stretched buttons change size with the screen.
+        private void OnRectTransformDimensionsChange() => FitTouchArea();
+
+        private void FitTouchArea()
+        {
+            if (settings == null || button == null)
+                return;
+            Graphic graphic = button.targetGraphic;
+            if (graphic == null)
+                return;
+            Vector2 size = graphic.rectTransform.rect.size;
+            float min = settings.MinTapSize;
+            // Negative padding grows the area that takes the press beyond the drawn rect.
+            float x = -Mathf.Max(0f, min - size.x) * 0.5f;
+            float y = -Mathf.Max(0f, min - size.y) * 0.5f;
+            graphic.raycastPadding = new Vector4(x, y, x, y);
         }
 
         public void OnPointerDown(PointerEventData eventData)

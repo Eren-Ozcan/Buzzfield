@@ -9,6 +9,11 @@ namespace Buzzfield.UI
         [Tooltip("Tweens that can run at once; extra requests are dropped.")]
         [SerializeField, Min(1)] private int tweenCapacity = 96;
 
+        [Header("Touch area")]
+        [Tooltip("Smallest touch area of a button, in canvas units; a smaller button takes taps around it too. " +
+                 "120 is 48 dp, Android's minimum, on the common phones.")]
+        [SerializeField, Min(0f)] private float minTapSize = 120f;
+
         [Header("Button press")]
         [Tooltip("Scale while a button is held down.")]
         [SerializeField, Range(0.5f, 1f)] private float pressScale = 0.93f;
@@ -39,6 +44,7 @@ namespace Buzzfield.UI
         [SerializeField, Min(0.01f)] private float badgePopDuration = 0.35f;
 
         public int TweenCapacity => tweenCapacity;
+        public float MinTapSize => minTapSize;
         public float PressScale => pressScale;
         public float PressDuration => pressDuration;
         public float ReleasePop => releasePop;
